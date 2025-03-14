@@ -7,7 +7,7 @@ import { getMockListing } from '@/lib/mock-data';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
-import { toast } from '@/components/ui/sonner';
+import { toast } from 'sonner'; // Fixed import for toast
 import { Share, Heart, ArrowLeft, User, Bookmark, Flag } from 'lucide-react';
 import ImageGallery from '@/components/listing/ImageGallery';
 import ListingInfo from '@/components/listing/ListingInfo';
