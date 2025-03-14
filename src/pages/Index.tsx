@@ -5,17 +5,40 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { 
-  Search, MapPin, Heart, ChevronDown, 
-  Bell, Menu, X, Filter, Grid3X3, LayoutList 
+  Search, MapPin, Heart, ChevronDown, Bell, Menu, 
+  X, Filter, Grid3X3, LayoutList, Plus, CarFront,
+  Sofa, Building, Briefcase, Cpu, Dog, Smartphone
 } from 'lucide-react';
 import { generateMockListing } from '@/lib/mock-data';
 
 // Generate mock listings for demo
 const mockListings = Array.from({ length: 12 }, (_, i) => generateMockListing(i + 1));
 
+// Define categories
+const categories = [
+  { id: 1, name: "Cars", icon: <CarFront className="h-6 w-6" /> },
+  { id: 2, name: "Real Estate", icon: <Building className="h-6 w-6" /> },
+  { id: 3, name: "Jobs", icon: <Briefcase className="h-6 w-6" /> },
+  { id: 4, name: "Electronics", icon: <Smartphone className="h-6 w-6" /> },
+  { id: 5, name: "Home", icon: <Sofa className="h-6 w-6" /> },
+  { id: 6, name: "Services", icon: <Cpu className="h-6 w-6" /> },
+  { id: 7, name: "Pets", icon: <Dog className="h-6 w-6" /> },
+];
+
+// Brand logos for car brands shown in the design
+const carBrands = [
+  { id: 1, name: "Toyota", logo: "/lovable-uploads/3e25247d-47db-4b30-975f-d78cadf136d7.png" },
+  { id: 2, name: "Ford", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Ford_logo_flat.svg/2560px-Ford_logo_flat.svg.png" },
+  { id: 3, name: "Nissan", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8d/Nissan_logo.svg/1200px-Nissan_logo.svg.png" },
+  { id: 4, name: "Mercedes", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/90/Mercedes-Logo.svg/1200px-Mercedes-Logo.svg.png" },
+  { id: 5, name: "BMW", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/44/BMW.svg/1200px-BMW.svg.png" },
+  { id: 6, name: "Chevrolet", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d6/Chevrolet_logo.svg/1200px-Chevrolet_logo.svg.png" },
+];
+
 const Index = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
+  const [activeCategory, setActiveCategory] = useState<number | null>(1);
   
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -24,12 +47,12 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="bg-card border-b sticky top-0 z-50 backdrop-blur-lg bg-opacity-80">
-        <div className="container-custom py-4">
+      <header className="bg-white border-b sticky top-0 z-50 shadow-sm">
+        <div className="container mx-auto py-3">
           <div className="flex items-center justify-between">
             {/* Logo */}
             <Link to="/" className="flex items-center">
-              <span className="text-xl font-bold text-primary">AdNexus</span>
+              <span className="text-2xl font-bold text-primary">Haraj</span>
             </Link>
             
             {/* Search Bar - Desktop */}
@@ -44,18 +67,22 @@ const Index = () => {
               </div>
             </div>
             
-            {/* Navigation - Desktop */}
-            <nav className="hidden md:flex items-center gap-4">
-              <Button variant="ghost" size="sm">
-                <Bell className="h-5 w-5 mr-2" />
-                <span>Notifications</span>
+            {/* Language Toggle */}
+            <div className="hidden md:flex items-center mr-4">
+              <Button variant="ghost" size="sm" className="gap-1">
+                <span>EN</span>
+                <ChevronDown className="h-4 w-4" />
               </Button>
-              <Button variant="ghost" size="sm">
-                <Heart className="h-5 w-5 mr-2" />
-                <span>Favorites</span>
+            </div>
+            
+            {/* Dark Mode Toggle */}
+            <div className="hidden md:flex items-center">
+              <Button variant="ghost" size="icon" className="rounded-full">
+                <div className="h-5 w-5 rounded-full bg-primary flex items-center justify-center text-white">
+                  <span className="text-xs">🌙</span>
+                </div>
               </Button>
-              <Button className="button-hover-effect">Post Ad</Button>
-            </nav>
+            </div>
             
             {/* Mobile Menu Toggle */}
             <Button 
@@ -93,46 +120,76 @@ const Index = () => {
                   <Heart className="h-5 w-5 mr-2" />
                   <span>Favorites</span>
                 </Button>
-                <Button className="w-full button-hover-effect">Post Ad</Button>
               </div>
             </div>
           )}
         </div>
       </header>
       
-      {/* Main content */}
-      <main className="container-custom py-8">
-        {/* Page Title */}
-        <div className="mb-8 space-y-2">
-          <h1 className="text-3xl font-bold tracking-tight">Featured Listings</h1>
-          <p className="text-muted-foreground">Discover premium items from verified sellers</p>
+      {/* Secondary Navigation - Categories */}
+      <div className="bg-primary text-white py-2 shadow-md">
+        <div className="container mx-auto">
+          <div className="flex items-center justify-between">
+            <Button variant="primary" size="sm" className="bg-blue-600 hover:bg-blue-700 flex items-center gap-1">
+              <Plus className="h-4 w-4" />
+              <span>Post Ad</span>
+            </Button>
+            
+            <div className="overflow-x-auto pb-1 hide-scrollbar">
+              <div className="flex space-x-6">
+                {categories.map(category => (
+                  <Button 
+                    key={category.id}
+                    variant={activeCategory === category.id ? "secondary" : "ghost"} 
+                    size="sm"
+                    className={activeCategory === category.id ? "bg-white text-primary" : "text-white hover:bg-blue-600"}
+                    onClick={() => setActiveCategory(category.id)}
+                  >
+                    {category.name}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
-        
-        {/* Filters */}
-        <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0">
+      </div>
+      
+      {/* Category Icons */}
+      <div className="bg-white py-4 border-b">
+        <div className="container mx-auto">
+          <div className="grid grid-cols-7 gap-4">
+            {categories.map(category => (
+              <div 
+                key={category.id} 
+                className={`flex flex-col items-center justify-center cursor-pointer p-2 rounded-lg transition-colors ${activeCategory === category.id ? 'bg-blue-50 text-primary' : 'hover:bg-gray-50'}`}
+                onClick={() => setActiveCategory(category.id)}
+              >
+                <div className="p-3 rounded-full bg-gray-100">
+                  {category.icon}
+                </div>
+                <span className="mt-2 text-sm font-medium">{category.name}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+      
+      {/* Main content */}
+      <main className="container mx-auto py-6">
+        {/* Filters & View Toggle */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+          <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" className="flex items-center gap-1">
               <Filter className="h-4 w-4" />
               <span>Filters</span>
+              <ChevronDown className="h-4 w-4 ml-1" />
             </Button>
             
-            <Button variant="outline" size="sm" className="flex items-center gap-1">
-              Category
-              <ChevronDown className="h-4 w-4" />
-            </Button>
-            
-            <Button variant="outline" size="sm" className="flex items-center gap-1">
-              Price
-              <ChevronDown className="h-4 w-4" />
-            </Button>
-            
-            <Button variant="outline" size="sm" className="flex items-center gap-1">
-              <MapPin className="h-4 w-4" />
-              <span>Location</span>
-            </Button>
+            <div className="text-sm text-muted-foreground">All Regions</div>
           </div>
           
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-muted-foreground">View:</span>
             <Button
               variant={viewMode === 'grid' ? "default" : "outline"}
               size="icon"
@@ -153,6 +210,24 @@ const Index = () => {
           </div>
         </div>
         
+        {/* Car Brands - Only show for cars category */}
+        {activeCategory === 1 && (
+          <div className="mb-8">
+            <h3 className="text-lg font-medium mb-4">Popular Brands</h3>
+            <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
+              {carBrands.map(brand => (
+                <div key={brand.id} className="border rounded-lg p-4 flex items-center justify-center bg-white hover:shadow-md transition-shadow cursor-pointer">
+                  <img 
+                    src={brand.logo} 
+                    alt={brand.name} 
+                    className="h-10 object-contain"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        
         {/* Listings Grid/List */}
         {viewMode === 'grid' ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
@@ -160,7 +235,7 @@ const Index = () => {
               <Link 
                 to={`/listing/${listing.id}`} 
                 key={listing.id}
-                className="group rounded-xl border bg-card overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 animate-slide-up"
+                className="group rounded-xl border bg-white overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 animate-slide-up"
               >
                 <div className="aspect-[4/3] bg-muted relative overflow-hidden">
                   <img 
@@ -224,7 +299,7 @@ const Index = () => {
               <Link 
                 to={`/listing/${listing.id}`} 
                 key={listing.id}
-                className="group flex flex-col sm:flex-row gap-4 rounded-xl border bg-card overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 animate-fade-in"
+                className="group flex flex-col sm:flex-row gap-4 rounded-xl border bg-white overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 animate-fade-in"
               >
                 <div className="w-full sm:w-48 md:w-60 shrink-0 aspect-[4/3] sm:aspect-square bg-muted relative overflow-hidden">
                   <img 
@@ -311,11 +386,11 @@ const Index = () => {
       </main>
       
       {/* Footer */}
-      <footer className="bg-card border-t py-8">
-        <div className="container-custom">
+      <footer className="bg-white border-t py-8">
+        <div className="container mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div>
-              <h3 className="font-bold text-lg mb-4">AdNexus</h3>
+              <h3 className="font-bold text-lg mb-4">Haraj</h3>
               <p className="text-muted-foreground text-sm">
                 The premier destination for buying and selling premium products online.
               </p>
@@ -324,18 +399,13 @@ const Index = () => {
             <div>
               <h4 className="font-medium mb-4">Categories</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li>
-                  <a href="#" className="hover:text-foreground transition-colors">Electronics</a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-foreground transition-colors">Fashion</a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-foreground transition-colors">Home & Garden</a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-foreground transition-colors">Vehicles</a>
-                </li>
+                {categories.slice(0, 4).map(category => (
+                  <li key={category.id}>
+                    <a href="#" className="hover:text-foreground transition-colors">
+                      {category.name}
+                    </a>
+                  </li>
+                ))}
               </ul>
             </div>
             
@@ -389,7 +459,7 @@ const Index = () => {
           </div>
           
           <div className="mt-8 pt-8 border-t text-center text-sm text-muted-foreground">
-            <p>© {new Date().getFullYear()} AdNexus. All rights reserved.</p>
+            <p>© {new Date().getFullYear()} Haraj. All rights reserved.</p>
           </div>
         </div>
       </footer>
