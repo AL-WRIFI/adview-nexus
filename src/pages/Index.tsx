@@ -130,7 +130,7 @@ const Index = () => {
       <div className="bg-primary text-white py-2 shadow-md">
         <div className="container mx-auto">
           <div className="flex items-center justify-between">
-            <Button variant="primary" size="sm" className="bg-blue-600 hover:bg-blue-700 flex items-center gap-1">
+            <Button variant="default" size="sm" className="bg-blue-600 hover:bg-blue-700 flex items-center gap-1">
               <Plus className="h-4 w-4" />
               <span>Post Ad</span>
             </Button>
@@ -176,192 +176,191 @@ const Index = () => {
       
       {/* Main content */}
       <main className="container mx-auto py-6">
-        {/* Filters & View Toggle */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" className="flex items-center gap-1">
-              <Filter className="h-4 w-4" />
-              <span>Filters</span>
-              <ChevronDown className="h-4 w-4 ml-1" />
-            </Button>
-            
-            <div className="text-sm text-muted-foreground">All Regions</div>
+        {/* User Profile Section - Similar to Laravel implementation */}
+        <div className="mb-8 rounded-xl overflow-hidden border bg-white shadow-sm">
+          <div className="h-40 bg-gradient-to-r from-blue-400 to-blue-600 relative">
+            {/* Cover photo - could be dynamic */}
           </div>
-          
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-muted-foreground">View:</span>
-            <Button
-              variant={viewMode === 'grid' ? "default" : "outline"}
-              size="icon"
-              onClick={() => setViewMode('grid')}
-              className="h-8 w-8"
-            >
-              <Grid3X3 className="h-4 w-4" />
-            </Button>
-            
-            <Button
-              variant={viewMode === 'list' ? "default" : "outline"}
-              size="icon"
-              onClick={() => setViewMode('list')}
-              className="h-8 w-8"
-            >
-              <LayoutList className="h-4 w-4" />
-            </Button>
+          <div className="p-4 flex flex-col sm:flex-row items-center justify-between">
+            <div className="flex flex-col sm:flex-row items-center gap-4">
+              <div className="w-20 h-20 rounded-full bg-white border-4 border-white shadow-md -mt-10 overflow-hidden">
+                <img 
+                  src="/placeholder.svg" 
+                  alt="User Profile" 
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className="text-center sm:text-left">
+                <h2 className="text-xl font-bold">User Name</h2>
+                <p className="text-muted-foreground text-sm">Member since 2023</p>
+              </div>
+            </div>
+            <div className="mt-4 sm:mt-0">
+              <Button variant="outline" size="sm">
+                Edit Profile
+              </Button>
+            </div>
           </div>
         </div>
         
-        {/* Car Brands - Only show for cars category */}
-        {activeCategory === 1 && (
-          <div className="mb-8">
-            <h3 className="text-lg font-medium mb-4">Popular Brands</h3>
-            <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
-              {carBrands.map(brand => (
-                <div key={brand.id} className="border rounded-lg p-4 flex items-center justify-center bg-white hover:shadow-md transition-shadow cursor-pointer">
-                  <img 
-                    src={brand.logo} 
-                    alt={brand.name} 
-                    className="h-10 object-contain"
-                  />
-                </div>
-              ))}
+        {/* Filters & View Toggle */}
+        <div className="bg-white p-4 rounded-lg shadow-sm border mb-6">
+          <h3 className="text-lg font-semibold mb-4">My Listings</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="text-sm text-muted-foreground mb-1 block">Status</label>
+              <select className="w-full rounded-md border border-input bg-background px-3 h-10">
+                <option value="all">All Status</option>
+                <option value="approved">Approved</option>
+                <option value="pending">Pending</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-sm text-muted-foreground mb-1 block">Category</label>
+              <select className="w-full rounded-md border border-input bg-background px-3 h-10">
+                <option value="all">All Categories</option>
+                {categories.map(category => (
+                  <option key={category.id} value={category.id}>{category.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-sm text-muted-foreground mb-1 block">Publication</label>
+              <select className="w-full rounded-md border border-input bg-background px-3 h-10">
+                <option value="all">All Publications</option>
+                <option value="published">Published</option>
+                <option value="unpublished">Unpublished</option>
+              </select>
             </div>
           </div>
-        )}
+        </div>
         
-        {/* Listings Grid/List */}
-        {viewMode === 'grid' ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {mockListings.map((listing) => (
-              <Link 
-                to={`/listing/${listing.id}`} 
-                key={listing.id}
-                className="group rounded-xl border bg-white overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 animate-slide-up"
-              >
-                <div className="aspect-[4/3] bg-muted relative overflow-hidden">
-                  <img 
-                    src={listing.image} 
-                    alt={listing.title} 
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    loading="lazy"
-                  />
-                  {listing.is_featured && (
-                    <Badge className="absolute top-2 left-2 bg-amber-500">
-                      Featured
-                    </Badge>
-                  )}
-                </div>
-                
-                <div className="p-4">
-                  <div className="flex items-start justify-between gap-2">
-                    <h3 className="font-medium line-clamp-1 group-hover:text-primary transition-colors">
-                      {listing.title}
-                    </h3>
-                    <Badge variant="outline" className="shrink-0">
-                      {listing.condition}
-                    </Badge>
+        {/* Listings Section */}
+        <div className="space-y-4">
+          {mockListings.map((listing) => (
+            <div key={listing.id} className="bg-white rounded-lg border shadow-sm overflow-hidden">
+              <div className="p-4">
+                <div className="flex flex-col md:flex-row gap-4">
+                  {/* Image Column */}
+                  <div className="md:w-1/4 lg:w-1/5">
+                    <div className="aspect-[4/3] rounded-lg overflow-hidden bg-gray-100">
+                      <img 
+                        src={listing.image} 
+                        alt={listing.title} 
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
                   </div>
                   
-                  <div className="flex items-center gap-1 mt-1 text-sm text-muted-foreground">
-                    <MapPin className="h-3 w-3 shrink-0" />
-                    <span className="truncate">{listing.address}</span>
-                  </div>
-                  
-                  <div className="mt-2 flex items-center justify-between">
-                    <p className="text-primary font-bold">
-                      ${listing.price.toLocaleString()}
-                      {listing.negotiable && (
-                        <span className="text-xs font-normal text-muted-foreground ml-1">
-                          (Neg.)
+                  {/* Content Column */}
+                  <div className="md:w-2/4 lg:w-3/5">
+                    <div>
+                      <h3 className="text-lg font-medium mb-2 hover:text-primary">
+                        <Link to={`/listing/${listing.id}`}>
+                          {listing.title}
+                        </Link>
+                      </h3>
+                      
+                      <div className="flex flex-wrap gap-2 mb-2">
+                        {listing.is_featured && (
+                          <Badge className="bg-amber-500 text-white">
+                            Featured
+                          </Badge>
+                        )}
+                        <Badge variant="outline">
+                          {listing.condition}
+                        </Badge>
+                      </div>
+                      
+                      <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                          <MapPin className="h-3 w-3" />
+                          <span>{listing.address}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <span>Posted 2 days ago</span>
+                        </div>
+                      </div>
+                      
+                      <div className="mt-3">
+                        <span className="text-lg font-bold text-primary">
+                          ${listing.price.toLocaleString()}
+                          {listing.negotiable && (
+                            <span className="text-xs font-normal text-muted-foreground ml-1">
+                              (Negotiable)
+                            </span>
+                          )}
                         </span>
-                      )}
-                    </p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Actions Column */}
+                  <div className="md:w-1/4 lg:w-1/5 flex flex-col justify-center items-center border-t md:border-t-0 md:border-l pt-4 md:pt-0 md:pl-4 gap-3">
+                    <div className="text-center">
+                      <Badge variant="outline" className={`${
+                        Math.random() > 0.5 ? 'bg-green-100 text-green-800 border-green-200' : 'bg-amber-100 text-amber-800 border-amber-200'
+                      } px-3 py-1`}>
+                        {Math.random() > 0.5 ? 'Approved' : 'Pending'}
+                      </Badge>
+                    </div>
                     
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="h-7 w-7 rounded-full"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        // Add to favorites logic
-                      }}
-                    >
-                      <Heart className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {mockListings.map((listing) => (
-              <Link 
-                to={`/listing/${listing.id}`} 
-                key={listing.id}
-                className="group flex flex-col sm:flex-row gap-4 rounded-xl border bg-white overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 animate-fade-in"
-              >
-                <div className="w-full sm:w-48 md:w-60 shrink-0 aspect-[4/3] sm:aspect-square bg-muted relative overflow-hidden">
-                  <img 
-                    src={listing.image} 
-                    alt={listing.title} 
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    loading="lazy"
-                  />
-                  {listing.is_featured && (
-                    <Badge className="absolute top-2 left-2 bg-amber-500">
-                      Featured
-                    </Badge>
-                  )}
-                </div>
-                
-                <div className="p-4 flex-1 flex flex-col">
-                  <div className="flex items-start justify-between gap-2">
-                    <h3 className="text-lg font-medium group-hover:text-primary transition-colors">
-                      {listing.title}
-                    </h3>
-                    <Badge variant="outline">
-                      {listing.condition}
-                    </Badge>
-                  </div>
-                  
-                  <div className="flex items-center gap-1 mt-1 text-sm text-muted-foreground">
-                    <MapPin className="h-3 w-3 shrink-0" />
-                    <span>{listing.address}</span>
-                  </div>
-                  
-                  <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
-                    {listing.description}
-                  </p>
-                  
-                  <div className="mt-auto pt-4 flex items-center justify-between">
-                    <p className="text-primary font-bold text-lg">
-                      ${listing.price.toLocaleString()}
-                      {listing.negotiable && (
-                        <span className="text-xs font-normal text-muted-foreground ml-1">
-                          (Negotiable)
+                    <div className="flex items-center gap-2">
+                      <div className="relative inline-flex items-center">
+                        <input
+                          type="checkbox"
+                          id={`publish-${listing.id}`}
+                          className="sr-only peer"
+                          defaultChecked={Math.random() > 0.5}
+                        />
+                        <label
+                          htmlFor={`publish-${listing.id}`}
+                          className="flex items-center cursor-pointer w-11 h-6 bg-gray-200 rounded-full peer-checked:bg-green-500 peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all"
+                        >
+                        </label>
+                        <span className="ml-2 text-sm text-muted-foreground">
+                          {Math.random() > 0.5 ? 'Published' : 'Unpublished'}
                         </span>
-                      )}
-                    </p>
+                      </div>
+                    </div>
                     
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="h-8 w-8 rounded-full"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        // Add to favorites logic
-                      }}
-                    >
-                      <Heart className="h-4 w-4" />
-                    </Button>
+                    <div className="flex gap-2 mt-2">
+                      <Button variant="outline" size="sm" className="px-2">
+                        <Link to={`/listing/${listing.id}`}>
+                          View
+                        </Link>
+                      </Button>
+                      <Button variant="outline" size="sm" className="px-2">
+                        Edit
+                      </Button>
+                      <div className="relative group">
+                        <Button variant="outline" size="sm" className="px-2">
+                          <ChevronDown className="h-4 w-4" />
+                        </Button>
+                        <div className="absolute right-0 mt-1 w-48 bg-white border rounded-md shadow-lg z-10 hidden group-hover:block">
+                          <div className="py-1">
+                            <a href="#" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                              View Listing
+                            </a>
+                            <a href="#" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                              Edit Listing
+                            </a>
+                            <a href="#" className="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100">
+                              Delete Listing
+                            </a>
+                            <a href="#" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                              Renew Listing
+                            </a>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </Link>
-            ))}
-          </div>
-        )}
+              </div>
+            </div>
+          ))}
+        </div>
         
         {/* Pagination */}
         <div className="mt-8 flex justify-center">
@@ -463,6 +462,8 @@ const Index = () => {
           </div>
         </div>
       </footer>
+      
+      {/* Delete Modal - Add here when needed */}
     </div>
   );
 };
