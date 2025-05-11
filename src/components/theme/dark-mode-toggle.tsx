@@ -31,20 +31,21 @@ export function DarkModeToggle() {
 
   // Handle theme toggle
   const toggleDarkMode = () => {
-    setIsDarkMode(!isDarkMode);
+    const newDarkMode = !isDarkMode;
+    setIsDarkMode(newDarkMode);
     
-    if (isDarkMode) {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-      toast({
-        title: "تم التبديل إلى الوضع النهاري",
-        duration: 1500,
-      });
-    } else {
+    if (newDarkMode) {
       document.documentElement.classList.add('dark');
       localStorage.setItem('theme', 'dark');
       toast({
         title: "تم التبديل إلى الوضع الليلي",
+        duration: 1500,
+      });
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+      toast({
+        title: "تم التبديل إلى الوضع النهاري",
         duration: 1500,
       });
     }

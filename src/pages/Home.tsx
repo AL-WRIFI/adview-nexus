@@ -155,13 +155,15 @@ export default function Home() {
                     )}
                     
                     {/* Pagination */}
-                    <div className="mt-6">
-                      <Pagination 
-                        currentPage={page} 
-                        totalPages={totalPages}
-                        onPageChange={setPage}
-                      />
-                    </div>
+                    {totalPages > 1 && (
+                      <div className="mt-6">
+                        <Pagination 
+                          currentPage={page} 
+                          totalPages={totalPages}
+                          onPageChange={setPage}
+                        />
+                      </div>
+                    )}
                   </div>
                 </>
               )}

@@ -80,6 +80,10 @@ export default {
 				featured: {
 					DEFAULT: '#FFF8E6',
 					border: '#FFEEC0'
+				},
+				gray: {
+					750: '#2D3748', // Additional gray shade for dark mode
+					850: '#1A202C', // Additional gray shade for dark mode
 				}
 			},
 			borderRadius: {

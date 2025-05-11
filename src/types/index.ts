@@ -51,6 +51,7 @@ export interface Category {
   banner?: string;
   parent_id?: number | string | null;
   children?: Category[];
+  subcategories?: Category[]; // Add this for backward compatibility
 }
 
 export interface Location {
@@ -73,6 +74,8 @@ export interface User {
   createdAt: string;
   location?: string;
   about?: string;
+  bio?: string; // Added for compatibility with existing components
+  city?: string; // Added for compatibility with existing components
   roles?: string[];
 }
 
@@ -126,6 +129,31 @@ export interface Listing {
   has_price?: boolean;
 }
 
+// For backward compatibility
+export interface Ad extends Listing {}
+export interface ListingDetails extends Listing {}
+export interface Brand {
+  id: number | string;
+  name: string;
+  logo?: string;
+  slug?: string;
+}
+
+// For Comment type
+export interface Comment {
+  id: number | string;
+  user_id: number | string;
+  listing_id: number | string;
+  content: string;
+  created_at: string;
+  user: {
+    id: number | string;
+    name: string;
+    avatar?: string;
+  };
+  replies?: Comment[];
+}
+
 // Notification Types
 export interface Notification {
   id: number | string;
@@ -156,6 +184,7 @@ export interface Conversation {
   last_message: string;
   unread_count: number;
   updated_at: string;
+  participants?: (number | string)[]; // Added for compatibility with existing components
   user: {
     id: number | string;
     name: string;

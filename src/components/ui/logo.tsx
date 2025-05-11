@@ -15,7 +15,7 @@ export function Logo({ className, withText = true }: LogoProps) {
         <span className="absolute inset-0 flex items-center justify-center text-white text-lg font-bold">مكس</span>
       </div>
       {withText && (
-        <div className="text-xl font-bold bg-gradient-to-r from-brand to-brand-dark bg-clip-text text-transparent dark:from-brand-light dark:to-brand">
+        <div className="text-xl font-bold bg-gradient-to-r from-brand to-brand-dark bg-clip-text text-transparent dark:from-brand-light dark:to-blue-300">
           مكس سوريا
         </div>
       )}

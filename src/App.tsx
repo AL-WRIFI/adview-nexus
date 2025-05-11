@@ -82,6 +82,19 @@ function App() {
       appleIcon.setAttribute('href', '/icons/icon-192x192.png');
       document.head.appendChild(appleIcon);
     }
+
+    // Check dark mode preference
+    const storedTheme = localStorage.getItem('theme');
+    if (storedTheme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else if (storedTheme === 'light') {
+      document.documentElement.classList.remove('dark');
+    } else {
+      // If no stored preference, use system preference
+      if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.documentElement.classList.add('dark');
+      }
+    }
   }, []);
 
   return (
