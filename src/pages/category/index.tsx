@@ -7,7 +7,7 @@ import { AdCard } from '@/components/ads/ad-card';
 import { Footer } from '@/components/layout/footer';
 import { MobileNav } from '@/components/layout/mobile-nav';
 import { useAds, useCategory } from '@/hooks/use-api';
-import { SearchFilters } from '@/types';
+import { SearchFilters, Listing } from '@/types';
 import { Pagination } from '@/components/custom/pagination';
 import { Loader2 } from 'lucide-react';
 import { EnhancedFilterSection } from '@/components/filters/enhanced-filter-section';
@@ -66,9 +66,9 @@ export default function CategoryPage() {
     setPage(1); // Reset to first page when filters change
   };
   
-  // Extract data
-  const ads = adsResponse?.data || [];
-  const totalPages = adsResponse?.meta?.last_page || 1;
+  // Safely extract data from response
+  const ads = adsResponse?.data?.data || [];
+  const totalPages = adsResponse?.data?.meta?.last_page || 1;
   
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
@@ -140,18 +140,18 @@ export default function CategoryPage() {
                     {/* Ads count */}
                     <div className="mb-4">
                       <p className="text-gray-600">
-                        تم العثور على <span className="font-bold text-brand">{ads.length}</span> إعلان
+                        تم العثور على <span className="font-bold text-brand">{Array.isArray(ads) ? ads.length : 0}</span> إعلان
                       </p>
                     </div>
                     
                     {/* Ads grid/list */}
-                    {ads.length > 0 ? (
+                    {Array.isArray(ads) && ads.length > 0 ? (
                       <div className={`grid gap-4 ${
                         adLayout === 'grid' 
                           ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3' 
                           : 'grid-cols-1'
                       }`}>
-                        {ads.map((ad) => (
+                        {ads.map((ad: Listing) => (
                           <AdCard 
                             key={ad.id} 
                             ad={ad} 

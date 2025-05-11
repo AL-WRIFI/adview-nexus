@@ -7,10 +7,10 @@ export interface ApiResponse<T> {
 }
 
 export interface User {
-  id: number;
-  first_name: string;
-  last_name: string;
-  username: string;
+  id: number | string;
+  first_name?: string;
+  last_name?: string;
+  username?: string;
   phone: string;
   email?: string;
   image?: string | null;
@@ -25,16 +25,17 @@ export interface User {
   name?: string;
   verified?: boolean;
   createdAt?: string;
+  nationalId?: string;
 }
 
 export interface Ad {
-  id: number;
+  id: number | string;
   title: string;
   description: string;
   price: number;
   negotiable?: boolean;
   condition: 'new' | 'used';
-  category: string;
+  category: string | number;
   subcategory?: string;
   city: string;
   district?: string;
@@ -45,7 +46,7 @@ export interface Ad {
   listing_type: 'sell' | 'buy' | 'exchange' | 'service';
   created_at: string;
   seller: {
-    id: number;
+    id: number | string;
     name: string;
     avatar?: string;
     verified: boolean;
@@ -58,10 +59,12 @@ export interface Ad {
   image?: string;
   viewCount?: number; // Alias for views_count
   status?: string;
+  adType?: string;
+  commentCount?: number;
 }
 
 export interface Listing {
-  id: number;
+  id: number | string;
   title: string;
   slug?: string;
   description: string;
@@ -69,18 +72,18 @@ export interface Listing {
   is_negotiable?: boolean;
   condition: 'new' | 'used';
   listing_type: 'sell' | 'buy' | 'exchange' | 'service';
-  category_id: number;
+  category_id: number | string;
   category_name: string;
-  subcategory_id?: number;
+  subcategory_id?: number | string;
   subcategory_name?: string;
-  brand_id?: number;
+  brand_id?: number | string;
   brand_name?: string;
   model?: string;
-  city_id: number;
+  city_id: number | string;
   city_name: string;
-  state_id?: number;
+  state_id?: number | string;
   state_name?: string;
-  district_id?: number;
+  district_id?: number | string;
   district_name?: string;
   image: string;
   images?: string[];
@@ -89,14 +92,14 @@ export interface Listing {
   comments_count?: number;
   created_at: string;
   updated_at?: string;
-  user_id: number;
+  user_id: number | string;
   user?: User;
   attributes?: Record<string, any>;
   // For compatibility with Ad type
-  category?: string;
+  category?: string | number;
   city?: string;
   seller?: {
-    id: number;
+    id: number | string;
     name: string;
     avatar?: string;
     verified: boolean;
@@ -113,34 +116,37 @@ export interface ListingDetails extends Listing {
 }
 
 export interface Comment {
-  id: number;
+  id: number | string;
   content: string;
-  user_id: number;
-  listing_id: number;
-  parent_id?: number;
+  user_id: number | string;
+  listing_id: number | string;
+  parent_id?: number | string;
   created_at: string;
   updated_at: string;
   user: User;
   replies?: Comment[];
+  text?: string; // Alternative field name for content
+  adId?: number | string; // Alternative field name for listing_id
 }
 
 export interface Category {
-  id: number;
+  id: number | string;
   name: string;
-  slug: string;
+  slug?: string;
   description?: string;
-  parent_id?: number;
+  parent_id?: number | string;
   icon?: string;
   count?: number;
   subcategories?: Category[];
   // Add property for child categories
   children?: Category[];
+  arabicName?: string; // For display in Arabic
 }
 
 export interface Brand {
-  id: number;
+  id: number | string;
   name: string;
-  slug: string;
+  slug?: string;
   logo?: string;
   count?: number;
   title?: string; // For compatibility with API responses
@@ -149,13 +155,13 @@ export interface Brand {
 export interface SearchFilters {
   page?: number;
   per_page?: number;
-  category_id?: number | number[];
-  subcategory_id?: number | number[];
-  child_category_id?: number | number[];
-  brand_id?: number | number[];
-  city_id?: number | number[];
-  state_id?: number | number[];
-  district_id?: number | number[];
+  category_id?: number | string | (number | string)[];
+  subcategory_id?: number | string | (number | string)[];
+  child_category_id?: number | string | (number | string)[];
+  brand_id?: number | string | (number | string)[];
+  city_id?: number | string | (number | string)[];
+  state_id?: number | string | (number | string)[];
+  district_id?: number | string | (number | string)[];
   price_min?: number;
   price_max?: number;
   condition?: 'new' | 'used' | '';
@@ -176,6 +182,7 @@ export interface SearchFilters {
   has_price?: boolean;
   has_phone?: boolean;
   negotiable?: boolean;
+  [key: string]: any; // Allow for dynamic properties
 }
 
 export interface PaginatedResponse<T> {
@@ -209,19 +216,26 @@ export interface PaginatedResponse<T> {
 
 // This will replace the Conversation type that's missing
 export interface Conversation {
-  id: number;
+  id: number | string;
   participants: User[];
   lastMessage?: Message;
   unreadCount: number;
   createdAt: string;
   updatedAt: string;
+  adId?: string | number;
+  adTitle?: string;
+  adImage?: string;
+  isActive?: boolean;
 }
 
 export interface Message {
-  id: number;
-  content: string;
-  senderId: number;
-  conversationId: number;
+  id: number | string;
+  content?: string;
+  senderId: string | number;
+  receiverId?: string | number;
+  conversationId: string | number;
   read: boolean;
   createdAt: string;
+  text?: string; // Alternative field name for content
+  adId?: number | string;
 }
