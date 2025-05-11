@@ -6,34 +6,34 @@
 @layer base {
   :root {
     --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
+    --foreground: 222.2 84% 4.9%;
 
     --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
+    --card-foreground: 222.2 84% 4.9%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
+    --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 221.2 83.2% 53.3%;
+    --primary: 210 100% 50%;
     --primary-foreground: 210 40% 98%;
 
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
 
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
 
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 142.1 76.2% 36.3%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 222.2 84% 4.9%;
 
-    --radius: 0.75rem;
+    --radius: 0.5rem;
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -43,37 +43,44 @@
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+    
+    /* Brand colors */
+    --brand: 217 100% 50%;
+    --brand-foreground: 0 0% 100%;
+    
+    /* Ad borders */
+    --ad-border: 214.3 31.8% 91.4%;
+    --featured-border: 216 98% 80%;
   }
 
   .dark {
-    --background: 20 14.3% 4.1%;
-    --foreground: 0 0% 95%;
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
 
-    --card: 24 9.8% 10%;
-    --card-foreground: 0 0% 95%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
 
-    --popover: 0 0% 9%;
-    --popover-foreground: 0 0% 95%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
 
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 210 100% 50%;
+    --primary-foreground: 210 40% 98%;
 
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
 
-    --muted: 0 0% 15%;
-    --muted-foreground: 240 5% 64.9%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
 
-    --accent: 12 6.5% 15.1%;
-    --accent-foreground: 0 0% 98%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
 
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 85.7% 97.3%;
+    --destructive-foreground: 210 40% 98%;
 
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 142.4 71.8% 29.2%;
-
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;
@@ -82,6 +89,14 @@
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+    
+    /* Brand colors */
+    --brand: 217 100% 60%;
+    --brand-foreground: 0 0% 100%;
+    
+    /* Ad borders */
+    --ad-border: 217.2 32.6% 17.5%;
+    --featured-border: 216 98% 40%;
   }
 }
 
@@ -89,80 +104,161 @@
   * {
     @apply border-border;
   }
-  
+
   html {
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+    direction: rtl;
   }
-  
+
   body {
-    @apply bg-background text-foreground font-sans;
-  }
-  
-  /* Scrollbar styling */
-  ::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
-  }
-  
-  ::-webkit-scrollbar-track {
-    @apply bg-transparent;
-  }
-  
-  ::-webkit-scrollbar-thumb {
-    @apply bg-muted rounded-full transition-colors duration-200;
-  }
-  
-  ::-webkit-scrollbar-thumb:hover {
-    @apply bg-muted-foreground/30;
-  }
-  
-  /* Image loading effect */
-  .image-loading-effect {
-    @apply bg-gradient-to-r from-transparent via-muted-foreground/10 to-transparent bg-[length:200%_100%] animate-image-shimmer;
+    @apply bg-background text-foreground font-tajawal;
   }
 }
 
 @layer components {
-  .container-custom {
-    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  .category-icon {
+    @apply flex flex-col items-center justify-center p-3 rounded-lg bg-white shadow-sm hover:shadow transition-all hover:scale-105 cursor-pointer border border-ad-border;
   }
   
-  .button-hover-effect {
-    @apply relative overflow-hidden transition-all duration-300 ease-out;
+  .ad-card {
+    @apply relative border border-ad-border rounded-lg overflow-hidden bg-white transition-all hover:shadow-md;
   }
   
-  .button-hover-effect::after {
-    @apply content-[''] absolute w-full h-full top-0 left-0 bg-white/20 scale-x-0 origin-right transition-transform duration-300 ease-out;
+  .ad-card-horizontal {
+    @apply flex;
   }
   
-  .button-hover-effect:hover::after {
-    @apply scale-x-100 origin-left;
+  .ad-card-grid {
+    @apply flex flex-col;
   }
   
-  .page-transition-enter {
-    @apply opacity-0 transform translate-y-2;
+  .featured-ad {
+    @apply border-featured-border bg-featured shadow-md;
   }
   
-  .page-transition-enter-active {
-    @apply opacity-100 transform translate-y-0 transition-all duration-300 ease-out;
+  .nav-link {
+    @apply px-3 py-2 text-gray-700 hover:text-primary rounded-md transition-colors;
   }
   
-  .listing-badge {
-    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  .mobile-nav-link {
+    @apply flex flex-col items-center justify-center p-2 text-xs text-gray-600 hover:text-primary transition-colors;
   }
   
-  .gallery-transition {
-    @apply transition-opacity duration-300 ease-in-out;
+  .scroll-container {
+    @apply flex overflow-x-auto pb-2 scrollbar-hide;
   }
   
-  /* Hide scrollbar for clean UI */
-  .hide-scrollbar {
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;  /* Firefox */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
   
-  .hide-scrollbar::-webkit-scrollbar {
-    display: none; /* Chrome, Safari and Opera */
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
   }
+  
+  /* Card effects and animations */
+  .card-hover {
+    @apply hover:shadow-md transition-all duration-200 hover:-translate-y-1;
+  }
+  
+  .pulse-animation {
+    @apply animate-pulse;
+  }
+}
+
+/* Hide cursor on non-interactive elements */
+body * {
+  cursor: default;
+}
+
+/* Show text cursor only on text inputs and elements that should have it */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="search"],
+input[type="tel"],
+input[type="url"],
+textarea,
+[contenteditable="true"],
+.cursor-text {
+  cursor: text !important;
+}
+
+/* Show pointer cursor on clickable elements */
+a, 
+button, 
+[role="button"], 
+input[type="submit"],
+input[type="button"],
+input[type="checkbox"],
+input[type="radio"],
+select,
+summary,
+[tabindex]:not([tabindex="-1"]),
+.cursor-pointer,
+.category-icon,
+.ad-card {
+  cursor: pointer !important;
+}
+
+/* Custom scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0, 0, 0, 0.3);
+}
+
+/* Custom design elements */
+.glass-effect {
+  @apply bg-white/80 backdrop-filter backdrop-blur-sm border border-white/20;
+}
+
+.brand-gradient {
+  @apply bg-gradient-to-r from-blue-500 to-indigo-600;
+}
+
+.shadow-soft {
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.badge-status {
+  @apply inline-flex items-center justify-center px-2 py-0.5 rounded text-xs font-medium;
+}
+
+.badge-featured {
+  @apply badge-status bg-amber-50 text-amber-600 border border-amber-200;
+}
+
+.badge-verified {
+  @apply badge-status bg-green-50 text-green-600 border border-green-200;
+}
+
+.text-truncate-1 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.text-truncate-2 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
