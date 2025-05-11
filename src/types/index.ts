@@ -1,6 +1,5 @@
-// We need to extend the existing types, so we can't use the // ... keep existing code notation
-// Instead, we'll add the ApiResponse type and export it
 
+// ApiResponse type definition
 export interface ApiResponse<T> {
   success: boolean;
   message: string;
@@ -20,7 +19,6 @@ export interface User {
   address?: string | null;
   created_at?: string;
   is_verified?: boolean;
-  // Add missing properties that are being used in components
   bio?: string;
   avatar?: string;
   city?: string;
@@ -153,6 +151,7 @@ export interface SearchFilters {
   per_page?: number;
   category_id?: number | number[];
   subcategory_id?: number | number[];
+  child_category_id?: number | number[];
   brand_id?: number | number[];
   city_id?: number | number[];
   state_id?: number | number[];
@@ -170,8 +169,13 @@ export interface SearchFilters {
   min_price?: number;
   max_price?: number;
   sort_by?: 'newest' | 'oldest' | 'price_asc' | 'price_desc';
-  // Add property for child category
-  child_category_id?: number | number[];
+  // Add these additional properties for filters
+  today?: boolean;
+  verified?: boolean;
+  has_image?: boolean;
+  has_price?: boolean;
+  has_phone?: boolean;
+  negotiable?: boolean;
 }
 
 export interface PaginatedResponse<T> {

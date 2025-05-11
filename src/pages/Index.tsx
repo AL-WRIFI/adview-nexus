@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
@@ -6,6 +5,7 @@ import { MobileNav } from '@/components/layout/mobile-nav';
 import { Link } from 'react-router-dom';
 import { Building2, Car, Cpu, GamepadIcon, Heart, Sofa, Users, Briefcase, Hammer, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 // Define category types
 type Category = {
@@ -31,6 +31,7 @@ type Listing = {
 const Index = () => {
   const [activeCategory, setActiveCategory] = useState<number | null>(null);
   const [selectedLocation, setSelectedLocation] = useState<'all' | 'nearby'>('all');
+  const isMobile = useIsMobile();
   
   // Categories data
   const categories: Category[] = [
@@ -81,40 +82,83 @@ const Index = () => {
     setActiveCategory(categoryId);
   };
   
+  // Render different category layouts for mobile and desktop
+  const renderCategories = () => {
+    if (isMobile) {
+      // Enhanced mobile category design inspired by Haraj.sa
+      return (
+        <div className="bg-white py-4 px-2 mb-2 shadow-sm">
+          <div className="grid grid-cols-5 gap-3">
+            {categories.slice(0, 10).map((category) => (
+              <Link 
+                key={category.id}
+                to={`/category/${category.slug}`}
+                className="flex flex-col items-center"
+                onClick={() => handleCategoryClick(category.id)}
+              >
+                <div className={cn(
+                  "w-14 h-14 flex items-center justify-center rounded-lg bg-slate-100",
+                  activeCategory === category.id && "bg-blue-100"
+                )}>
+                  {category.icon}
+                </div>
+                <span className="text-xs mt-1 text-center">{category.arabicName}</span>
+              </Link>
+            ))}
+          </div>
+          
+          {/* Category Pagination Dots */}
+          <div className="flex justify-center mt-4">
+            <div className="flex space-x-1">
+              <div className="w-2 h-2 rounded-full bg-gray-300"></div>
+              <div className="w-2 h-2 rounded-full bg-gray-300"></div>
+              <div className="w-6 h-2 rounded-full bg-blue-500"></div>
+            </div>
+          </div>
+        </div>
+      );
+    } else {
+      // Keep the original desktop category layout
+      return (
+        <div className="bg-white py-4 px-2 mb-2 shadow-sm">
+          <div className="grid grid-cols-5 gap-3">
+            {categories.slice(0, 10).map((category) => (
+              <Link 
+                key={category.id}
+                to={`/category/${category.slug}`}
+                className="flex flex-col items-center"
+                onClick={() => handleCategoryClick(category.id)}
+              >
+                <div className={cn(
+                  "w-14 h-14 flex items-center justify-center rounded-lg bg-slate-100",
+                  activeCategory === category.id && "bg-blue-100"
+                )}>
+                  {category.icon}
+                </div>
+                <span className="text-xs mt-1 text-center">{category.arabicName}</span>
+              </Link>
+            ))}
+          </div>
+          
+          {/* Category Pagination Dots */}
+          <div className="flex justify-center mt-4">
+            <div className="flex space-x-1">
+              <div className="w-2 h-2 rounded-full bg-gray-300"></div>
+              <div className="w-2 h-2 rounded-full bg-gray-300"></div>
+              <div className="w-6 h-2 rounded-full bg-blue-500"></div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+  };
+  
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 pb-16 md:pb-0">
       <Header />
       
-      {/* Categories Section - Mobile Style */}
-      <div className="bg-white py-4 px-2 mb-2 shadow-sm">
-        <div className="grid grid-cols-5 gap-3">
-          {categories.slice(0, 10).map((category) => (
-            <Link 
-              key={category.id}
-              to={`/category/${category.slug}`}
-              className="flex flex-col items-center"
-              onClick={() => handleCategoryClick(category.id)}
-            >
-              <div className={cn(
-                "w-14 h-14 flex items-center justify-center rounded-lg bg-slate-100",
-                activeCategory === category.id && "bg-blue-100"
-              )}>
-                {category.icon}
-              </div>
-              <span className="text-xs mt-1 text-center">{category.arabicName}</span>
-            </Link>
-          ))}
-        </div>
-        
-        {/* Category Pagination Dots */}
-        <div className="flex justify-center mt-4">
-          <div className="flex space-x-1">
-            <div className="w-2 h-2 rounded-full bg-gray-300"></div>
-            <div className="w-2 h-2 rounded-full bg-gray-300"></div>
-            <div className="w-6 h-2 rounded-full bg-blue-500"></div>
-          </div>
-        </div>
-      </div>
+      {/* Categories Section - Responsive */}
+      {renderCategories()}
       
       {/* Location Filter */}
       <div className="bg-white py-2 px-4 mb-2 flex items-center justify-between">
