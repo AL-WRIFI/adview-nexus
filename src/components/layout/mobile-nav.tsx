@@ -1,6 +1,6 @@
 
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Search, PlusCircle, Bell, Mail } from 'lucide-react';
+import { Home, Search, PlusCircle, Heart, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function MobileNav() {
@@ -13,25 +13,24 @@ export function MobileNav() {
       href: '/'
     },
     {
-      label: 'الأقسام',
+      label: 'البحث',
       icon: Search,
-      href: '/categories'
+      href: '/search'
     },
     {
-      label: 'إضافة عرض',
+      label: 'إضافة إعلان',
       icon: PlusCircle,
-      href: '/add-ad',
-      primary: true
+      href: '/add-ad'
     },
     {
-      label: 'الإشعارات',
-      icon: Bell,
-      href: '/notifications'
+      label: 'المفضلة',
+      icon: Heart,
+      href: '/favorites'
     },
     {
-      label: 'الرسائل',
-      icon: Mail,
-      href: '/messages'
+      label: 'حسابي',
+      icon: User,
+      href: '/profile'
     }
   ];
   
@@ -47,18 +46,15 @@ export function MobileNav() {
               key={item.href}
               to={item.href}
               className={cn(
-                "flex flex-col items-center justify-center",
+                "mobile-nav-link",
                 isActive ? "text-brand" : "text-gray-600"
               )}
             >
-              {item.primary ? (
-                <div className="flex items-center justify-center bg-blue-600 text-white rounded-md w-12 h-12 -mt-6 mb-1">
-                  <Icon className="h-6 w-6" />
-                </div>
-              ) : (
-                <Icon className={cn("h-6 w-6 mb-1", isActive && "text-blue-600")} />
-              )}
-              <span className="text-xs">{item.label}</span>
+              <Icon className={cn(
+                "h-6 w-6 mb-1",
+                item.href === '/add-ad' && "text-brand"
+              )} />
+              <span>{item.label}</span>
             </Link>
           );
         })}

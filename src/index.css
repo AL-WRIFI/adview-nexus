@@ -164,24 +164,6 @@
   .pulse-animation {
     @apply animate-pulse;
   }
-
-  /* Category icons for mobile */
-  .category-icon-mobile {
-    @apply w-14 h-14 flex items-center justify-center rounded-lg bg-slate-100 shadow-sm;
-  }
-  
-  /* Filter buttons */
-  .filter-button {
-    @apply px-3 py-1.5 rounded-md text-sm font-medium transition-all;
-  }
-
-  .filter-button-active {
-    @apply bg-blue-600 text-white;
-  }
-
-  .filter-button-inactive {
-    @apply bg-slate-100 text-slate-800 hover:bg-slate-200;
-  }
 }
 
 /* Hide cursor on non-interactive elements */
@@ -279,49 +261,4 @@ summary,
   -webkit-line-clamp: 2;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-/* Haraj style elements */
-.haraj-blue-button {
-  @apply bg-blue-600 hover:bg-blue-700 text-white rounded-md py-2 px-4 transition-all;
-}
-
-.haraj-category-icon {
-  @apply w-14 h-14 flex items-center justify-center rounded-lg bg-slate-100 mb-2;
-}
-
-.haraj-listing-card {
-  @apply bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all mb-2;
-}
-
-/* Add this for RTL support in different browsers */
-html[dir="rtl"] {
-  text-align: right;
-}
-
-html[dir="ltr"] {
-  text-align: left;
-}
-
-/* Dark mode transitions */
-.dark .haraj-category-icon {
-  @apply bg-gray-800 text-gray-100;
-}
-
-.dark .haraj-listing-card {
-  @apply bg-gray-800 text-gray-100;
-}
-
-.dark .filter-button-inactive {
-  @apply bg-gray-700 text-gray-200;
-}
-
-/* Hide scrollbar utility */
-.hide-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-
-.hide-scrollbar::-webkit-scrollbar {
-  display: none;
 }

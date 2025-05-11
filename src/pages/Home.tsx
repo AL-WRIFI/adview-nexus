@@ -38,9 +38,9 @@ export default function Home() {
     setPage(1); // Reset to first page when filters change
   };
   
-  // Extract data with proper type checking
-  const adData = adsResponse?.data?.data || [];
-  const totalPages = adsResponse?.data?.meta?.last_page || adsResponse?.data?.last_page || 1;
+  // Extract data - ensure we have access to the right structure
+  const adData = adsResponse?.data || [];
+  const totalPages = adsResponse?.last_page || 1;
   
   // Split into featured and regular ads
   const featuredAds = Array.isArray(adData) ? adData.filter((ad: Listing) => ad.featured) : [];

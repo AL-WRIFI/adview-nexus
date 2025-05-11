@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { 
   Filter, SlidersHorizontal, Grid2X2, List, ArrowDownAZ, 
@@ -36,7 +35,7 @@ export function EnhancedFilterSection({
   itemsPerPage = 10
 }: EnhancedFilterSectionProps) {
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 100000]);
-  const [sortOption, setSortOption] = useState<'newest' | 'oldest' | 'price_asc' | 'price_desc' | 'popular'>('newest');
+  const [sortOption, setSortOption] = useState<string>('newest');
   const [locationRadius, setLocationRadius] = useState<number>(50);
 
   const handlePriceRangeChange = (value: number[]) => {
@@ -48,7 +47,7 @@ export function EnhancedFilterSection({
     });
   };
 
-  const handleSortChange = (value: 'newest' | 'oldest' | 'price_asc' | 'price_desc' | 'popular') => {
+  const handleSortChange = (value: string) => {
     setSortOption(value);
     onFilterChange({
       ...activeFilters,
@@ -246,8 +245,8 @@ export function EnhancedFilterSection({
               <Button
                 variant="ghost"
                 className="w-full justify-start font-normal"
-                onClick={() => handleSortChange('price_desc')}
-                data-active={sortOption === 'price_desc'}
+                onClick={() => handleSortChange('price_high')}
+                data-active={sortOption === 'price_high'}
               >
                 <ArrowDownAZ className="mr-2 h-4 w-4" />
                 السعر: من الأعلى
@@ -255,8 +254,8 @@ export function EnhancedFilterSection({
               <Button
                 variant="ghost"
                 className="w-full justify-start font-normal"
-                onClick={() => handleSortChange('price_asc')}
-                data-active={sortOption === 'price_asc'}
+                onClick={() => handleSortChange('price_low')}
+                data-active={sortOption === 'price_low'}
               >
                 <ArrowDownAZ className="mr-2 h-4 w-4" />
                 السعر: من الأقل
@@ -397,12 +396,4 @@ export function EnhancedFilterSection({
       </div>
     </div>
   );
-
-  function countActiveFilters() {
-    return Object.keys(activeFilters).length;
-  }
-
-  function clearFilters() {
-    onFilterChange({});
-  }
 }

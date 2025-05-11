@@ -1,5 +1,6 @@
+// We need to extend the existing types, so we can't use the // ... keep existing code notation
+// Instead, we'll add the ApiResponse type and export it
 
-// ApiResponse type definition
 export interface ApiResponse<T> {
   success: boolean;
   message: string;
@@ -7,10 +8,10 @@ export interface ApiResponse<T> {
 }
 
 export interface User {
-  id: number | string;
-  first_name?: string;
-  last_name?: string;
-  username?: string;
+  id: number;
+  first_name: string;
+  last_name: string;
+  username: string;
   phone: string;
   email?: string;
   image?: string | null;
@@ -19,23 +20,23 @@ export interface User {
   address?: string | null;
   created_at?: string;
   is_verified?: boolean;
+  // Add missing properties that are being used in components
   bio?: string;
   avatar?: string;
   city?: string;
   name?: string;
   verified?: boolean;
   createdAt?: string;
-  nationalId?: string;
 }
 
 export interface Ad {
-  id: number | string;
+  id: number;
   title: string;
   description: string;
   price: number;
   negotiable?: boolean;
   condition: 'new' | 'used';
-  category: string | number;
+  category: string;
   subcategory?: string;
   city: string;
   district?: string;
@@ -46,7 +47,7 @@ export interface Ad {
   listing_type: 'sell' | 'buy' | 'exchange' | 'service';
   created_at: string;
   seller: {
-    id: number | string;
+    id: number;
     name: string;
     avatar?: string;
     verified: boolean;
@@ -59,12 +60,10 @@ export interface Ad {
   image?: string;
   viewCount?: number; // Alias for views_count
   status?: string;
-  adType?: string;
-  commentCount?: number;
 }
 
 export interface Listing {
-  id: number | string;
+  id: number;
   title: string;
   slug?: string;
   description: string;
@@ -72,18 +71,18 @@ export interface Listing {
   is_negotiable?: boolean;
   condition: 'new' | 'used';
   listing_type: 'sell' | 'buy' | 'exchange' | 'service';
-  category_id: number | string;
+  category_id: number;
   category_name: string;
-  subcategory_id?: number | string;
+  subcategory_id?: number;
   subcategory_name?: string;
-  brand_id?: number | string;
+  brand_id?: number;
   brand_name?: string;
   model?: string;
-  city_id: number | string;
+  city_id: number;
   city_name: string;
-  state_id?: number | string;
+  state_id?: number;
   state_name?: string;
-  district_id?: number | string;
+  district_id?: number;
   district_name?: string;
   image: string;
   images?: string[];
@@ -92,14 +91,14 @@ export interface Listing {
   comments_count?: number;
   created_at: string;
   updated_at?: string;
-  user_id: number | string;
+  user_id: number;
   user?: User;
   attributes?: Record<string, any>;
   // For compatibility with Ad type
-  category?: string | number;
+  category?: string;
   city?: string;
   seller?: {
-    id: number | string;
+    id: number;
     name: string;
     avatar?: string;
     verified: boolean;
@@ -116,37 +115,34 @@ export interface ListingDetails extends Listing {
 }
 
 export interface Comment {
-  id: number | string;
+  id: number;
   content: string;
-  user_id: number | string;
-  listing_id: number | string;
-  parent_id?: number | string;
+  user_id: number;
+  listing_id: number;
+  parent_id?: number;
   created_at: string;
   updated_at: string;
   user: User;
   replies?: Comment[];
-  text?: string; // Alternative field name for content
-  adId?: number | string; // Alternative field name for listing_id
 }
 
 export interface Category {
-  id: number | string;
+  id: number;
   name: string;
-  slug?: string;
+  slug: string;
   description?: string;
-  parent_id?: number | string;
+  parent_id?: number;
   icon?: string;
   count?: number;
   subcategories?: Category[];
   // Add property for child categories
   children?: Category[];
-  arabicName?: string; // For display in Arabic
 }
 
 export interface Brand {
-  id: number | string;
+  id: number;
   name: string;
-  slug?: string;
+  slug: string;
   logo?: string;
   count?: number;
   title?: string; // For compatibility with API responses
@@ -155,13 +151,12 @@ export interface Brand {
 export interface SearchFilters {
   page?: number;
   per_page?: number;
-  category_id?: number | string | (number | string)[];
-  subcategory_id?: number | string | (number | string)[];
-  child_category_id?: number | string | (number | string)[];
-  brand_id?: number | string | (number | string)[];
-  city_id?: number | string | (number | string)[];
-  state_id?: number | string | (number | string)[];
-  district_id?: number | string | (number | string)[];
+  category_id?: number | number[];
+  subcategory_id?: number | number[];
+  brand_id?: number | number[];
+  city_id?: number | number[];
+  state_id?: number | number[];
+  district_id?: number | number[];
   price_min?: number;
   price_max?: number;
   condition?: 'new' | 'used' | '';
@@ -175,14 +170,8 @@ export interface SearchFilters {
   min_price?: number;
   max_price?: number;
   sort_by?: 'newest' | 'oldest' | 'price_asc' | 'price_desc';
-  // Add these additional properties for filters
-  today?: boolean;
-  verified?: boolean;
-  has_image?: boolean;
-  has_price?: boolean;
-  has_phone?: boolean;
-  negotiable?: boolean;
-  [key: string]: any; // Allow for dynamic properties
+  // Add property for child category
+  child_category_id?: number | number[];
 }
 
 export interface PaginatedResponse<T> {
@@ -216,26 +205,19 @@ export interface PaginatedResponse<T> {
 
 // This will replace the Conversation type that's missing
 export interface Conversation {
-  id: number | string;
+  id: number;
   participants: User[];
   lastMessage?: Message;
   unreadCount: number;
   createdAt: string;
   updatedAt: string;
-  adId?: string | number;
-  adTitle?: string;
-  adImage?: string;
-  isActive?: boolean;
 }
 
 export interface Message {
-  id: number | string;
-  content?: string;
-  senderId: string | number;
-  receiverId?: string | number;
-  conversationId: string | number;
+  id: number;
+  content: string;
+  senderId: number;
+  conversationId: number;
   read: boolean;
   createdAt: string;
-  text?: string; // Alternative field name for content
-  adId?: number | string;
 }
