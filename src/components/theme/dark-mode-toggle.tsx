@@ -2,9 +2,11 @@
 import { useState, useEffect } from 'react';
 import { Moon, Sun } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/components/ui/use-toast';
 
 export function DarkModeToggle() {
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const { toast } = useToast();
 
   // Check system preference or user's saved preference on mount
   useEffect(() => {
@@ -34,9 +36,17 @@ export function DarkModeToggle() {
     if (isDarkMode) {
       document.documentElement.classList.remove('dark');
       localStorage.setItem('theme', 'light');
+      toast({
+        title: "تم التبديل إلى الوضع النهاري",
+        duration: 1500,
+      });
     } else {
       document.documentElement.classList.add('dark');
       localStorage.setItem('theme', 'dark');
+      toast({
+        title: "تم التبديل إلى الوضع الليلي",
+        duration: 1500,
+      });
     }
   };
 

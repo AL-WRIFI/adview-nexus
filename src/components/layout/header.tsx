@@ -5,6 +5,7 @@ import { Search, Bell, MessageSquare, ChevronDown, User, LogIn, LogOut, Menu, X,
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Logo } from '@/components/ui/logo';
+import { DarkModeToggle } from '@/components/theme/dark-mode-toggle';
 import { useAuth } from '@/context/auth-context';
 import {
   DropdownMenu,
@@ -61,7 +62,7 @@ export function Header() {
   const userIsAuthenticated = isAuthenticated || !!displayUser;
   
   return (
-    <header className="sticky top-0 z-50 w-full bg-white border-b border-border shadow-sm">
+    <header className="sticky top-0 z-50 w-full bg-white border-b border-border shadow-sm dark:bg-gray-900 dark:border-gray-800">
       <div className="container px-4 mx-auto">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
@@ -74,7 +75,7 @@ export function Header() {
                 <Input
                   type="text"
                   placeholder="ابحث عن منتجات، خدمات، وظائف..."
-                  className="w-full h-10 pr-10 rounded-lg border border-input bg-background cursor-text"
+                  className="w-full h-10 pr-10 rounded-lg border border-input bg-background cursor-text dark:bg-gray-800 dark:border-gray-700"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
@@ -87,6 +88,9 @@ export function Header() {
           
           {/* Right side nav - Desktop */}
           <div className="hidden md:flex items-center space-x-4 space-x-reverse">
+            {/* Dark mode toggle */}
+            <DarkModeToggle />
+            
             {userIsAuthenticated && displayUser ? (
               <>
                 <Button variant="ghost" size="icon" asChild>
@@ -159,7 +163,8 @@ export function Header() {
           </div>
           
           {/* Mobile menu button */}
-          <div className="flex md:hidden">
+          <div className="flex md:hidden items-center gap-2">
+            <DarkModeToggle />
             <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
               {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </Button>
@@ -168,13 +173,13 @@ export function Header() {
         
         {/* Mobile search and menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden py-4 space-y-4 border-t border-border">
+          <div className="md:hidden py-4 space-y-4 border-t border-border dark:border-gray-800">
             <form onSubmit={handleSearch}>
               <div className="relative">
                 <Input
                   type="text"
                   placeholder="ابحث عن منتجات، خدمات، وظائف..."
-                  className="w-full h-10 pr-10 rounded-lg border border-input bg-background cursor-text"
+                  className="w-full h-10 pr-10 rounded-lg border border-input bg-background cursor-text dark:bg-gray-800 dark:border-gray-700"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
@@ -186,48 +191,48 @@ export function Header() {
             <div className="flex flex-col space-y-3">
               {userIsAuthenticated && displayUser ? (
                 <>
-                  <div className="p-3 bg-gray-50 rounded-lg">
-                    <div className="font-medium">{`${displayUser.first_name || ''} ${displayUser.last_name || ''}`}</div>
+                  <div className="p-3 bg-gray-50 rounded-lg dark:bg-gray-800">
+                    <div className="font-medium dark:text-white">{`${displayUser.first_name || ''} ${displayUser.last_name || ''}`}</div>
                     <div className="text-sm text-muted-foreground">{displayUser.phone}</div>
                   </div>
-                  <Link to="/notifications" className="flex items-center gap-3 p-2 rounded-md hover:bg-muted">
+                  <Link to="/notifications" className="flex items-center gap-3 p-2 rounded-md hover:bg-muted dark:hover:bg-gray-800">
                     <Bell className="h-5 w-5" />
-                    <span>الإشعارات</span>
+                    <span className="dark:text-white">الإشعارات</span>
                     {notificationCount > 0 && (
                       <span className="bg-red-500 text-white text-xs rounded-full h-5 px-2 flex items-center">
                         {notificationCount}
                       </span>
                     )}
                   </Link>
-                  <Link to="/messages" className="flex items-center gap-3 p-2 rounded-md hover:bg-muted">
+                  <Link to="/messages" className="flex items-center gap-3 p-2 rounded-md hover:bg-muted dark:hover:bg-gray-800">
                     <MessageSquare className="h-5 w-5" />
-                    <span>الرسائل</span>
+                    <span className="dark:text-white">الرسائل</span>
                     {messageCount > 0 && (
                       <span className="bg-red-500 text-white text-xs rounded-full h-5 px-2 flex items-center">
                         {messageCount}
                       </span>
                     )}
                   </Link>
-                  <Link to="/dashboard" className="flex items-center gap-3 p-2 rounded-md hover:bg-muted">
+                  <Link to="/dashboard" className="flex items-center gap-3 p-2 rounded-md hover:bg-muted dark:hover:bg-gray-800">
                     <Settings className="h-5 w-5" />
-                    <span>لوحة التحكم</span>
+                    <span className="dark:text-white">لوحة التحكم</span>
                   </Link>
-                  <Link to="/profile" className="flex items-center gap-3 p-2 rounded-md hover:bg-muted">
+                  <Link to="/profile" className="flex items-center gap-3 p-2 rounded-md hover:bg-muted dark:hover:bg-gray-800">
                     <User className="h-5 w-5" />
-                    <span>الملف الشخصي</span>
+                    <span className="dark:text-white">الملف الشخصي</span>
                   </Link>
                   <button 
                     onClick={handleLogout}
-                    className="flex items-center gap-3 p-2 rounded-md hover:bg-muted text-red-500"
+                    className="flex items-center gap-3 p-2 rounded-md hover:bg-muted text-red-500 dark:hover:bg-gray-800"
                   >
                     <LogOut className="h-5 w-5" />
                     <span>تسجيل الخروج</span>
                   </button>
                 </>
               ) : (
-                <Link to="/auth/login" className="flex items-center gap-3 p-2 rounded-md hover:bg-muted">
+                <Link to="/auth/login" className="flex items-center gap-3 p-2 rounded-md hover:bg-muted dark:hover:bg-gray-800">
                   <LogIn className="h-5 w-5" />
-                  <span>تسجيل الدخول</span>
+                  <span className="dark:text-white">تسجيل الدخول</span>
                 </Link>
               )}
               <Button asChild className="w-full mt-2">

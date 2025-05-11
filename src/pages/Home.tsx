@@ -40,14 +40,14 @@ export default function Home() {
   
   // Extract data - ensure we have access to the right structure
   const adData = adsResponse?.data || [];
-  const totalPages = adsResponse?.last_page || 1;
+  const totalPages = adsResponse?.meta?.last_page || adsResponse?.last_page || 1;
   
   // Split into featured and regular ads
   const featuredAds = Array.isArray(adData) ? adData.filter((ad: Listing) => ad.featured) : [];
   const regularAds = Array.isArray(adData) ? adData.filter((ad: Listing) => !ad.featured) : [];
   
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
       <Header />
       <CategoryBar />
       
@@ -56,8 +56,8 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             {/* Sidebar with filters */}
             <div className="col-span-1 hidden md:block">
-              <div className="bg-white rounded-xl shadow-sm p-4 border border-blue-100">
-                <h3 className="text-lg font-semibold mb-4 text-gray-800">خيارات البحث</h3>
+              <div className="bg-white rounded-xl shadow-sm p-4 border border-blue-100 dark:bg-gray-800 dark:border-gray-700">
+                <h3 className="text-lg font-semibold mb-4 text-gray-800 dark:text-gray-100">خيارات البحث</h3>
                 <AdFilters 
                   layout="sidebar" 
                   onLayoutChange={setAdLayout} 
@@ -70,7 +70,7 @@ export default function Home() {
             {/* Main content */}
             <div className="col-span-1 md:col-span-3 space-y-6">
               {/* Enhanced filters for both mobile and desktop */}
-              <div className="bg-white p-4 rounded-xl shadow-sm border border-blue-100">
+              <div className="bg-white p-4 rounded-xl shadow-sm border border-blue-100 dark:bg-gray-800 dark:border-gray-700">
                 <EnhancedFilterSection 
                   onLayoutChange={setAdLayout} 
                   currentLayout={adLayout} 
@@ -83,15 +83,15 @@ export default function Home() {
 
               {/* Loading state */}
               {isLoadingAds && (
-                <div className="flex justify-center items-center py-12 bg-white rounded-xl shadow-sm">
+                <div className="flex justify-center items-center py-12 bg-white rounded-xl shadow-sm dark:bg-gray-800">
                   <Loader2 className="h-8 w-8 animate-spin text-brand" />
                 </div>
               )}
               
               {/* Error state */}
               {adsError && (
-                <div className="text-center py-12 bg-white rounded-xl shadow-sm">
-                  <p className="text-red-500 mb-4">حدث خطأ أثناء تحميل الإعلانات</p>
+                <div className="text-center py-12 bg-white rounded-xl shadow-sm dark:bg-gray-800">
+                  <p className="text-red-500 mb-4 dark:text-red-400">حدث خطأ أثناء تحميل الإعلانات</p>
                   <Button onClick={() => window.location.reload()}>إعادة المحاولة</Button>
                 </div>
               )}
@@ -101,10 +101,10 @@ export default function Home() {
                 <>
                   {/* Featured ads section */}
                   {featuredAds.length > 0 && (
-                    <div className="bg-white p-4 rounded-xl shadow-sm border border-blue-100">
+                    <div className="bg-white p-4 rounded-xl shadow-sm border border-blue-100 dark:bg-gray-800 dark:border-gray-700">
                       <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-xl font-bold">إعلانات مميزة</h2>
-                        <Button variant="link" className="text-brand" size="sm" asChild>
+                        <h2 className="text-xl font-bold dark:text-white">إعلانات مميزة</h2>
+                        <Button variant="link" className="text-brand dark:text-brand-light" size="sm" asChild>
                           <Link to="/search?featured=true">
                             عرض الكل
                             <ChevronLeft className="h-4 w-4 mr-1" />
@@ -129,9 +129,9 @@ export default function Home() {
                   )}
                   
                   {/* Regular ads section */}
-                  <div className="bg-white p-4 rounded-xl shadow-sm border border-blue-100">
+                  <div className="bg-white p-4 rounded-xl shadow-sm border border-blue-100 dark:bg-gray-800 dark:border-gray-700">
                     <div className="flex items-center justify-between mb-4">
-                      <h2 className="text-xl font-bold">أحدث الإعلانات</h2>
+                      <h2 className="text-xl font-bold dark:text-white">أحدث الإعلانات</h2>
                     </div>
                     
                     {regularAds.length > 0 ? (
@@ -149,7 +149,7 @@ export default function Home() {
                         ))}
                       </div>
                     ) : (
-                      <div className="text-center py-12 bg-gray-50 rounded-lg">
+                      <div className="text-center py-12 bg-gray-50 rounded-lg dark:bg-gray-700">
                         <p className="text-muted-foreground mb-4">لا توجد إعلانات متطابقة مع البحث</p>
                       </div>
                     )}
