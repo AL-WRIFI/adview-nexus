@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { 
   Filter, SlidersHorizontal, Grid2X2, List, ArrowDownAZ, 
@@ -96,9 +97,9 @@ export function EnhancedFilterSection({
             <Button 
               variant="outline" 
               size="sm"
-              className="flex items-center gap-2 bg-white border-blue-100 text-gray-700 hover:bg-blue-50 shadow-sm"
+              className="flex items-center gap-2 bg-white border-blue-100 text-gray-700 hover:bg-blue-50 shadow-sm dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-700"
             >
-              <Filter className="h-4 w-4 text-brand" />
+              <Filter className="h-4 w-4 text-brand dark:text-brand-light" />
               <span>تصفية</span>
               {countActiveFilters() > 0 && (
                 <Badge variant="default" className="h-5 w-5 p-0 flex items-center justify-center rounded-full">
@@ -107,29 +108,29 @@ export function EnhancedFilterSection({
               )}
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-80 p-4" align="start">
+          <PopoverContent className="w-80 p-4 dark:bg-gray-800 dark:border-gray-700" align="start">
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="font-medium">خيارات التصفية</h3>
+                <h3 className="font-medium dark:text-white">خيارات التصفية</h3>
                 {countActiveFilters() > 0 && (
                   <Button 
                     variant="ghost" 
                     size="sm" 
                     onClick={clearFilters}
-                    className="text-xs text-gray-500 hover:text-gray-800"
+                    className="text-xs text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
                   >
                     مسح الكل
                   </Button>
                 )}
               </div>
               
-              <Separator />
+              <Separator className="dark:bg-gray-700" />
               
               {/* Price Range Filter */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <label className="text-sm font-medium">نطاق السعر</label>
-                  <div className="text-xs text-muted-foreground">
+                  <label className="text-sm font-medium dark:text-white">نطاق السعر</label>
+                  <div className="text-xs text-muted-foreground dark:text-gray-400">
                     {priceRange[0]} - {priceRange[1]} ل.س
                   </div>
                 </div>
@@ -142,16 +143,16 @@ export function EnhancedFilterSection({
                 />
               </div>
               
-              <Separator />
+              <Separator className="dark:bg-gray-700" />
               
               {/* Nearby Filter */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <MapPin className="h-4 w-4 text-brand" />
-                    <label className="text-sm font-medium">إعلانات قريبة</label>
+                    <MapPin className="h-4 w-4 text-brand dark:text-brand-light" />
+                    <label className="text-sm font-medium dark:text-white">إعلانات قريبة</label>
                   </div>
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-xs text-muted-foreground dark:text-gray-400">
                     {locationRadius} كم
                   </span>
                 </div>
@@ -163,7 +164,7 @@ export function EnhancedFilterSection({
                 />
               </div>
               
-              <Separator />
+              <Separator className="dark:bg-gray-700" />
               
               {/* Featured Ads Filter */}
               <div>
@@ -172,7 +173,7 @@ export function EnhancedFilterSection({
                   size="sm"
                   className={cn(
                     "mr-2 mb-2", 
-                    activeFilters.featured ? "bg-brand text-white" : "bg-white"
+                    activeFilters.featured ? "bg-brand text-white" : "bg-white dark:bg-gray-800 dark:text-gray-300"
                   )}
                   onClick={() => handleFilterToggle('featured', !activeFilters.featured)}
                 >
@@ -185,7 +186,7 @@ export function EnhancedFilterSection({
                   size="sm"
                   className={cn(
                     "mr-2 mb-2",
-                    activeFilters.today ? "bg-brand text-white" : "bg-white"
+                    activeFilters.today ? "bg-brand text-white" : "bg-white dark:bg-gray-800 dark:text-gray-300"
                   )}
                   onClick={() => handleFilterToggle('today', !activeFilters.today)}
                 >
@@ -198,7 +199,7 @@ export function EnhancedFilterSection({
                   size="sm"
                   className={cn(
                     "mr-2 mb-2",
-                    activeFilters.verified ? "bg-brand text-white" : "bg-white"
+                    activeFilters.verified ? "bg-brand text-white" : "bg-white dark:bg-gray-800 dark:text-gray-300"
                   )}
                   onClick={() => handleFilterToggle('verified', !activeFilters.verified)}
                 >
@@ -216,17 +217,17 @@ export function EnhancedFilterSection({
             <Button 
               variant="outline" 
               size="sm"
-              className="flex items-center gap-2 bg-white border-blue-100 text-gray-700 hover:bg-blue-50 shadow-sm"
+              className="flex items-center gap-2 bg-white border-blue-100 text-gray-700 hover:bg-blue-50 shadow-sm dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-700"
             >
-              <ArrowUpDown className="h-4 w-4 text-brand" />
+              <ArrowUpDown className="h-4 w-4 text-brand dark:text-brand-light" />
               <span>الترتيب</span>
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-56" align="start">
+          <PopoverContent className="w-56 dark:bg-gray-800 dark:border-gray-700" align="start">
             <div className="space-y-1">
               <Button
                 variant="ghost"
-                className="w-full justify-start font-normal"
+                className="w-full justify-start font-normal dark:text-gray-300 dark:hover:bg-gray-700"
                 onClick={() => handleSortChange('newest')}
                 data-active={sortOption === 'newest'}
               >
@@ -235,7 +236,7 @@ export function EnhancedFilterSection({
               </Button>
               <Button
                 variant="ghost"
-                className="w-full justify-start font-normal"
+                className="w-full justify-start font-normal dark:text-gray-300 dark:hover:bg-gray-700"
                 onClick={() => handleSortChange('oldest')}
                 data-active={sortOption === 'oldest'}
               >
@@ -244,7 +245,7 @@ export function EnhancedFilterSection({
               </Button>
               <Button
                 variant="ghost"
-                className="w-full justify-start font-normal"
+                className="w-full justify-start font-normal dark:text-gray-300 dark:hover:bg-gray-700"
                 onClick={() => handleSortChange('price_high')}
                 data-active={sortOption === 'price_high'}
               >
@@ -253,7 +254,7 @@ export function EnhancedFilterSection({
               </Button>
               <Button
                 variant="ghost"
-                className="w-full justify-start font-normal"
+                className="w-full justify-start font-normal dark:text-gray-300 dark:hover:bg-gray-700"
                 onClick={() => handleSortChange('price_low')}
                 data-active={sortOption === 'price_low'}
               >
@@ -270,15 +271,15 @@ export function EnhancedFilterSection({
             <Button 
               variant="outline" 
               size="sm"
-              className="flex items-center gap-2 bg-white border-blue-100 text-gray-700 hover:bg-blue-50 shadow-sm"
+              className="flex items-center gap-2 bg-white border-blue-100 text-gray-700 hover:bg-blue-50 shadow-sm dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-700"
             >
-              <SlidersHorizontal className="h-4 w-4 text-brand" />
+              <SlidersHorizontal className="h-4 w-4 text-brand dark:text-brand-light" />
               <span>خيارات متقدمة</span>
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-72" align="start">
+          <PopoverContent className="w-72 dark:bg-gray-800 dark:border-gray-700" align="start">
             <div className="space-y-4">
-              <h3 className="font-medium mb-2">خيارات متقدمة</h3>
+              <h3 className="font-medium mb-2 dark:text-white">خيارات متقدمة</h3>
               
               <div className="grid grid-cols-2 gap-2">
                 {/* More filter options */}
@@ -286,7 +287,7 @@ export function EnhancedFilterSection({
                   variant={activeFilters.has_image ? "default" : "outline"}
                   size="sm"
                   className={cn(
-                    activeFilters.has_image ? "bg-brand text-white" : "bg-white"
+                    activeFilters.has_image ? "bg-brand text-white" : "bg-white dark:bg-gray-800 dark:text-gray-300"
                   )}
                   onClick={() => handleFilterToggle('has_image', !activeFilters.has_image)}
                 >
@@ -297,7 +298,7 @@ export function EnhancedFilterSection({
                   variant={activeFilters.has_price ? "default" : "outline"}
                   size="sm"
                   className={cn(
-                    activeFilters.has_price ? "bg-brand text-white" : "bg-white"
+                    activeFilters.has_price ? "bg-brand text-white" : "bg-white dark:bg-gray-800 dark:text-gray-300"
                   )}
                   onClick={() => handleFilterToggle('has_price', !activeFilters.has_price)}
                 >
@@ -308,7 +309,7 @@ export function EnhancedFilterSection({
                   variant={activeFilters.has_phone ? "default" : "outline"}
                   size="sm"
                   className={cn(
-                    activeFilters.has_phone ? "bg-brand text-white" : "bg-white"
+                    activeFilters.has_phone ? "bg-brand text-white" : "bg-white dark:bg-gray-800 dark:text-gray-300"
                   )}
                   onClick={() => handleFilterToggle('has_phone', !activeFilters.has_phone)}
                 >
@@ -319,7 +320,7 @@ export function EnhancedFilterSection({
                   variant={activeFilters.negotiable ? "default" : "outline"}
                   size="sm"
                   className={cn(
-                    activeFilters.negotiable ? "bg-brand text-white" : "bg-white"
+                    activeFilters.negotiable ? "bg-brand text-white" : "bg-white dark:bg-gray-800 dark:text-gray-300"
                   )}
                   onClick={() => handleFilterToggle('negotiable', !activeFilters.negotiable)}
                 >
@@ -339,12 +340,12 @@ export function EnhancedFilterSection({
               <Button 
                 variant="outline" 
                 size="icon"
-                className="h-9 w-9 rounded-r-none border-blue-100 bg-white hover:bg-blue-50 shadow-sm"
+                className="h-9 w-9 rounded-r-none border-blue-100 bg-white hover:bg-blue-50 shadow-sm dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-700"
               >
                 {itemsPerPage}
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-16 p-0" align="end">
+            <PopoverContent className="w-16 p-0 dark:bg-gray-800 dark:border-gray-700" align="end">
               <div className="flex flex-col">
                 {[5, 10, 20, 50].map(num => (
                   <Button
@@ -353,7 +354,7 @@ export function EnhancedFilterSection({
                     size="sm"
                     className={cn(
                       "rounded-none",
-                      itemsPerPage === num ? "bg-blue-50 text-brand" : ""
+                      itemsPerPage === num ? "bg-blue-50 text-brand dark:bg-gray-700 dark:text-brand-light" : "dark:text-gray-300"
                     )}
                     onClick={() => onItemsPerPageChange(num)}
                   >
@@ -365,14 +366,16 @@ export function EnhancedFilterSection({
           </Popover>
         )}
         
-        <div className="flex border rounded-md overflow-hidden shadow-sm border-blue-100">
+        <div className="flex border rounded-md overflow-hidden shadow-sm border-blue-100 dark:border-gray-700">
           <Button 
             variant={currentLayout === 'grid' ? "default" : "ghost"} 
             size="icon"
             onClick={() => onLayoutChange('grid')}
             className={cn(
               "h-9 w-9 rounded-none",
-              currentLayout === 'grid' ? "bg-brand text-white" : "bg-white hover:bg-blue-50"
+              currentLayout === 'grid' 
+                ? "bg-brand text-white dark:bg-brand-dark" 
+                : "bg-white hover:bg-blue-50 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
             )}
             aria-label="Grid view"
             title="عرض شبكي"
@@ -385,7 +388,9 @@ export function EnhancedFilterSection({
             onClick={() => onLayoutChange('list')}
             className={cn(
               "h-9 w-9 rounded-none",
-              currentLayout === 'list' ? "bg-brand text-white" : "bg-white hover:bg-blue-50"
+              currentLayout === 'list' 
+                ? "bg-brand text-white dark:bg-brand-dark" 
+                : "bg-white hover:bg-blue-50 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
             )}
             aria-label="List view"
             title="عرض قائمة"
