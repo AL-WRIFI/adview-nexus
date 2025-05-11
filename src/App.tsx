@@ -1,12 +1,11 @@
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Routes, Route, BrowserRouter } from 'react-router-dom';
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from './context/auth-context';
 import { ProtectedRoute } from './components/auth/protected-route';
-import '../public/registerServiceWorker'; // Register service worker for PWA
 
 // Pages
 import Index from './pages/Index';
@@ -43,10 +42,31 @@ const queryClient = new QueryClient({
 });
 
 function App() {
-  // Set the page title and meta description
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [language, setLanguage] = useState('ar');
+  
+  // Effect to check and apply user preferences
   useEffect(() => {
-    document.title = 'مكس سوريا - منصة إعلانات مبوبة سورية';
+    // Check for dark mode preference
+    const darkModePreference = localStorage.getItem('darkMode');
+    if (darkModePreference === 'true') {
+      setIsDarkMode(true);
+      document.documentElement.classList.add('dark');
+    } else {
+      setIsDarkMode(false);
+      document.documentElement.classList.remove('dark');
+    }
     
+    // Check for language preference
+    const languagePreference = localStorage.getItem('language') || 'ar';
+    setLanguage(languagePreference);
+    document.documentElement.dir = languagePreference === 'ar' ? 'rtl' : 'ltr';
+    
+    // Set the page title and meta description based on language
+    document.title = languagePreference === 'ar' 
+      ? 'مكس سوريا - منصة إعلانات مبوبة سورية'
+      : 'Mix Syria - Syrian Classified Ads Platform';
+      
     // Update meta description
     let metaDescription = document.querySelector('meta[name="description"]');
     if (!metaDescription) {
@@ -54,7 +74,9 @@ function App() {
       metaDescription.setAttribute('name', 'description');
       document.head.appendChild(metaDescription);
     }
-    metaDescription.setAttribute('content', 'مكس سوريا - منصة الإعلانات المبوبة السورية. تسوق، بيع، اعثر على وظائف، خدمات، سيارات، عقارات، وأكثر');
+    metaDescription.setAttribute('content', languagePreference === 'ar'
+      ? 'مكس سوريا - منصة الإعلانات المبوبة السورية. تسوق، بيع، اعثر على وظائف، خدمات، سيارات، عقارات، وأكثر'
+      : 'Mix Syria - Syrian Classified Ads Platform. Shop, sell, find jobs, services, cars, real estate, and more');
     
     // Add meta theme color for mobile browsers
     let metaThemeColor = document.querySelector('meta[name="theme-color"]');
@@ -63,7 +85,7 @@ function App() {
       metaThemeColor.setAttribute('name', 'theme-color');
       document.head.appendChild(metaThemeColor);
     }
-    metaThemeColor.setAttribute('content', '#9b87f5');
+    metaThemeColor.setAttribute('content', '#0064D2');
     
     // Add manifest link
     let manifestLink = document.querySelector('link[rel="manifest"]');
@@ -82,6 +104,19 @@ function App() {
       appleIcon.setAttribute('href', '/icons/icon-192x192.png');
       document.head.appendChild(appleIcon);
     }
+    
+    // Register service worker
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/serviceWorker.js')
+          .then(registration => {
+            console.log('SW registered: ', registration);
+          })
+          .catch(registrationError => {
+            console.log('SW registration failed: ', registrationError);
+          });
+      });
+    }
   }, []);
 
   return (
@@ -90,8 +125,8 @@ function App() {
         <AuthProvider>
           <BrowserRouter>
             <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/index" element={<Index />} />
+              <Route path="/" element={<Index />} />
+              <Route path="/home" element={<Home />} />
               <Route path="/ad/:id" element={<AdDetails />} />
               <Route path="/category/:categoryId" element={<CategoryPage />} />
               <Route path="/add-ad" element={<AddAd />} />

@@ -11,11 +11,11 @@ interface LogoProps {
 export function Logo({ className, withText = true }: LogoProps) {
   return (
     <Link to="/" className={cn("flex items-center gap-2", className)}>
-      <div className="relative w-10 h-10 overflow-hidden bg-gradient-to-r from-brand to-brand-dark rounded-lg">
-        <span className="absolute inset-0 flex items-center justify-center text-white text-lg font-bold">مكس</span>
+      <div className="relative">
+        <span className="text-xl font-bold text-white">حراج</span>
       </div>
       {withText && (
-        <div className="text-xl font-bold bg-gradient-to-r from-brand to-brand-dark bg-clip-text text-transparent">
+        <div className="text-xl font-bold text-white">
           مكس سوريا
         </div>
       )}

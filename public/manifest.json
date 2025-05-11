@@ -1,69 +1,43 @@
 
 {
-  "short_name": "Mix Syria",
-  "name": "Mix Syria - مكس سوريا",
+  "name": "مكس سوريا | Mix Syria",
+  "short_name": "مكس سوريا",
+  "description": "منصة إعلانات مبوبة سورية",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0064D2",
+  "theme_color": "#0064D2",
+  "orientation": "portrait",
   "icons": [
     {
-      "src": "icons/icon-72x72.png",
+      "src": "/icons/icon-72x72.png",
       "sizes": "72x72",
       "type": "image/png"
     },
     {
-      "src": "icons/icon-96x96.png",
+      "src": "/icons/icon-96x96.png",
       "sizes": "96x96",
       "type": "image/png"
     },
     {
-      "src": "icons/icon-128x128.png",
-      "sizes": "128x128",
-      "type": "image/png"
-    },
-    {
-      "src": "icons/icon-144x144.png",
+      "src": "/icons/icon-144x144.png",
       "sizes": "144x144",
       "type": "image/png"
     },
     {
-      "src": "icons/icon-152x152.png",
-      "sizes": "152x152",
-      "type": "image/png"
-    },
-    {
-      "src": "icons/icon-192x192.png",
+      "src": "/icons/icon-192x192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "icons/icon-384x384.png",
+      "src": "/icons/icon-384x384.png",
       "sizes": "384x384",
       "type": "image/png"
     },
     {
-      "src": "icons/icon-512x512.png",
+      "src": "/icons/icon-512x512.png",
       "sizes": "512x512",
       "type": "image/png"
-    }
-  ],
-  "start_url": ".",
-  "display": "standalone",
-  "theme_color": "#0066FF",
-  "background_color": "#ffffff",
-  "orientation": "portrait",
-  "description": "سوق إلكتروني للإعلانات المبوبة في سوريا",
-  "dir": "rtl",
-  "lang": "ar",
-  "prefer_related_applications": false,
-  "related_applications": [],
-  "shortcuts": [
-    {
-      "name": "أحدث الإعلانات",
-      "url": "/",
-      "icons": [{ "src": "icons/icon-96x96.png", "sizes": "96x96" }]
-    },
-    {
-      "name": "إعلاناتي",
-      "url": "/dashboard",
-      "icons": [{ "src": "icons/icon-96x96.png", "sizes": "96x96" }]
     }
   ]
 }

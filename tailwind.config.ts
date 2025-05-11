@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -79,6 +80,13 @@ export default {
 				featured: {
 					DEFAULT: '#FFF8E6',
 					border: '#FFEEC0'
+				},
+				haraj: {
+					blue: '#005cd1',
+					darkBlue: '#004bb1',
+					green: '#00b053',
+					gray: '#f7f8fa',
+					dark: '#1c1c28',
 				}
 			},
 			borderRadius: {
