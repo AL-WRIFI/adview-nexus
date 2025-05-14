@@ -209,7 +209,21 @@ export function useCreateListing() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: (formData: FormData) => API.listingsAPI.createListing(formData),
+    mutationFn: async (formData: FormData) => {
+      try {
+        console.log("FormData entries before API call:");
+        // Log all form data entries for debugging
+        for (let [key, value] of formData.entries()) {
+          console.log(`${key}: ${value instanceof File ? value.name : value}`);
+        }
+        
+        const response = await API.listingsAPI.createListing(formData);
+        return response;
+      } catch (error) {
+        console.error('Error in createListing mutation:', error);
+        throw error;
+      }
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['listings'] });
       queryClient.invalidateQueries({ queryKey: ['userListings'] });

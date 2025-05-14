@@ -1,8 +1,7 @@
 
-import { useState, useEffect, useCallback } from 'react';
-import { Search, ChevronDown, X, Filter, MapPin, Grid2X2, List } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Check, ChevronDown, Filter, SlidersHorizontal } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -10,915 +9,483 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
+import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
+import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { 
-  useCategories, 
-  useBrands,
-  useAllCities,
-  useStates,
-  useCurrentLocation 
-} from '@/hooks/use-api';
-import { SearchFilters, Category, Brand } from '@/types';
-import { debounce } from '@/lib/utils';
-import { 
-  Car, Home, Smartphone, Mouse, Briefcase, Wrench, Shirt, Gamepad, 
-  Gem, ShoppingBag, Utensils, Laptop, BookOpen, Baby, Bike, Camera, FileText, 
-  Headphones, Gift, Train
-} from 'lucide-react';
-
-// Icon mapping for categories
-const iconMap: Record<string, React.ComponentType<any>> = {
-  'Car': Car,
-  'Home': Home,
-  'Smartphone': Smartphone,
-  'Mouse': Mouse,
-  'Briefcase': Briefcase,
-  'Wrench': Wrench,
-  'Shirt': Shirt,
-  'Gamepad': Gamepad,
-  'Gem': Gem,
-  'ShoppingBag': ShoppingBag,
-  'Utensils': Utensils,
-  'Laptop': Laptop,
-  'BookOpen': BookOpen,
-  'Baby': Baby,
-  'Bike': Bike,
-  'Camera': Camera,
-  'FileText': FileText,
-  'Headphones': Headphones,
-  'Gift': Gift,
-  'Train': Train
-};
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Input } from '@/components/ui/input';
+import { useCategories, useBrands, useAllCities, useStates, useCities } from '@/hooks/use-api';
+import { Category, Brand } from '@/types';
+import { cn } from '@/lib/utils';
 
 interface AdFiltersProps {
-  layout?: 'sidebar' | 'horizontal';
-  onLayoutChange?: (layout: 'grid' | 'list') => void;
-  currentLayout?: 'grid' | 'list';
-  onFilterChange?: (filters: SearchFilters) => void;
+  inline?: boolean;
+  categories?: Category[];
+  brands?: Brand[];
   className?: string;
-  initialFilters?: SearchFilters;
-  selectedCategory?: Category;
+  onFilterChange?: (filters: Record<string, any>) => void;
 }
 
-export function AdFilters({
-  layout = 'sidebar',
-  onLayoutChange,
-  currentLayout = 'list',
-  onFilterChange,
-  className,
-  initialFilters,
-  selectedCategory,
-}: AdFiltersProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [categoryOpen, setCategoryOpen] = useState(true);
-  const [priceOpen, setPriceOpen] = useState(true);
-  const [locationOpen, setLocationOpen] = useState(true);
-  const [brandOpen, setBrandOpen] = useState(true);
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 100000]);
-  const [searchText, setSearchText] = useState('');
-  const [selectedCategoryId, setSelectedCategoryId] = useState<number | undefined>(
-    initialFilters?.category_id as number | undefined
-  );
-  const [selectedSubCategoryId, setSelectedSubCategoryId] = useState<number | undefined>(
-    initialFilters?.subcategory_id as number | undefined
-  );
-  const [selectedBrandId, setSelectedBrandId] = useState<number | undefined>(
-    initialFilters?.brand_id as number | undefined
-  );
-  const [selectedStateId, setSelectedStateId] = useState<number | undefined>(
-    initialFilters?.state_id as number | undefined
-  );
-  const [selectedCityId, setSelectedCityId] = useState<number | undefined>(
-    initialFilters?.city_id as number | undefined
-  );
-  const [listingType, setListingType] = useState<'sell' | 'buy' | 'exchange' | undefined>(
-    initialFilters?.listing_type as 'sell' | 'buy' | 'exchange' | undefined
-  );
-  const [condition, setCondition] = useState<'new' | 'used' | undefined>(
-    initialFilters?.condition as 'new' | 'used' | undefined
-  );
-  const [nearbyAds, setNearbyAds] = useState(false);
-  const [sortBy, setSortBy] = useState<'newest' | 'price_asc' | 'price_desc' | 'oldest' | undefined>(
-    initialFilters?.sort as 'newest' | 'price_asc' | 'price_desc' | 'oldest' | undefined
-  );
-  const [activeFilters, setActiveFilters] = useState<string[]>([]);
-  const [displayMode, setDisplayMode] = useState<'grid' | 'list'>('grid'); // For categories display
-  
-  // Fetch data from API
-  const { data: categoriesResponse, isLoading: loadingCategories } = useCategories();
-  const { data: brandsResponse, isLoading: loadingBrands } = useBrands();
-  const { data: statesResponse, isLoading: loadingStates } = useStates();
-  const { data: citiesResponse, isLoading: loadingCities } = useAllCities();
-  const { data: location, isLoading: loadingLocation } = useCurrentLocation();
+interface FilterOption {
+  id: string | number;
+  name: string;
+}
 
-  // Extract actual data arrays from API responses
-  const categories = categoriesResponse || [];
-  const brands = brandsResponse || [];
-  const states = statesResponse || [];
-  const cities = citiesResponse || [];
+export default function AdFilters({ inline = true, categories: propCategories, brands: propBrands, className, onFilterChange }: AdFiltersProps) {
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   
-  // If a specific category is provided via props, use it
-  useEffect(() => {
-    if (selectedCategory) {
-      setSelectedCategoryId(selectedCategory.id);
-    }
-  }, [selectedCategory]);
-
-  // Get subcategories based on selected category
-  const subcategories = selectedCategoryId && categories
-    ? categories.find(cat => cat.id === selectedCategoryId)?.subcategories || []
-    : [];
+  // Fetch filter data
+  const { data: apiCategories } = useCategories();
+  const { data: apiBrands } = useBrands();
+  const { data: cities } = useAllCities();
+  const { data: states } = useStates();
   
-  // Get cities based on selected state
-  const stateCities = selectedStateId && cities
-    ? cities.filter(city => city.state_id === selectedStateId)
-    : [];
+  const allCategories = propCategories || apiCategories || [];
+  const allBrands = propBrands || apiBrands || [];
   
-  // Toggle filter
-  const toggleFilter = () => {
-    setIsOpen(!isOpen);
-  };
+  // Filter states
+  const [category, setCategory] = useState<string | null>(searchParams.get('category_id') || null);
+  const [subcategory, setSubcategory] = useState<string | null>(searchParams.get('subcategory_id') || null);
+  const [childCategory, setChildCategory] = useState<string | null>(searchParams.get('child_category_id') || null);
+  const [brand, setBrand] = useState<string | null>(searchParams.get('brand_id') || null);
+  const [condition, setCondition] = useState<string>(searchParams.get('condition') || '');
+  const [listingType, setListingType] = useState<string>(searchParams.get('listing_type') || '');
+  const [priceRange, setPriceRange] = useState<[number, number]>([
+    parseInt(searchParams.get('min_price') || '0'),
+    parseInt(searchParams.get('max_price') || '200000')
+  ]);
+  const [minPrice, setMinPrice] = useState<string>(searchParams.get('min_price') || '0');
+  const [maxPrice, setMaxPrice] = useState<string>(searchParams.get('max_price') || '200000');
+  const [state, setState] = useState<string | null>(searchParams.get('state_id') || null);
+  const [city, setCity] = useState<string | null>(searchParams.get('city_id') || null);
+  const [sort, setSort] = useState<string>(searchParams.get('sort_by') || 'newest');
   
-  // Debounced filter application for real-time filtering
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const debouncedApplyFilters = useCallback(
-    debounce(() => {
-      applyFilters();
-    }, 500),
-    [
-      searchText, selectedCategoryId, selectedSubCategoryId, selectedBrandId,
-      selectedStateId, selectedCityId, priceRange, listingType, condition,
-      nearbyAds, sortBy
-    ]
-  );
+  // Get cities for the selected state
+  const { data: stateCities } = useCities(state ? parseInt(state) : undefined);
   
+  // Get subcategories for the selected category
+  const selectedCategory = allCategories.find(c => c.id.toString() === category);
+  const subcategories = selectedCategory?.subcategories || [];
+  
+  // Get child categories for the selected subcategory
+  const selectedSubcategory = subcategories.find(s => s.id.toString() === subcategory);
+  const childCategories = selectedSubcategory?.children || [];
+  
+  // Apply filters
   const applyFilters = () => {
-    // Build filters object
-    const filters: SearchFilters = {};
+    const filters: Record<string, string> = {};
     
-    if (searchText) filters.query = searchText;
-    if (selectedCategoryId) filters.category_id = selectedCategoryId;
-    if (selectedSubCategoryId) filters.subcategory_id = selectedSubCategoryId;
-    if (selectedBrandId) filters.brand_id = selectedBrandId;
-    if (selectedStateId) filters.state_id = selectedStateId;
-    if (selectedCityId) filters.city_id = selectedCityId;
-    if (priceRange[0] > 0) filters.price_min = priceRange[0];
-    if (priceRange[1] < 100000) filters.price_max = priceRange[1];
-    if (listingType) filters.listing_type = listingType;
+    if (category) filters.category_id = category;
+    if (subcategory) filters.subcategory_id = subcategory;
+    if (childCategory) filters.child_category_id = childCategory;
+    if (brand) filters.brand_id = brand;
     if (condition) filters.condition = condition;
-    if (sortBy) filters.sort = sortBy;
+    if (listingType) filters.listing_type = listingType;
+    if (minPrice && parseInt(minPrice) > 0) filters.min_price = minPrice;
+    if (maxPrice) filters.max_price = maxPrice;
+    if (state) filters.state_id = state;
+    if (city) filters.city_id = city;
+    if (sort) filters.sort_by = sort;
     
-    // Add location if nearby ads is selected
-    if (nearbyAds && location) {
-      filters.lat = location.lat;
-      filters.lon = location.lng;
-      filters.radius = 20; // 20 km radius
-    }
-    
-    // Update active filters for display
-    const newActiveFilters: string[] = [];
-    if (searchText) newActiveFilters.push(`بحث: ${searchText}`);
-    
-    if (selectedCategoryId && categories) {
-      const category = categories.find(cat => cat.id === selectedCategoryId);
-      if (category) newActiveFilters.push(`التصنيف: ${category.name}`);
-    }
-    
-    if (selectedSubCategoryId && subcategories) {
-      const subcategory = subcategories.find(subcat => subcat.id === selectedSubCategoryId);
-      if (subcategory) newActiveFilters.push(`التصنيف الفرعي: ${subcategory.name}`);
-    }
-    
-    if (selectedBrandId && brands) {
-      const brand = brands.find(b => b.id === selectedBrandId);
-      if (brand) newActiveFilters.push(`الماركة: ${brand.name || brand.title}`);
-    }
-    
-    if (selectedStateId && states) {
-      const state = states.find(s => s.id === selectedStateId);
-      if (state) newActiveFilters.push(`المنطقة: ${state.name}`);
-    }
-    
-    if (selectedCityId && cities) {
-      const city = cities.find(c => c.id === selectedCityId);
-      if (city) newActiveFilters.push(`المدينة: ${city.name}`);
-    }
-    
-    if (priceRange[0] > 0 || priceRange[1] < 100000) {
-      newActiveFilters.push(`السعر: ${priceRange[0]} - ${priceRange[1]} ريال`);
-    }
-    
-    if (listingType) {
-      const listingTypeMap = {
-        'sell': 'للبيع',
-        'buy': 'للشراء',
-        'exchange': 'للتبديل'
-      };
-      newActiveFilters.push(`نوع الإعلان: ${listingTypeMap[listingType]}`);
-    }
-    
-    if (condition) {
-      const conditionMap = {
-        'new': 'جديد',
-        'used': 'مستعمل'
-      };
-      newActiveFilters.push(`الحالة: ${conditionMap[condition]}`);
-    }
-    
-    if (sortBy) {
-      const sortByMap = {
-        'newest': 'الأحدث',
-        'oldest': 'الأقدم',
-        'price_asc': 'السعر: من الأقل للأعلى',
-        'price_desc': 'السعر: من الأعلى للأقل'
-      };
-      newActiveFilters.push(`الترتيب: ${sortByMap[sortBy]}`);
-    }
-    
-    if (nearbyAds) newActiveFilters.push('الإعلانات القريبة');
-    
-    setActiveFilters(newActiveFilters);
-    
-    // Call parent callback with filters
     if (onFilterChange) {
       onFilterChange(filters);
-    }
-    
-    // Close filter panel on mobile
-    if (layout === 'horizontal') {
-      setIsOpen(false);
+    } else {
+      setSearchParams(filters);
     }
   };
   
-  // Apply filters automatically when any filter changes (real-time filtering)
-  useEffect(() => {
-    debouncedApplyFilters();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    searchText, selectedCategoryId, selectedSubCategoryId, selectedBrandId,
-    selectedStateId, selectedCityId, priceRange, listingType, condition,
-    nearbyAds, sortBy
-  ]);
-  
-  // Set initial state from props
-  useEffect(() => {
-    if (initialFilters) {
-      if (initialFilters.price_min !== undefined || initialFilters.price_max !== undefined) {
-        setPriceRange([
-          initialFilters.price_min || 0,
-          initialFilters.price_max || 100000
-        ]);
-      }
-      
-      if (initialFilters.query) setSearchText(initialFilters.query);
-      if (initialFilters.category_id) setSelectedCategoryId(initialFilters.category_id as number);
-      if (initialFilters.subcategory_id) setSelectedSubCategoryId(initialFilters.subcategory_id as number);
-      if (initialFilters.brand_id) setSelectedBrandId(initialFilters.brand_id as number);
-      if (initialFilters.state_id) setSelectedStateId(initialFilters.state_id as number);
-      if (initialFilters.city_id) setSelectedCityId(initialFilters.city_id as number);
-      if (initialFilters.listing_type) setListingType(initialFilters.listing_type as any);
-      if (initialFilters.condition) setCondition(initialFilters.condition as any);
-      if (initialFilters.sort) setSortBy(initialFilters.sort as any);
-      if (initialFilters.lat && initialFilters.lon) setNearbyAds(true);
-      
-      // Apply initial filters
-      applyFilters();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialFilters]);
-  
-  const clearFilters = () => {
-    setSearchText('');
-    setSelectedCategoryId(undefined);
-    setSelectedSubCategoryId(undefined);
-    setSelectedBrandId(undefined);
-    setSelectedStateId(undefined);
-    setSelectedCityId(undefined);
-    setPriceRange([0, 100000]);
-    setListingType(undefined);
-    setCondition(undefined);
-    setSortBy(undefined);
-    setNearbyAds(false);
-    setActiveFilters([]);
+  // Reset filters
+  const resetFilters = () => {
+    setCategory(null);
+    setSubcategory(null);
+    setChildCategory(null);
+    setBrand(null);
+    setCondition('');
+    setListingType('');
+    setPriceRange([0, 200000]);
+    setMinPrice('0');
+    setMaxPrice('200000');
+    setState(null);
+    setCity(null);
+    setSort('newest');
     
     if (onFilterChange) {
       onFilterChange({});
+    } else {
+      setSearchParams({});
     }
   };
   
-  const removeFilter = (index: number) => {
-    const filter = activeFilters[index];
-    
-    // Reset the corresponding filter
-    if (filter.includes('بحث')) setSearchText('');
-    if (filter.includes('التصنيف') && !filter.includes('التصنيف الفرعي')) setSelectedCategoryId(undefined);
-    if (filter.includes('التصنيف الفرعي')) setSelectedSubCategoryId(undefined);
-    if (filter.includes('الماركة')) setSelectedBrandId(undefined);
-    if (filter.includes('المنطقة')) setSelectedStateId(undefined);
-    if (filter.includes('المدينة')) setSelectedCityId(undefined);
-    if (filter.includes('السعر')) setPriceRange([0, 100000]);
-    if (filter.includes('نوع الإعلان')) setListingType(undefined);
-    if (filter.includes('الحالة')) setCondition(undefined);
-    if (filter.includes('الترتيب')) setSortBy(undefined);
-    if (filter === 'الإعلانات القريبة') setNearbyAds(false);
-    
-    // Remove from active filters
-    const newFilters = [...activeFilters];
-    newFilters.splice(index, 1);
-    setActiveFilters(newFilters);
-  };
+  // Handle price range changes
+  useEffect(() => {
+    setMinPrice(priceRange[0].toString());
+    setMaxPrice(priceRange[1].toString());
+  }, [priceRange]);
   
-  const isSidebar = layout === 'sidebar';
+  // Reset dependent fields when parent field changes
+  useEffect(() => {
+    if (!category) {
+      setSubcategory(null);
+      setChildCategory(null);
+    }
+  }, [category]);
   
-  // Render categories in grid/list mode
-  const renderCategories = () => {
-    if (loadingCategories) {
-      return (
-        <div className="text-center py-2 text-sm text-muted-foreground">
-          جاري التحميل...
-        </div>
-      );
+  useEffect(() => {
+    if (!subcategory) {
+      setChildCategory(null);
     }
-    
-    if (!categories || categories.length === 0) {
-      return (
-        <div className="text-center py-2 text-sm text-muted-foreground">
-          لا توجد تصنيفات
-        </div>
-      );
+  }, [subcategory]);
+  
+  useEffect(() => {
+    if (!state) {
+      setCity(null);
     }
-    
-    if (displayMode === 'grid') {
-      return (
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-3 lg:grid-cols-4 gap-2 mt-2">
-          {categories.map((category) => {
-            const iconName = category.icon || 'Car';
-            const Icon = iconMap[iconName] || Car;
-            const isSelected = selectedCategoryId === category.id;
-            
-            return (
-              <div
-                key={category.id}
-                className={`flex flex-col items-center p-2 cursor-pointer rounded ${
-                  isSelected ? 'bg-brand/10 border border-brand' : 'hover:bg-gray-100'
-                }`}
-                onClick={() => setSelectedCategoryId(isSelected ? undefined : category.id)}
-              >
-                <div className={`p-2 rounded-full ${isSelected ? 'bg-brand text-white' : 'bg-gray-100'}`}>
-                  <Icon className="h-5 w-5" />
-                </div>
-                <span className="text-xs mt-1 text-center truncate w-full">{category.name}</span>
-              </div>
-            );
-          })}
-        </div>
-      );
-    }
-    
-    return (
-      <Select 
-        value={selectedCategoryId?.toString()} 
-        onValueChange={(value) => {
-          setSelectedCategoryId(value ? Number(value) : undefined);
-          setSelectedSubCategoryId(undefined); // Reset subcategory when category changes
-        }}
-      >
+  }, [state]);
+  
+  // Inline filter view (for medium to large screens)
+  const inlineFilters = (
+    <div className={cn("grid grid-cols-1 md:grid-cols-5 gap-3", className)}>
+      <Select value={category || undefined} onValueChange={(value) => {
+        setCategory(value); 
+        setSubcategory(null);
+        setChildCategory(null);
+      }}>
         <SelectTrigger>
-          <SelectValue placeholder="اختر التصنيف" />
+          <SelectValue placeholder="جميع الفئات" />
         </SelectTrigger>
         <SelectContent>
-          {categories.map((category) => (
-            <SelectItem 
-              key={category.id} 
-              value={category.id.toString()}
-            >
+          <SelectItem value="">جميع الفئات</SelectItem>
+          {allCategories.map((category) => (
+            <SelectItem key={category.id} value={category.id.toString()}>
               {category.name}
             </SelectItem>
           ))}
         </SelectContent>
       </Select>
-    );
-  };
-  
-  // Render brands in grid/list mode
-  const renderBrands = () => {
-    if (loadingBrands) {
-      return (
-        <div className="text-center py-2 text-sm text-muted-foreground">
-          جاري التحميل...
-        </div>
-      );
-    }
-    
-    if (!brands || brands.length === 0) {
-      return (
-        <div className="text-center py-2 text-sm text-muted-foreground">
-          لا توجد ماركات
-        </div>
-      );
-    }
-    
-    if (displayMode === 'grid') {
-      return (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-2 lg:grid-cols-3 gap-2 mt-2">
-          {brands.slice(0, 12).map((brand) => {
-            const isSelected = selectedBrandId === brand.id;
-            
-            return (
-              <div
-                key={brand.id}
-                className={`flex flex-col items-center p-2 cursor-pointer rounded ${
-                  isSelected ? 'bg-brand/10 border border-brand' : 'hover:bg-gray-100'
-                }`}
-                onClick={() => setSelectedBrandId(isSelected ? undefined : brand.id)}
-              >
-                {brand.logo ? (
-                  <img src={brand.logo} alt={brand.name} className="h-8 w-8 object-contain" />
-                ) : (
-                  <div className={`p-2 rounded-full ${isSelected ? 'bg-brand text-white' : 'bg-gray-100'}`}>
-                    <ShoppingBag className="h-4 w-4" />
-                  </div>
-                )}
-                <span className="text-xs mt-1 text-center truncate w-full">
-                  {brand.name || brand.title}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      );
-    }
-    
-    return (
-      <Select 
-        value={selectedBrandId?.toString()} 
-        onValueChange={(value) => {
-          setSelectedBrandId(value ? Number(value) : undefined);
-        }}
-      >
+      
+      <Select value={brand || undefined} onValueChange={(value) => setBrand(value)}>
         <SelectTrigger>
-          <SelectValue placeholder="اختر الماركة" />
+          <SelectValue placeholder="جميع الماركات" />
         </SelectTrigger>
         <SelectContent>
-          {brands.map((brand) => (
-            <SelectItem 
-              key={brand.id} 
-              value={brand.id.toString()}
-            >
-              {brand.name || brand.title}
+          <SelectItem value="">جميع الماركات</SelectItem>
+          {allBrands.map((brand) => (
+            <SelectItem key={brand.id} value={brand.id.toString()}>
+              {brand.name}
             </SelectItem>
           ))}
         </SelectContent>
       </Select>
-    );
-  };
-
-  return (
-    <div className={className}>
-      {/* Mobile filter toggle */}
-      {!isSidebar && (
-        <>
-          <Button 
-            variant="outline" 
-            onClick={toggleFilter}
-            className="w-full flex items-center justify-between mb-2"
-          >
-            <span className="flex items-center">
-              <Filter className="w-4 h-4 ml-2" />
-              تصفية النتائج
-            </span>
-            <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-          </Button>
-          
-          {/* Active filters */}
-          {activeFilters.length > 0 && (
-            <div className="flex flex-wrap gap-2 mb-4">
-              {activeFilters.map((filter, index) => (
-                <Badge 
-                  key={index} 
-                  variant="secondary"
-                  className="flex items-center gap-1"
-                >
-                  {filter}
-                  <button 
-                    onClick={() => removeFilter(index)} 
-                    className="ml-1 rounded-full hover:bg-muted p-0.5"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </Badge>
-              ))}
-              
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="text-xs h-6 px-2"
-                onClick={clearFilters}
-              >
-                مسح الكل
-              </Button>
-            </div>
-          )}
-        </>
-      )}
       
-      {/* Filter content */}
-      <div className={`
-        ${isSidebar ? 'space-y-6' : 'space-y-4 border-t border-border pt-4 mt-4'}
-        ${!isSidebar && !isOpen ? 'hidden md:block' : 'block'}
-      `}>
-        {/* Search */}
-        <div>
-          <div className="relative">
-            <Input
-              type="text"
-              placeholder="ابحث..."
-              className="w-full h-10 pr-10"
-              value={searchText}
-              onChange={(e) => setSearchText(e.target.value)}
-            />
-            <Search className="absolute top-1/2 right-3 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          </div>
-        </div>
-        
-        {!isSidebar && (
-          <div className="flex justify-end mb-2">
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">طريقة العرض:</span>
-              <div className="flex border rounded overflow-hidden">
-                <Button
-                  variant={displayMode === 'grid' ? "default" : "ghost"}
-                  size="icon"
-                  onClick={() => setDisplayMode('grid')}
-                  className="h-6 w-6 rounded-none"
-                  aria-label="Grid view"
-                  title="عرض شبكة"
-                >
-                  <Grid2X2 className="h-3 w-3" />
-                </Button>
-                <Button
-                  variant={displayMode === 'list' ? "default" : "ghost"}
-                  size="icon"
-                  onClick={() => setDisplayMode('list')}
-                  className="h-6 w-6 rounded-none"
-                  aria-label="List view"
-                  title="عرض قائمة"
-                >
-                  <List className="h-3 w-3" />
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
-        
-        {/* Categories */}
-        <div>
-          <div
-            className="flex items-center justify-between cursor-pointer py-2"
-            onClick={() => setCategoryOpen(!categoryOpen)}
-          >
-            <h3 className="text-lg font-bold">التصنيفات</h3>
-            <div className="flex items-center gap-2">
-              {isSidebar && (
-                <div className="flex border rounded overflow-hidden">
-                  <Button
-                    variant={displayMode === 'grid' ? "default" : "ghost"}
-                    size="icon"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setDisplayMode('grid');
-                    }}
-                    className="h-6 w-6 rounded-none"
-                    aria-label="Grid view"
-                    title="عرض شبكة"
-                  >
-                    <Grid2X2 className="h-3 w-3" />
-                  </Button>
-                  <Button
-                    variant={displayMode === 'list' ? "default" : "ghost"}
-                    size="icon"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setDisplayMode('list');
-                    }}
-                    className="h-6 w-6 rounded-none"
-                    aria-label="List view"
-                    title="عرض قائمة"
-                  >
-                    <List className="h-3 w-3" />
-                  </Button>
-                </div>
-              )}
-              <ChevronDown className={`w-5 h-5 transition-transform ${categoryOpen ? 'rotate-180' : ''}`} />
-            </div>
-          </div>
-          
-          {categoryOpen && (
-            <div className="mt-2 space-y-3 bg-gray-50 p-3 rounded-md">
-              {renderCategories()}
-              
-              {/* Subcategories */}
-              {selectedCategoryId && subcategories && subcategories.length > 0 && (
-                <div className="mt-3">
-                  <label className="text-sm font-medium mb-1 block">التصنيف الفرعي</label>
-                  <Select 
-                    value={selectedSubCategoryId?.toString()} 
-                    onValueChange={(value) => {
-                      setSelectedSubCategoryId(value ? Number(value) : undefined);
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="اختر التصنيف الفرعي" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {subcategories.map((subcat) => (
-                        <SelectItem 
-                          key={subcat.slug} 
-                          value={subcat.id?.toString() || `subcat-${subcat.slug}`}
-                        >
-                          {subcat.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-        
-        {/* Brands */}
-        <div>
-          <div
-            className="flex items-center justify-between cursor-pointer py-2"
-            onClick={() => setBrandOpen(!brandOpen)}
-          >
-            <h3 className="text-lg font-bold">الماركات</h3>
-            <ChevronDown className={`w-5 h-5 transition-transform ${brandOpen ? 'rotate-180' : ''}`} />
-          </div>
-          
-          {brandOpen && (
-            <div className="mt-2 bg-gray-50 p-3 rounded-md">
-              {renderBrands()}
-            </div>
-          )}
-        </div>
-        
-        {/* Price Range */}
-        <div>
-          <div
-            className="flex items-center justify-between cursor-pointer py-2"
-            onClick={() => setPriceOpen(!priceOpen)}
-          >
-            <h3 className="text-lg font-bold">نطاق السعر</h3>
-            <ChevronDown className={`w-5 h-5 transition-transform ${priceOpen ? 'rotate-180' : ''}`} />
-          </div>
-          
-          {priceOpen && (
-            <div className="mt-2 bg-gray-50 p-3 rounded-md">
-              <div className="mb-4">
-                <Slider
-                  value={priceRange}
-                  max={100000}
-                  step={1000}
-                  onValueChange={(value) => setPriceRange(value as [number, number])}
-                />
-              </div>
-              <div className="flex justify-between">
-                <div className="text-sm">{priceRange[0]} ريال</div>
-                <div className="text-sm">{priceRange[1]} ريال</div>
-              </div>
-              
-              <div className="mt-3 flex gap-2">
-                <Input 
-                  type="number" 
-                  placeholder="من" 
-                  className="w-1/2" 
-                  value={priceRange[0]}
-                  onChange={(e) => setPriceRange([parseInt(e.target.value) || 0, priceRange[1]])}
-                />
-                <Input 
-                  type="number" 
-                  placeholder="إلى" 
-                  className="w-1/2" 
-                  value={priceRange[1]}
-                  onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value) || 100000])}
-                />
-              </div>
-            </div>
-          )}
-        </div>
-        
-        {/* Location */}
-        <div>
-          <div
-            className="flex items-center justify-between cursor-pointer py-2"
-            onClick={() => setLocationOpen(!locationOpen)}
-          >
-            <h3 className="text-lg font-bold">الموقع</h3>
-            <ChevronDown className={`w-5 h-5 transition-transform ${locationOpen ? 'rotate-180' : ''}`} />
-          </div>
-          
-          {locationOpen && (
-            <div className="mt-2 bg-gray-50 p-3 rounded-md">
-              {/* States */}
-              {loadingStates ? (
-                <div className="text-center py-2 text-sm text-muted-foreground">
-                  جاري التحميل...
-                </div>
-              ) : (
-                <div className="mb-3">
-                  <label className="text-sm font-medium mb-1 block">المنطقة</label>
-                  <Select 
-                    value={selectedStateId?.toString()} 
-                    onValueChange={(value) => {
-                      setSelectedStateId(value ? Number(value) : undefined);
-                      setSelectedCityId(undefined); // Reset city when state changes
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="اختر المنطقة" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {states && states.map((state) => (
-                        <SelectItem 
-                          key={state.id} 
-                          value={state.id.toString()}
-                        >
-                          {state.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-              
-              {/* Cities */}
-              {selectedStateId && (
-                <div>
-                  <label className="text-sm font-medium mb-1 block">المدينة</label>
-                  <Select 
-                    value={selectedCityId?.toString()} 
-                    onValueChange={(value) => {
-                      setSelectedCityId(value ? Number(value) : undefined);
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="اختر المدينة" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {stateCities.map((city) => (
-                        <SelectItem 
-                          key={city.id} 
-                          value={city.id.toString()}
-                        >
-                          {city.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-              
-              {/* Nearby ads option */}
-              <div className="mt-3 flex items-center justify-between">
-                <div className="flex items-center">
-                  <MapPin className="h-4 w-4 ml-2 text-muted-foreground" />
-                  <Label className="text-sm" htmlFor="nearby-ads">
-                    الإعلانات القريبة مني
-                  </Label>
-                </div>
-                <Switch 
-                  id="nearby-ads" 
-                  checked={nearbyAds}
-                  onCheckedChange={setNearbyAds}
-                  disabled={loadingLocation || !location}
-                />
-              </div>
-              {loadingLocation && (
-                <div className="text-xs text-muted-foreground mt-1">
-                  جاري تحديد موقعك...
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-        
-        {/* More filters */}
-        <div className="p-3 bg-gray-50 rounded-md">
-          <h3 className="font-medium mb-3">خيارات إضافية</h3>
-          
-          <div className="space-y-3">
-            {/* Listing Type */}
-            <div>
-              <label className="text-sm font-medium mb-1 block">نوع الإعلان</label>
-              <Select value={listingType || "all"} onValueChange={(value: 'sell' | 'buy' | 'exchange' | 'all') => {
-                setListingType(value === 'all' ? undefined : value);
-              }}>
-                <SelectTrigger>
-                  <SelectValue placeholder="اختر نوع الإعلان" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">الكل</SelectItem>
-                  <SelectItem value="sell">للبيع</SelectItem>
-                  <SelectItem value="buy">للشراء</SelectItem>
-                  <SelectItem value="exchange">للتبديل</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            {/* Condition */}
-            <div>
-              <label className="text-sm font-medium mb-1 block">الحالة</label>
-              <Select value={condition || "all"} onValueChange={(value: 'new' | 'used' | 'all') => {
-                setCondition(value === 'all' ? undefined : value);
-              }}>
-                <SelectTrigger>
-                  <SelectValue placeholder="اختر حالة المنتج" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">الكل</SelectItem>
-                  <SelectItem value="new">جديد</SelectItem>
-                  <SelectItem value="used">مستعمل</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            {/* Sorting */}
-            <div>
-              <label className="text-sm font-medium mb-1 block">الترتيب حسب</label>
-              <Select value={sortBy || "default"} onValueChange={(value: 'newest' | 'oldest' | 'price_asc' | 'price_desc' | 'default') => {
-                setSortBy(value === 'default' ? undefined : value);
-              }}>
-                <SelectTrigger>
-                  <SelectValue placeholder="اختر طريقة الترتيب" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="default">الافتراضي</SelectItem>
-                  <SelectItem value="newest">الأحدث</SelectItem>
-                  <SelectItem value="oldest">الأقدم</SelectItem>
-                  <SelectItem value="price_asc">السعر: من الأقل للأعلى</SelectItem>
-                  <SelectItem value="price_desc">السعر: من الأعلى للأقل</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </div>
-        
-        {/* Layout toggle */}
-        {onLayoutChange && isSidebar && (
-          <div className="p-3 bg-gray-50 rounded-md">
-            <h3 className="font-medium mb-3">طريقة عرض الإعلانات</h3>
-            <div className="flex justify-around">
-              <Button
-                variant={currentLayout === 'list' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => onLayoutChange('list')}
-                className="flex-1 ml-2"
-              >
-                <List className="h-4 w-4 ml-2" />
-                قائمة
-              </Button>
-              <Button
-                variant={currentLayout === 'grid' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => onLayoutChange('grid')}
-                className="flex-1"
-              >
-                <Grid2X2 className="h-4 w-4 ml-2" />
-                شبكة
-              </Button>
-            </div>
-          </div>
-        )}
-        
-        {/* Apply filters button */}
-        <div className="flex justify-end mt-4">
-          {isSidebar && activeFilters.length > 0 && (
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="mr-auto"
-              onClick={clearFilters}
-            >
-              مسح الكل
-            </Button>
-          )}
-          
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="mr-2"
-            onClick={clearFilters}
-          >
-            إعادة ضبط
-          </Button>
-          <Button size="sm" onClick={applyFilters}>تطبيق</Button>
-        </div>
+      <Select value={state || undefined} onValueChange={(value) => {
+        setState(value);
+        setCity(null);
+      }}>
+        <SelectTrigger>
+          <SelectValue placeholder="جميع المناطق" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="">جميع المناطق</SelectItem>
+          {states?.map((state) => (
+            <SelectItem key={state.id} value={state.id.toString()}>
+              {state.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      
+      <Select value={condition} onValueChange={setCondition}>
+        <SelectTrigger>
+          <SelectValue placeholder="الحالة" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="">الكل</SelectItem>
+          <SelectItem value="new">جديد</SelectItem>
+          <SelectItem value="used">مستعمل</SelectItem>
+        </SelectContent>
+      </Select>
+      
+      <Select value={sort} onValueChange={setSort}>
+        <SelectTrigger>
+          <SelectValue placeholder="الترتيب" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="newest">الأحدث</SelectItem>
+          <SelectItem value="oldest">الأقدم</SelectItem>
+          <SelectItem value="price_asc">السعر: من الأقل إلى الأعلى</SelectItem>
+          <SelectItem value="price_desc">السعر: من الأعلى إلى الأقل</SelectItem>
+        </SelectContent>
+      </Select>
+      
+      <div className="md:col-span-5 flex justify-end gap-2 mt-2">
+        <Button variant="outline" onClick={resetFilters}>إعادة ضبط</Button>
+        <Button onClick={applyFilters}>تطبيق الفلاتر</Button>
       </div>
     </div>
   );
+  
+  // Mobile filter drawer (for small screens)
+  const mobileFilters = (
+    <Sheet>
+      <SheetTrigger asChild>
+        <Button variant="outline" size="sm" className="px-3 h-9">
+          <Filter className="h-4 w-4 ml-1" />
+          فلترة
+        </Button>
+      </SheetTrigger>
+      <SheetContent side="right" className="w-full max-w-md dark:bg-gray-900 dark:border-gray-800">
+        <SheetHeader>
+          <SheetTitle>خيارات الفلترة</SheetTitle>
+        </SheetHeader>
+        
+        <div className="py-4 space-y-6">
+          <div className="space-y-4">
+            <h3 className="text-sm font-medium">الفئات</h3>
+            <Select value={category || undefined} onValueChange={(value) => {
+              setCategory(value);
+              setSubcategory(null);
+              setChildCategory(null);
+            }}>
+              <SelectTrigger>
+                <SelectValue placeholder="جميع الفئات" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">جميع الفئات</SelectItem>
+                {allCategories.map((category) => (
+                  <SelectItem key={category.id} value={category.id.toString()}>
+                    {category.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            {category && subcategories.length > 0 && (
+              <Select value={subcategory || undefined} onValueChange={(value) => {
+                setSubcategory(value);
+                setChildCategory(null);
+              }}>
+                <SelectTrigger>
+                  <SelectValue placeholder="التصنيف الفرعي" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">جميع التصنيفات الفرعية</SelectItem>
+                  {subcategories.map((subcat) => (
+                    <SelectItem key={subcat.id} value={subcat.id.toString()}>
+                      {subcat.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+            
+            {subcategory && childCategories.length > 0 && (
+              <Select value={childCategory || undefined} onValueChange={(value) => setChildCategory(value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="التصنيف الفرعي الثانوي" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">الكل</SelectItem>
+                  {childCategories.map((child) => (
+                    <SelectItem key={child.id} value={child.id.toString()}>
+                      {child.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          </div>
+          
+          <div className="space-y-4">
+            <h3 className="text-sm font-medium">الماركة</h3>
+            <Select value={brand || undefined} onValueChange={(value) => setBrand(value)}>
+              <SelectTrigger>
+                <SelectValue placeholder="جميع الماركات" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">جميع الماركات</SelectItem>
+                {allBrands.map((brand) => (
+                  <SelectItem key={brand.id} value={brand.id.toString()}>
+                    {brand.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="space-y-4">
+            <h3 className="text-sm font-medium">حالة المنتج</h3>
+            <RadioGroup value={condition} onValueChange={setCondition}>
+              <div className="flex items-center space-x-2 space-x-reverse">
+                <RadioGroupItem value="" id="condition-all" />
+                <Label htmlFor="condition-all">الكل</Label>
+              </div>
+              <div className="flex items-center space-x-2 space-x-reverse">
+                <RadioGroupItem value="new" id="condition-new" />
+                <Label htmlFor="condition-new">جديد</Label>
+              </div>
+              <div className="flex items-center space-x-2 space-x-reverse">
+                <RadioGroupItem value="used" id="condition-used" />
+                <Label htmlFor="condition-used">مستعمل</Label>
+              </div>
+            </RadioGroup>
+          </div>
+          
+          <div className="space-y-4">
+            <h3 className="text-sm font-medium">نوع الإعلان</h3>
+            <RadioGroup value={listingType} onValueChange={setListingType}>
+              <div className="flex items-center space-x-2 space-x-reverse">
+                <RadioGroupItem value="" id="type-all" />
+                <Label htmlFor="type-all">الكل</Label>
+              </div>
+              <div className="flex items-center space-x-2 space-x-reverse">
+                <RadioGroupItem value="sell" id="type-sell" />
+                <Label htmlFor="type-sell">للبيع</Label>
+              </div>
+              <div className="flex items-center space-x-2 space-x-reverse">
+                <RadioGroupItem value="buy" id="type-buy" />
+                <Label htmlFor="type-buy">شراء</Label>
+              </div>
+              <div className="flex items-center space-x-2 space-x-reverse">
+                <RadioGroupItem value="rent" id="type-rent" />
+                <Label htmlFor="type-rent">للايجار</Label>
+              </div>
+              <div className="flex items-center space-x-2 space-x-reverse">
+                <RadioGroupItem value="job" id="type-job" />
+                <Label htmlFor="type-job">وظيفة</Label>
+              </div>
+              <div className="flex items-center space-x-2 space-x-reverse">
+                <RadioGroupItem value="service" id="type-service" />
+                <Label htmlFor="type-service">خدمة</Label>
+              </div>
+            </RadioGroup>
+          </div>
+          
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-medium">السعر</h3>
+              <div className="text-sm text-muted-foreground">
+                {minPrice} - {maxPrice} ريال
+              </div>
+            </div>
+            <Slider
+              defaultValue={[parseInt(minPrice), parseInt(maxPrice)]}
+              min={0}
+              max={200000}
+              step={1000}
+              value={[parseInt(minPrice), parseInt(maxPrice)]}
+              onValueChange={(value) => {
+                setMinPrice(value[0].toString());
+                setMaxPrice(value[1].toString());
+              }}
+              className="mb-6"
+            />
+            <div className="flex gap-4">
+              <div className="space-y-1 flex-1">
+                <Label htmlFor="min-price">من</Label>
+                <Input
+                  type="number"
+                  id="min-price"
+                  value={minPrice}
+                  onChange={(e) => setMinPrice(e.target.value)}
+                  className="dark:bg-gray-800 dark:border-gray-700"
+                />
+              </div>
+              <div className="space-y-1 flex-1">
+                <Label htmlFor="max-price">إلى</Label>
+                <Input
+                  type="number"
+                  id="max-price"
+                  value={maxPrice}
+                  onChange={(e) => setMaxPrice(e.target.value)}
+                  className="dark:bg-gray-800 dark:border-gray-700"
+                />
+              </div>
+            </div>
+          </div>
+          
+          <div className="space-y-4">
+            <h3 className="text-sm font-medium">المنطقة</h3>
+            <Select value={state || undefined} onValueChange={(value) => {
+              setState(value);
+              setCity(null);
+            }}>
+              <SelectTrigger>
+                <SelectValue placeholder="اختر المنطقة" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">جميع المناطق</SelectItem>
+                {states?.map((state) => (
+                  <SelectItem key={state.id} value={state.id.toString()}>
+                    {state.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            {state && (
+              <Select value={city || undefined} onValueChange={(value) => setCity(value)}>
+                <SelectTrigger disabled={!state}>
+                  <SelectValue placeholder={state ? "اختر المدينة" : "اختر المنطقة أولاً"} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">جميع المدن</SelectItem>
+                  {stateCities?.map((city) => (
+                    <SelectItem key={city.id} value={city.id.toString()}>
+                      {city.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          </div>
+          
+          <div className="space-y-4">
+            <h3 className="text-sm font-medium">الترتيب حسب</h3>
+            <RadioGroup value={sort} onValueChange={setSort}>
+              <div className="flex items-center space-x-2 space-x-reverse">
+                <RadioGroupItem value="newest" id="sort-newest" />
+                <Label htmlFor="sort-newest">الأحدث</Label>
+              </div>
+              <div className="flex items-center space-x-2 space-x-reverse">
+                <RadioGroupItem value="oldest" id="sort-oldest" />
+                <Label htmlFor="sort-oldest">الأقدم</Label>
+              </div>
+              <div className="flex items-center space-x-2 space-x-reverse">
+                <RadioGroupItem value="price_asc" id="sort-price-asc" />
+                <Label htmlFor="sort-price-asc">السعر: من الأقل إلى الأعلى</Label>
+              </div>
+              <div className="flex items-center space-x-2 space-x-reverse">
+                <RadioGroupItem value="price_desc" id="sort-price-desc" />
+                <Label htmlFor="sort-price-desc">السعر: من الأعلى إلى الأقل</Label>
+              </div>
+            </RadioGroup>
+          </div>
+          
+          <div className="flex gap-3 pt-4">
+            <SheetClose asChild>
+              <Button variant="outline" className="flex-1" onClick={resetFilters}>
+                إعادة ضبط
+              </Button>
+            </SheetClose>
+            <SheetClose asChild>
+              <Button className="flex-1" onClick={applyFilters}>
+                تطبيق الفلاتر
+              </Button>
+            </SheetClose>
+          </div>
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
+  
+  return inline ? inlineFilters : mobileFilters;
 }

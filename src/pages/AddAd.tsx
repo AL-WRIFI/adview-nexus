@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowRight, Image, X, UploadCloud, ChevronDown, Info, Loader2 } from 'lucide-react';
@@ -12,7 +13,7 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { isAuthenticated } from '@/services/api';
-import { useCreateListing, useCategories, useBrands, useStates, useCities ,useBrand} from '@/hooks/use-api';
+import { useCreateListing, useCategories, useBrands, useStates, useCities } from '@/hooks/use-api';
 import {
   Select,
   SelectContent,
@@ -32,7 +33,6 @@ export default function AddAd() {
   const location = useLocation();
   const { toast } = useToast();
   const { data: categories } = useCategories();
-  // const { data: brands } = useBrands();
   const { data: states } = useStates();
   const createListingMutation = useCreateListing();
   const { user } = useAuth();
@@ -43,16 +43,16 @@ export default function AddAd() {
 
   const [currentStep, setCurrentStep] = useState(1);
   const [adType, setAdType] = useState<'sell' | 'rent' | 'job' | 'service'>('sell');
-  const [categoryId, setCategoryId] = useState<number | null>(null);
-  const [subCategoryId, setSubCategoryId] = useState<number | null>(null);
-  const [childCategoryId, setChildCategoryId] = useState<number | null>(null);
-  const [brandId, setBrandId] = useState<number | null>(null);
+  const [categoryId, setCategoryId] = useState<string | null>(null);
+  const [subCategoryId, setSubCategoryId] = useState<string | null>(null);
+  const [childCategoryId, setChildCategoryId] = useState<string | null>(null);
+  const [brandId, setBrandId] = useState<string | null>(null);
   const [adTitle, setAdTitle] = useState('');
   const [adDescription, setAdDescription] = useState('');
   const [adPrice, setAdPrice] = useState('');
   const [isNegotiable, setIsNegotiable] = useState(false);
-  const [stateId, setStateId] = useState<number | null>(null);
-  const [cityId, setCityId] = useState<number | null>(null);
+  const [stateId, setStateId] = useState<string | null>(null);
+  const [cityId, setCityId] = useState<string | null>(null);
   const [address, setAddress] = useState('');
   const [phoneHidden, setPhoneHidden] = useState(false);
   const [productCondition, setProductCondition] = useState<'new' | 'used'>('used');
@@ -65,8 +65,8 @@ export default function AddAd() {
   const [lon, setLon] = useState<number | null>(null);
   
   // Get filtered cities based on selected state
-  const { data: cities } = useCities(stateId || undefined);
-  const { data: brands } = useBrand(categoryId || undefined);
+  const { data: cities } = useCities(stateId ? parseInt(stateId) : undefined);
+  const { data: brands } = useBrands();
   
   // If coming back from login with form data, restore it
   useEffect(() => {
@@ -100,21 +100,6 @@ export default function AddAd() {
       handlePublish();
     }
   }, [autoSubmit, savedFormData]);
-  
-  // Try to get user's location
-  // useEffect(() => {
-  //   if (navigator.geolocation) {
-  //     navigator.geolocation.getCurrentPosition(
-  //       (position) => {
-  //         setLat(position.coords.latitude);
-  //         setLon(position.coords.longitude);
-  //       },
-  //       (error) => {
-  //         console.error("Error getting geolocation:", error);
-  //       }
-  //     );
-  //   }
-  // }, []);
   
   const handleMainImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -232,20 +217,30 @@ export default function AddAd() {
     
     try {
       const formData = new FormData();
+      
+      // Add listing_type
       formData.append('listing_type', adType);
-      formData.append('category_id', categoryId.toString());
-      if (subCategoryId) formData.append('sub_category_id', subCategoryId.toString());
-      if (childCategoryId) formData.append('child_category_id', childCategoryId.toString());
-      if (brandId) formData.append('brand_id', brandId.toString());
+      
+      // Add category
+      if (categoryId) formData.append('category_id', categoryId);
+      if (subCategoryId) formData.append('subcategory_id', subCategoryId);
+      if (childCategoryId) formData.append('child_category_id', childCategoryId);
+      if (brandId) formData.append('brand_id', brandId);
+      
+      // Add title, description, price
       formData.append('title', adTitle);
       formData.append('description', adDescription);
       formData.append('price', adPrice || '0');
-      formData.append('negotiable', isNegotiable ? '1' : '0');
-      formData.append('state_id', stateId.toString());
-      formData.append('city_id', cityId.toString());
+      formData.append('is_negotiable', isNegotiable ? '1' : '0');
+      
+      // Add location info
+      if (stateId) formData.append('state_id', stateId);
+      if (cityId) formData.append('city_id', cityId);
       formData.append('address', address);
+      
+      // Add other details
       formData.append('phone_hidden', phoneHidden ? '1' : '0');
-      formData.append('product_condition', productCondition);
+      formData.append('condition', productCondition);
       
       // Add main image
       if (mainImage) {
@@ -271,13 +266,14 @@ export default function AddAd() {
       });
       
     } catch (error) {
-      // Error is handled in the mutation
+      console.error('Error submitting listing:', error);
+      // Error is handled by the mutation's onError callback
     }
   };
   
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header isLoggedIn={isAuthenticated()} />
+    <div className="min-h-screen flex flex-col dark:bg-gray-900 dark:text-white">
+      <Header />
       
       <main className="flex-1 pb-20 md:pb-0">
         <div className="container px-4 mx-auto py-6">
@@ -292,7 +288,7 @@ export default function AddAd() {
                     <div 
                       key={step}
                       className={`text-sm font-medium ${
-                        step <= currentStep ? 'text-brand' : 'text-muted-foreground'
+                        step <= currentStep ? 'text-brand dark:text-brand-light' : 'text-muted-foreground'
                       }`}
                     >
                       الخطوة {step}
@@ -300,9 +296,9 @@ export default function AddAd() {
                   ))}
                 </div>
                 
-                <div className="overflow-hidden h-2 rounded-full bg-gray-200">
+                <div className="overflow-hidden h-2 rounded-full bg-gray-200 dark:bg-gray-700">
                   <div 
-                    className="h-full bg-brand transition-all duration-300"
+                    className="h-full bg-brand dark:bg-brand-light transition-all duration-300"
                     style={{ width: `${(currentStep / 4) * 100}%` }}
                   />
                 </div>
@@ -321,7 +317,8 @@ export default function AddAd() {
                   ].map((type) => (
                     <button
                       key={type.id}
-                      className={`p-6 border rounded-lg text-center hover:border-brand transition-colors ${adType === type.id ? 'border-brand bg-brand/5' : ''}`}
+                      type="button"
+                      className={`p-6 border rounded-lg text-center hover:border-brand transition-colors dark:border-gray-700 dark:hover:border-brand-light ${adType === type.id ? 'border-brand bg-brand/5 dark:border-brand-light dark:bg-brand-light/10' : ''}`}
                       onClick={() => setAdType(type.id as any)}
                     >
                       <div className="text-lg font-bold">{type.label}</div>
@@ -333,7 +330,10 @@ export default function AddAd() {
                 <div className="space-y-4">
                   <div>
                     <Label>اختر تصنيف الإعلان</Label>
-                    <Select value={categoryId?.toString()} onValueChange={(value) => setCategoryId(parseInt(value))}>
+                    <Select 
+                      value={categoryId || undefined} 
+                      onValueChange={(value) => setCategoryId(value)}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="اختر التصنيف" />
                       </SelectTrigger>
@@ -351,7 +351,10 @@ export default function AddAd() {
                   {(adType === 'sell' || adType === 'rent') && categoryId && (
                     <div>
                       <Label>اختر الماركة</Label>
-                      <Select value={brandId?.toString()} onValueChange={(value) => setBrandId(parseInt(value))}>
+                      <Select 
+                        value={brandId || undefined}
+                        onValueChange={(value) => setBrandId(value)}
+                      >
                         <SelectTrigger>
                           <SelectValue placeholder="اختر الماركة" />
                         </SelectTrigger>
@@ -386,7 +389,7 @@ export default function AddAd() {
                     value={adTitle}
                     onChange={(e) => setAdTitle(e.target.value)}
                     placeholder="اكتب عنواناً واضحاً ومختصراً"
-                    className="mt-1"
+                    className="mt-1 dark:bg-gray-800 dark:border-gray-700"
                   />
                 </div>
                 
@@ -398,7 +401,7 @@ export default function AddAd() {
                     onChange={(e) => setAdDescription(e.target.value)}
                     placeholder="اكتب وصفاً مفصلاً"
                     rows={5}
-                    className="mt-1 resize-none"
+                    className="mt-1 resize-none dark:bg-gray-800 dark:border-gray-700"
                   />
                 </div>
                 
@@ -411,7 +414,7 @@ export default function AddAd() {
                       value={adPrice}
                       onChange={(e) => setAdPrice(e.target.value)}
                       placeholder="أدخل السعر"
-                      className="mt-1"
+                      className="mt-1 dark:bg-gray-800 dark:border-gray-700"
                       disabled={adType === 'job'}
                     />
                   </div>
@@ -436,14 +439,14 @@ export default function AddAd() {
                     <div className="grid grid-cols-2 gap-4 mt-1">
                       <button
                         type="button"
-                        className={`p-3 border rounded-lg text-center ${productCondition === 'new' ? 'border-brand bg-brand/5' : ''}`}
+                        className={`p-3 border rounded-lg text-center dark:border-gray-700 ${productCondition === 'new' ? 'border-brand bg-brand/5 dark:border-brand-light dark:bg-brand-light/10' : ''}`}
                         onClick={() => setProductCondition('new')}
                       >
                         جديد
                       </button>
                       <button
                         type="button"
-                        className={`p-3 border rounded-lg text-center ${productCondition === 'used' ? 'border-brand bg-brand/5' : ''}`}
+                        className={`p-3 border rounded-lg text-center dark:border-gray-700 ${productCondition === 'used' ? 'border-brand bg-brand/5 dark:border-brand-light dark:bg-brand-light/10' : ''}`}
                         onClick={() => setProductCondition('used')}
                       >
                         مستعمل
@@ -455,11 +458,14 @@ export default function AddAd() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="state">المنطقة / المحافظة</Label>
-                    <Select value={stateId?.toString()} onValueChange={(value) => {
-                      setStateId(parseInt(value));
-                      setCityId(null); // Reset city when changing state
-                    }}>
-                      <SelectTrigger id="state" className="mt-1">
+                    <Select 
+                      value={stateId || undefined}
+                      onValueChange={(value) => {
+                        setStateId(value);
+                        setCityId(null); // Reset city when changing state
+                      }}
+                    >
+                      <SelectTrigger id="state" className="mt-1 dark:bg-gray-800 dark:border-gray-700">
                         <SelectValue placeholder="اختر المنطقة" />
                       </SelectTrigger>
                       <SelectContent>
@@ -474,8 +480,12 @@ export default function AddAd() {
                   
                   <div>
                     <Label htmlFor="city">المدينة</Label>
-                    <Select value={cityId?.toString()} onValueChange={(value) => setCityId(parseInt(value))} disabled={!stateId}>
-                      <SelectTrigger id="city" className="mt-1">
+                    <Select 
+                      value={cityId || undefined}
+                      onValueChange={(value) => setCityId(value)}
+                      disabled={!stateId}
+                    >
+                      <SelectTrigger id="city" className="mt-1 dark:bg-gray-800 dark:border-gray-700">
                         <SelectValue placeholder={stateId ? "اختر المدينة" : "اختر المنطقة أولاً"} />
                       </SelectTrigger>
                       <SelectContent>
@@ -496,7 +506,7 @@ export default function AddAd() {
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
                     placeholder="أدخل العنوان التفصيلي"
-                    className="mt-1"
+                    className="mt-1 dark:bg-gray-800 dark:border-gray-700"
                   />
                 </div>
                 
@@ -528,7 +538,7 @@ export default function AddAd() {
                 </div>
                 
                 <div className="flex justify-between pt-4">
-                  <Button variant="outline" onClick={handlePrevStep}>
+                  <Button variant="outline" onClick={handlePrevStep} className="dark:border-gray-700 dark:bg-gray-800">
                     السابق
                   </Button>
                   <Button 
@@ -549,9 +559,10 @@ export default function AddAd() {
                   <Label className="mb-2 block">الصورة الرئيسية</Label>
                   
                   {mainImagePreview ? (
-                    <div className="relative h-64 border rounded-lg overflow-hidden mb-4">
+                    <div className="relative h-64 border rounded-lg overflow-hidden mb-4 dark:border-gray-700">
                       <img src={mainImagePreview} alt="الصورة الرئيسية" className="w-full h-full object-contain" />
                       <button
+                        type="button"
                         onClick={handleRemoveMainImage}
                         className="absolute top-2 left-2 bg-red-500 text-white rounded-full p-1"
                       >
@@ -559,7 +570,7 @@ export default function AddAd() {
                       </button>
                     </div>
                   ) : (
-                    <label className="relative h-64 border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 mb-4">
+                    <label className="relative h-64 border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800 mb-4">
                       <UploadCloud className="h-16 w-16 text-muted-foreground mb-2" />
                       <span className="text-muted-foreground mb-1">اضغط لإضافة الصورة الرئيسية</span>
                       <span className="text-xs text-muted-foreground">(مطلوب)</span>
@@ -576,9 +587,10 @@ export default function AddAd() {
                   
                   <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
                     {galleryImagePreviews.map((image, index) => (
-                      <div key={index} className="relative h-32 border rounded-lg overflow-hidden">
+                      <div key={index} className="relative h-32 border rounded-lg overflow-hidden dark:border-gray-700">
                         <img src={image} alt={`صورة ${index + 1}`} className="w-full h-full object-cover" />
                         <button
+                          type="button"
                           onClick={() => handleRemoveGalleryImage(index)}
                           className="absolute top-1 left-1 bg-red-500 text-white rounded-full p-1"
                         >
@@ -588,7 +600,7 @@ export default function AddAd() {
                     ))}
                     
                     {galleryImagePreviews.length < 9 && (
-                      <label className="relative h-32 border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50">
+                      <label className="relative h-32 border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800">
                         <UploadCloud className="h-10 w-10 text-muted-foreground mb-2" />
                         <span className="text-sm text-muted-foreground">اضغط لإضافة صورة</span>
                         <input
@@ -601,7 +613,7 @@ export default function AddAd() {
                     )}
                   </div>
                   
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-blue-700 text-sm">
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-blue-700 text-sm dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-300">
                     <div className="flex items-start">
                       <Info className="h-5 w-5 ml-2 flex-shrink-0 mt-0.5" />
                       <div>
@@ -618,7 +630,7 @@ export default function AddAd() {
                 </div>
                 
                 <div className="flex justify-between pt-4">
-                  <Button variant="outline" onClick={handlePrevStep}>
+                  <Button variant="outline" onClick={handlePrevStep} className="dark:border-gray-700 dark:bg-gray-800">
                     السابق
                   </Button>
                   <Button onClick={handleNextStep} disabled={!mainImagePreview}>
@@ -631,12 +643,12 @@ export default function AddAd() {
             {/* Step 4: Review */}
             {currentStep === 4 && (
               <div className="space-y-6">
-                <div className="border rounded-lg overflow-hidden">
-                  <div className="bg-gray-50 border-b p-3">
+                <div className="border rounded-lg overflow-hidden dark:border-gray-700">
+                  <div className="bg-gray-50 border-b p-3 dark:bg-gray-800 dark:border-gray-700">
                     <h3 className="font-bold">مراجعة معلومات الإعلان</h3>
                   </div>
                   
-                  <div className="p-4 space-y-4">
+                  <div className="p-4 space-y-4 dark:bg-gray-900">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <h4 className="text-sm text-muted-foreground">عنوان الإعلان</h4>
@@ -645,17 +657,17 @@ export default function AddAd() {
                       
                       <div>
                         <h4 className="text-sm text-muted-foreground">التصنيف</h4>
-                        <p>{categories?.find(c => c.id === categoryId)?.name || '-'}</p>
+                        <p>{categories?.find(c => c.id.toString() === categoryId)?.name || '-'}</p>
                       </div>
                       
                       <div>
                         <h4 className="text-sm text-muted-foreground">المنطقة</h4>
-                        <p>{states?.find(s => s.id === stateId)?.name || '-'}</p>
+                        <p>{states?.find(s => s.id.toString() === stateId)?.name || '-'}</p>
                       </div>
                       
                       <div>
                         <h4 className="text-sm text-muted-foreground">المدينة</h4>
-                        <p>{cities?.find(c => c.id === cityId)?.name || '-'}</p>
+                        <p>{cities?.find(c => c.id.toString() === cityId)?.name || '-'}</p>
                       </div>
                       
                       <div>
@@ -683,10 +695,10 @@ export default function AddAd() {
                         </div>
                       )}
                       
-                      {brandId && brandId > 0 && (
+                      {brandId && brandId !== '0' && (
                         <div>
                           <h4 className="text-sm text-muted-foreground">الماركة</h4>
-                          <p>{brands?.find(b => b.id === brandId)?.name || '-'}</p>
+                          <p>{brands?.find(b => b.id.toString() === brandId)?.name || '-'}</p>
                         </div>
                       )}
                     </div>
@@ -700,12 +712,12 @@ export default function AddAd() {
                       <h4 className="text-sm text-muted-foreground">الصور</h4>
                       <div className="flex flex-wrap gap-2 mt-1">
                         {mainImagePreview && (
-                          <div className="w-16 h-16 rounded-md overflow-hidden border-2 border-brand">
+                          <div className="w-16 h-16 rounded-md overflow-hidden border-2 border-brand dark:border-brand-light">
                             <img src={mainImagePreview} alt="الصورة الرئيسية" className="w-full h-full object-cover" />
                           </div>
                         )}
                         {galleryImagePreviews.map((image, index) => (
-                          <div key={index} className="w-16 h-16 rounded-md overflow-hidden">
+                          <div key={index} className="w-16 h-16 rounded-md overflow-hidden dark:border-gray-700">
                             <img src={image} alt={`صورة ${index + 1}`} className="w-full h-full object-cover" />
                           </div>
                         ))}
@@ -719,17 +731,17 @@ export default function AddAd() {
                   </div>
                 </div>
                 
-                <div className="border rounded-lg p-4 bg-gray-50">
+                <div className="border rounded-lg p-4 bg-gray-50 dark:bg-gray-800 dark:border-gray-700">
                   <div className="flex items-center space-x-2 space-x-reverse mb-4">
                     <input 
                       type="checkbox" 
                       id="terms" 
-                      className="rounded border-gray-300"
+                      className="rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700"
                       checked={agreeTerms}
                       onChange={() => setAgreeTerms(!agreeTerms)}
                     />
                     <label htmlFor="terms" className="text-sm">
-                      أوافق على <a href="/terms" className="text-brand">شروط الاستخدام</a> و<a href="/privacy" className="text-brand">سياسة الخصوصية</a>
+                      أوافق على <a href="/terms" className="text-brand dark:text-brand-light">شروط الاستخدام</a> و<a href="/privacy" className="text-brand dark:text-brand-light">سياسة الخصوصية</a>
                     </label>
                   </div>
                   
@@ -749,7 +761,7 @@ export default function AddAd() {
                         'نشر الإعلان'
                       )}
                     </Button>
-                    <Button variant="outline" onClick={handlePrevStep}>تعديل الإعلان</Button>
+                    <Button variant="outline" onClick={handlePrevStep} className="dark:border-gray-700 dark:bg-transparent">تعديل الإعلان</Button>
                   </div>
                 </div>
               </div>

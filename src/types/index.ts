@@ -1,6 +1,5 @@
-// We need to extend the existing types, so we can't use the // ... keep existing code notation
-// Instead, we'll add the ApiResponse type and export it
 
+// Basic API response type
 export interface ApiResponse<T> {
   success: boolean;
   message: string;
@@ -69,34 +68,38 @@ export interface Listing {
   description: string;
   price: number;
   is_negotiable?: boolean;
+  negotiable?: boolean; // For compatibility with Ad
   condition: 'new' | 'used';
-  listing_type: 'sell' | 'buy' | 'exchange' | 'service';
+  listing_type: 'sell' | 'buy' | 'exchange' | 'service' | 'rent' | 'job';
   category_id: number;
   category_name: string;
+  category?: string; // For compatibility with Ad
   subcategory_id?: number;
   subcategory_name?: string;
+  subcategory?: string; // For compatibility with Ad
   brand_id?: number;
   brand_name?: string;
   model?: string;
   city_id: number;
   city_name: string;
+  city?: string; // For compatibility with Ad
   state_id?: number;
   state_name?: string;
   district_id?: number;
   district_name?: string;
-  image: string;
+  district?: string; // For compatibility with Ad
+  image?: string;
   images?: string[];
   featured?: boolean;
   views_count?: number;
+  viewCount?: number; // Alias for views_count
   comments_count?: number;
   created_at: string;
   updated_at?: string;
   user_id: number;
   user?: User;
   attributes?: Record<string, any>;
-  // For compatibility with Ad type
-  category?: string;
-  city?: string;
+  // For compatibility with Ad
   seller?: {
     id: number;
     name: string;
@@ -105,7 +108,6 @@ export interface Listing {
     phone: string;
     createdAt: string;
   };
-  viewCount?: number; // Alias for views_count
   status?: string;
 }
 
@@ -124,6 +126,8 @@ export interface Comment {
   updated_at: string;
   user: User;
   replies?: Comment[];
+  // For backward compatibility with mock data
+  text?: string;
 }
 
 export interface Category {
@@ -131,7 +135,7 @@ export interface Category {
   name: string;
   slug: string;
   description?: string;
-  parent_id?: number;
+  parent_id?: number | null;
   icon?: string;
   count?: number;
   subcategories?: Category[];
@@ -144,7 +148,7 @@ export interface Brand {
   slug: string;
   logo?: string;
   count?: number;
-  title?: string; 
+  title?: string; // Added for compatibility with filters
 }
 
 export interface SearchFilters {
@@ -159,7 +163,7 @@ export interface SearchFilters {
   price_min?: number;
   price_max?: number;
   condition?: 'new' | 'used' | '';
-  listing_type?: 'sell' | 'buy' | 'exchange' | 'service' | '';
+  listing_type?: 'sell' | 'buy' | 'exchange' | 'service' | 'rent' | 'job' | '';
   featured?: boolean;
   sort?: 'newest' | 'oldest' | 'price_asc' | 'price_desc' | 'popular';
   lat?: number;
@@ -202,14 +206,18 @@ export interface PaginatedResponse<T> {
   };
 }
 
-// This will replace the Conversation type that's missing
 export interface Conversation {
   id: number;
-  participants: User[];
+  participants: User[] | number[];
   lastMessage?: Message;
   unreadCount: number;
   createdAt: string;
   updatedAt: string;
+  // For mock data compatibility
+  lastActive?: Date;
+  unread?: boolean;
+  adTitle?: string;
+  adImage?: string;
 }
 
 export interface Message {
