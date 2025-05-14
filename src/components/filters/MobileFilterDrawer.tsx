@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Search, X, Filter, ArrowRight, Check, ChevronRight, MapPin } from 'lucide-react';
 import { 
@@ -151,12 +150,12 @@ export function MobileFilterDrawer({
     if (selectedCategoryId) filters.category_id = selectedCategoryId;
     if (selectedSubCategoryId) filters.subcategory_id = selectedSubCategoryId;
     if (selectedBrandId) filters.brand_id = selectedBrandId;
-    if (selectedStateId) filters.state_id = selectedStateId;
-    if (selectedCityId) filters.city_id = selectedCityId;
+    if (condition) filters.condition = condition;
+    if (listingType) filters.listing_type = listingType;
     if (priceRange[0] > 0) filters.price_min = priceRange[0];
     if (priceRange[1] < 100000) filters.price_max = priceRange[1];
-    if (listingType) filters.listing_type = listingType;
-    if (condition) filters.condition = condition;
+    if (selectedStateId) filters.state_id = selectedStateId;
+    if (selectedCityId) filters.city_id = selectedCityId;
     if (sortBy) filters.sort = sortBy;
     
     // Add location if nearby ads is selected
@@ -177,11 +176,11 @@ export function MobileFilterDrawer({
     setSelectedCategoryId(undefined);
     setSelectedSubCategoryId(undefined);
     setSelectedBrandId(undefined);
+    setCondition(undefined);
+    setListingType(undefined);
+    setPriceRange([0, 100000]);
     setSelectedStateId(undefined);
     setSelectedCityId(undefined);
-    setPriceRange([0, 100000]);
-    setListingType(undefined);
-    setCondition(undefined);
     setSortBy(undefined);
     setNearbyAds(false);
   };
@@ -456,6 +455,72 @@ export function MobileFilterDrawer({
     </div>
   );
   
+  // Helper to render back button for subsections
+  const renderBackButton = () => (
+    <Button 
+      variant="ghost" 
+      size="sm" 
+      className="absolute left-2 top-4 h-8 w-8 p-0 rounded-full"
+      onClick={() => setActiveSection('main')}
+    >
+      <ArrowRight className="h-4 w-4" />
+    </Button>
+  );
+
+  // Render different section based on active tab
+  const renderSectionContent = () => {
+    if (!isDrawerReady) return null;
+    
+    switch (activeSection) {
+      case 'main':
+        return renderMainMenu();
+      case 'price':
+        return (
+          <>
+            {renderBackButton()}
+            {renderPriceSection()}
+          </>
+        );
+      case 'category':
+        return (
+          <>
+            {renderBackButton()}
+            {renderCategorySection()}
+          </>
+        );
+      case 'brand':
+        return (
+          <>
+            {renderBackButton()}
+            {renderBrandSection()}
+          </>
+        );
+      case 'location':
+        return (
+          <>
+            {renderBackButton()}
+            {renderLocationSection()}
+          </>
+        );
+      case 'other':
+        return (
+          <>
+            {renderBackButton()}
+            {renderOtherSection()}
+          </>
+        );
+      case 'sort':
+        return (
+          <>
+            {renderBackButton()}
+            {renderSortSection()}
+          </>
+        );
+      default:
+        return renderMainMenu();
+    }
+  };
+
   const renderBrandSection = () => (
     <div className="space-y-5 p-4 animate-in fade-in">
       <h3 className="text-lg font-bold">الماركات</h3>
@@ -660,72 +725,6 @@ export function MobileFilterDrawer({
       </div>
     </div>
   );
-
-  // Helper to render back button for subsections
-  const renderBackButton = () => (
-    <Button 
-      variant="ghost" 
-      size="sm" 
-      className="absolute left-2 top-4 h-8 w-8 p-0 rounded-full"
-      onClick={() => setActiveSection('main')}
-    >
-      <ArrowRight className="h-4 w-4" />
-    </Button>
-  );
-
-  // Render different section based on active tab
-  const renderSectionContent = () => {
-    if (!isDrawerReady) return null;
-    
-    switch (activeSection) {
-      case 'main':
-        return renderMainMenu();
-      case 'price':
-        return (
-          <>
-            {renderBackButton()}
-            {renderPriceSection()}
-          </>
-        );
-      case 'category':
-        return (
-          <>
-            {renderBackButton()}
-            {renderCategorySection()}
-          </>
-        );
-      case 'brand':
-        return (
-          <>
-            {renderBackButton()}
-            {renderBrandSection()}
-          </>
-        );
-      case 'location':
-        return (
-          <>
-            {renderBackButton()}
-            {renderLocationSection()}
-          </>
-        );
-      case 'other':
-        return (
-          <>
-            {renderBackButton()}
-            {renderOtherSection()}
-          </>
-        );
-      case 'sort':
-        return (
-          <>
-            {renderBackButton()}
-            {renderSortSection()}
-          </>
-        );
-      default:
-        return renderMainMenu();
-    }
-  };
 
   // Dynamic drawer title
   const getDrawerTitle = () => {
