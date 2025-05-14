@@ -1,9 +1,8 @@
 
 import { ReactNode, useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from '@/context/auth-context';
+import { useAuth, tokenStorage } from '@/context/auth-context';
 import { Loader2 } from 'lucide-react';
-import { tokenStorage } from '@/context/auth-context';
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -18,7 +17,7 @@ export function ProtectedRoute({ children, isLoggedIn: externalIsLoggedIn }: Pro
   const isLoggedIn = externalIsLoggedIn !== undefined ? externalIsLoggedIn : isAuthenticated;
 
   const hasToken = !!tokenStorage.getToken();
-  const hasCachedUser = !!localStorage.getItem('cachedUser');
+  const hasCachedUser = !!localStorage.getItem('user');
   
   // Force refresh user data when component mounts, but only once
   useEffect(() => {

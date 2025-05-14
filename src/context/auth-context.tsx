@@ -1,7 +1,6 @@
-
 import { createContext, useState, useContext, useEffect, ReactNode } from "react";
-import { api, setToken, clearToken } from "@/services/api";
 import { User } from "@/types";
+import { api, setToken, clearToken } from "@/services/api";
 
 interface AuthContextType {
   user: User | null;
@@ -10,8 +9,10 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   register: (userData: RegisterData) => Promise<void>;
   logout: () => Promise<void>;
-  isAuthenticated: () => boolean;
+  isAuthenticated: boolean;
   checkAuthStatus: () => Promise<boolean>;
+  loading: boolean;
+  refreshUser: () => Promise<void>;
 }
 
 interface RegisterData {
@@ -20,6 +21,13 @@ interface RegisterData {
   email: string;
   password: string;
 }
+
+// Export tokenStorage for use in other components
+export const tokenStorage = {
+  getToken: () => localStorage.getItem('token'),
+  setToken: (token: string) => localStorage.setItem('token', token),
+  removeToken: () => localStorage.removeItem('token'),
+};
 
 const AuthContext = createContext<AuthContextType>({} as AuthContextType);
 
@@ -70,6 +78,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     
     initializeAuth();
   }, []);
+  
+  const refreshUser = async () => {
+    try {
+      if (!tokenStorage.getToken()) return;
+      
+      setIsLoading(true);
+      const response = await api.get('/user/me');
+      setUser(response.data);
+      localStorage.setItem('user', JSON.stringify(response.data));
+      
+      return response.data;
+    } catch (error) {
+      console.error('Refresh user error:', error);
+      // Don't clear token here - we want to keep trying with existing token
+    } finally {
+      setIsLoading(false);
+    }
+  };
   
   const login = async (email: string, password: string) => {
     try {
@@ -153,9 +179,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
   
-  const isAuthenticated = () => {
-    return !!user && !!localStorage.getItem('token');
-  };
+  const isAuthenticated = !!user && !!localStorage.getItem('token');
   
   const checkAuthStatus = async (): Promise<boolean> => {
     try {
@@ -187,6 +211,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         logout,
         isAuthenticated,
         checkAuthStatus,
+        loading: isLoading,
+        refreshUser,
       }}
     >
       {children}

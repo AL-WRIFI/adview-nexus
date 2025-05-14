@@ -1,9 +1,8 @@
-
 import { useState, useEffect } from 'react';
 import { Header } from '@/components/layout/header';
-import { CategoryBar } from '@/components/layout/category/CategoryBar';
+import { CategoryBar } from '@/components/layout/category-bar';
 import { AdCard } from '@/components/ads/ad-card';
-import { AdFilters } from '@/components/filters/ad-filters';
+import AdFilters from '@/components/filters/ad-filters';
 import { Footer } from '@/components/layout/footer';
 import { MobileNav } from '@/components/layout/mobile-nav';
 import { Button } from '@/components/ui/button';
@@ -45,7 +44,7 @@ export default function Home() {
   const adData = adsResponse?.data || [];
   // Use fallback for pagination
   const totalPages = adsResponse?.meta?.last_page || 
-                     (adsResponse?.pagination?.total_pages) || 1;
+                     (adsResponse?.meta?.pagination?.total_pages) || 1;
   
   // Split into featured and regular ads
   const featuredAds = Array.isArray(adData) ? adData.filter((ad: Listing) => ad.featured) : [];
@@ -193,8 +192,7 @@ export default function Home() {
                         {featuredAdsData.slice(0, 3).map((ad) => (
                           <AdCard 
                             key={ad.id} 
-                            ad={ad} 
-                            layout={adLayout}
+                            ad={ad}
                           />
                         ))}
                       </div>
@@ -226,8 +224,7 @@ export default function Home() {
                         {regularAdsData.map((ad) => (
                           <AdCard 
                             key={ad.id} 
-                            ad={ad} 
-                            layout={adLayout} 
+                            ad={ad}
                           />
                         ))}
                       </div>

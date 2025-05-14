@@ -1,39 +1,58 @@
 
+import React from 'react';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface DeleteConfirmDialogProps {
   open: boolean;
-  setOpen: (open: boolean) => void;
+  onOpenChange: (open: boolean) => void;
+  onConfirm: () => void;
+  title: string;
+  description: string;
+  confirmText?: React.ReactNode;
+  cancelText?: string;
+  isLoading?: boolean;
 }
 
-export function DeleteConfirmDialog({ open, setOpen }: DeleteConfirmDialogProps) {
+export function DeleteConfirmDialog({
+  open,
+  onOpenChange,
+  onConfirm,
+  title,
+  description,
+  confirmText = 'حذف',
+  cancelText = 'إلغاء',
+  isLoading = false,
+}: DeleteConfirmDialogProps) {
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>حذف الإعلان</DialogTitle>
-          <DialogDescription>
-            هل أنت متأكد من رغبتك في حذف هذا الإعلان؟ لا يمكن التراجع عن هذا الإجراء.
-          </DialogDescription>
-        </DialogHeader>
-        
-        <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)}>
-            إلغاء
-          </Button>
-          <Button variant="destructive" onClick={() => setOpen(false)}>
-            تأكيد الحذف
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
+      <AlertDialogContent className="dark:bg-gray-800 dark:border-gray-700">
+        <AlertDialogHeader>
+          <AlertDialogTitle>{title}</AlertDialogTitle>
+          <AlertDialogDescription>{description}</AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={isLoading}>{cancelText}</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={(e) => {
+              e.preventDefault();
+              onConfirm();
+            }}
+            disabled={isLoading}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            {confirmText}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }

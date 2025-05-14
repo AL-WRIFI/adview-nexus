@@ -32,6 +32,9 @@ interface AdFiltersProps {
   brands?: Brand[];
   className?: string;
   onFilterChange?: (filters: Record<string, any>) => void;
+  layout?: 'sidebar' | 'inline';
+  currentLayout?: 'grid' | 'list';
+  onLayoutChange?: (layout: 'grid' | 'list') => void;
 }
 
 interface FilterOption {
@@ -39,7 +42,16 @@ interface FilterOption {
   name: string;
 }
 
-export default function AdFilters({ inline = true, categories: propCategories, brands: propBrands, className, onFilterChange }: AdFiltersProps) {
+export default function AdFilters({ 
+  inline = true, 
+  categories: propCategories, 
+  brands: propBrands, 
+  className, 
+  onFilterChange,
+  layout,
+  currentLayout,
+  onLayoutChange
+}: AdFiltersProps) {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   
@@ -163,7 +175,7 @@ export default function AdFilters({ inline = true, categories: propCategories, b
           <SelectValue placeholder="جميع الفئات" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="">جميع الفئات</SelectItem>
+          <SelectItem value="all">جميع الفئات</SelectItem>
           {allCategories.map((category) => (
             <SelectItem key={category.id} value={category.id.toString()}>
               {category.name}
@@ -177,7 +189,7 @@ export default function AdFilters({ inline = true, categories: propCategories, b
           <SelectValue placeholder="جميع الماركات" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="">جميع الماركات</SelectItem>
+          <SelectItem value="all">جميع الماركات</SelectItem>
           {allBrands.map((brand) => (
             <SelectItem key={brand.id} value={brand.id.toString()}>
               {brand.name}
@@ -194,7 +206,7 @@ export default function AdFilters({ inline = true, categories: propCategories, b
           <SelectValue placeholder="جميع المناطق" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="">جميع المناطق</SelectItem>
+          <SelectItem value="all">جميع المناطق</SelectItem>
           {states?.map((state) => (
             <SelectItem key={state.id} value={state.id.toString()}>
               {state.name}
@@ -208,7 +220,7 @@ export default function AdFilters({ inline = true, categories: propCategories, b
           <SelectValue placeholder="الحالة" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="">الكل</SelectItem>
+          <SelectItem value="all">الكل</SelectItem>
           <SelectItem value="new">جديد</SelectItem>
           <SelectItem value="used">مستعمل</SelectItem>
         </SelectContent>
@@ -259,7 +271,7 @@ export default function AdFilters({ inline = true, categories: propCategories, b
                 <SelectValue placeholder="جميع الفئات" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">جميع الفئات</SelectItem>
+                <SelectItem value="all">جميع الفئات</SelectItem>
                 {allCategories.map((category) => (
                   <SelectItem key={category.id} value={category.id.toString()}>
                     {category.name}
@@ -277,7 +289,7 @@ export default function AdFilters({ inline = true, categories: propCategories, b
                   <SelectValue placeholder="التصنيف الفرعي" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">جميع التصنيفات الفرعية</SelectItem>
+                  <SelectItem value="all">جميع التصنيفات الفرعية</SelectItem>
                   {subcategories.map((subcat) => (
                     <SelectItem key={subcat.id} value={subcat.id.toString()}>
                       {subcat.name}
@@ -293,7 +305,7 @@ export default function AdFilters({ inline = true, categories: propCategories, b
                   <SelectValue placeholder="التصنيف الفرعي الثانوي" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">الكل</SelectItem>
+                  <SelectItem value="all">الكل</SelectItem>
                   {childCategories.map((child) => (
                     <SelectItem key={child.id} value={child.id.toString()}>
                       {child.name}
@@ -311,7 +323,7 @@ export default function AdFilters({ inline = true, categories: propCategories, b
                 <SelectValue placeholder="جميع الماركات" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">جميع الماركات</SelectItem>
+                <SelectItem value="all">جميع الماركات</SelectItem>
                 {allBrands.map((brand) => (
                   <SelectItem key={brand.id} value={brand.id.toString()}>
                     {brand.name}
@@ -325,7 +337,7 @@ export default function AdFilters({ inline = true, categories: propCategories, b
             <h3 className="text-sm font-medium">حالة المنتج</h3>
             <RadioGroup value={condition} onValueChange={setCondition}>
               <div className="flex items-center space-x-2 space-x-reverse">
-                <RadioGroupItem value="" id="condition-all" />
+                <RadioGroupItem value="all" id="condition-all" />
                 <Label htmlFor="condition-all">الكل</Label>
               </div>
               <div className="flex items-center space-x-2 space-x-reverse">
@@ -343,7 +355,7 @@ export default function AdFilters({ inline = true, categories: propCategories, b
             <h3 className="text-sm font-medium">نوع الإعلان</h3>
             <RadioGroup value={listingType} onValueChange={setListingType}>
               <div className="flex items-center space-x-2 space-x-reverse">
-                <RadioGroupItem value="" id="type-all" />
+                <RadioGroupItem value="all" id="type-all" />
                 <Label htmlFor="type-all">الكل</Label>
               </div>
               <div className="flex items-center space-x-2 space-x-reverse">
@@ -422,7 +434,7 @@ export default function AdFilters({ inline = true, categories: propCategories, b
                 <SelectValue placeholder="اختر المنطقة" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">جميع المناطق</SelectItem>
+                <SelectItem value="all">جميع المناطق</SelectItem>
                 {states?.map((state) => (
                   <SelectItem key={state.id} value={state.id.toString()}>
                     {state.name}
@@ -437,7 +449,7 @@ export default function AdFilters({ inline = true, categories: propCategories, b
                   <SelectValue placeholder={state ? "اختر المدينة" : "اختر المنطقة أولاً"} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">جميع المدن</SelectItem>
+                  <SelectItem value="all">جميع المدن</SelectItem>
                   {stateCities?.map((city) => (
                     <SelectItem key={city.id} value={city.id.toString()}>
                       {city.name}

@@ -1,40 +1,21 @@
 
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import React from 'react';
+import { Button } from '@/components/ui/button';
 
 interface PlaceholderTabProps {
-  tabName: string;
+  title?: string;
 }
 
-export function PlaceholderTab({ tabName }: PlaceholderTabProps) {
-  const getTabTitle = () => {
-    switch (tabName) {
-      case 'favorites':
-        return 'المفضلة';
-      case 'messages':
-        return 'الرسائل';
-      case 'notifications':
-        return 'الإشعارات';
-      case 'settings':
-        return 'الإعدادات';
-      default:
-        return tabName;
-    }
-  };
-  
+export default function PlaceholderTab({ title = 'القسم' }: PlaceholderTabProps) {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{getTabTitle()}</CardTitle>
-        <CardDescription>
-          هذه الصفحة قيد الإنشاء
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="text-center py-12">
-        <div className="max-w-sm mx-auto">
-          <h3 className="text-lg font-medium mb-2">نعمل على هذه الميزة حالياً</h3>
-          <p className="text-muted-foreground mb-4">سيتم إطلاق هذه الميزة قريباً. تابعنا للحصول على التحديثات.</p>
-        </div>
-      </CardContent>
-    </Card>
+    <div className="p-6">
+      <h2 className="text-2xl font-bold mb-6">{title}</h2>
+      <div className="text-center py-12 bg-gray-50 dark:bg-dark-surface rounded-lg">
+        <p className="text-muted-foreground mb-4">هذا القسم قيد التطوير</p>
+        <Button asChild>
+          <a href="/">العودة للرئيسية</a>
+        </Button>
+      </div>
+    </div>
   );
 }
