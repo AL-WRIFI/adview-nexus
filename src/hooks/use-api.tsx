@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/services/api';
 import { SearchFilters, PaginatedResponse, Listing, ApiResponse, Category, Brand, User } from '@/types';
@@ -57,6 +56,44 @@ export const useRemoveFromFavorites = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['favorites'] });
+    }
+  });
+};
+
+// Add useDeleteListing function
+export const useDeleteListing = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (id: number) => {
+      try {
+        const response = await api.delete(`/user/listings/${id}`);
+        return response.data;
+      } catch (error) {
+        console.error('Error deleting listing:', error);
+        throw error;
+      }
+    },
+    onSuccess: () => {
+      // Invalidate relevant queries to update the UI
+      queryClient.invalidateQueries({ queryKey: ['myAds'] });
+      queryClient.invalidateQueries({ queryKey: ['userListings'] });
+    }
+  });
+};
+
+// Add useUserListings function
+export const useUserListings = () => {
+  return useQuery({
+    queryKey: ['userListings'],
+    queryFn: async () => {
+      try {
+        const response = await api.get('/user/listings');
+        return response.data;
+      } catch (error) {
+        console.error('Error fetching user listings:', error);
+        throw error;
+      }
     }
   });
 };
