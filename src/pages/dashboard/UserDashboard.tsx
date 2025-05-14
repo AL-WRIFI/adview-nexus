@@ -9,13 +9,12 @@ import { Button } from '@/components/ui/button';
 import DashboardSidebar from './components/DashboardSidebar';
 import DashboardContent from './components/DashboardContent';
 import { useAuth } from '@/context/auth-context';
+import { useAdsDialog } from './hooks/useAdsDialog';
 
 export default function UserDashboard() {
   const [activePage, setActivePage] = useState('ads');
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [selectedAd, setSelectedAd] = useState<number | null>(null);
-  const [promoteDialogOpen, setPromoteDialogOpen] = useState(false);
-  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const { selectedAd, setSelectedAd, promoteDialogOpen, setPromoteDialogOpen, deleteConfirmOpen, setDeleteConfirmOpen } = useAdsDialog();
   const { user, logout } = useAuth();
 
   const handleLogout = async () => {
@@ -23,19 +22,19 @@ export default function UserDashboard() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col dark:bg-gray-950">
       <Header />
       
-      <main className="flex-1 pb-20 md:pb-0">
-        <div className="bg-gray-50 border-b border-border">
+      <main className="flex-1 pb-20 md:pb-0 dark:bg-gray-950">
+        <div className="bg-gray-50 border-b border-border dark:bg-gray-900 dark:border-gray-800">
           <div className="container px-4 mx-auto py-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center">
-                <div className="w-16 h-16 bg-gray-200 rounded-full overflow-hidden ml-4">
+                <div className="w-16 h-16 bg-gray-200 rounded-full overflow-hidden ml-4 dark:bg-gray-800">
                   <UserCircle className="w-full h-full text-gray-400" />
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold">
+                  <h1 className="text-xl font-bold dark:text-white">
                     أهلاً، {user?.first_name} {user?.last_name}
                   </h1>
                   <p className="text-muted-foreground">مرحباً بك في لوحة التحكم</p>
@@ -81,10 +80,10 @@ export default function UserDashboard() {
             {sidebarOpen && (
               <div className="fixed inset-0 z-40 md:hidden">
                 <div className="fixed inset-0 bg-black/50" onClick={() => setSidebarOpen(false)} />
-                <div className="fixed inset-y-0 right-0 max-w-[16rem] w-full bg-white shadow-lg">
-                  <div className="p-4 border-b">
+                <div className="fixed inset-y-0 right-0 max-w-[16rem] w-full bg-white shadow-lg dark:bg-gray-900 dark:border-gray-800">
+                  <div className="p-4 border-b dark:border-gray-800">
                     <div className="flex items-center justify-between">
-                      <h2 className="font-bold">القائمة</h2>
+                      <h2 className="font-bold dark:text-white">القائمة</h2>
                       <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(false)}>
                         <X className="h-5 w-5" />
                       </Button>

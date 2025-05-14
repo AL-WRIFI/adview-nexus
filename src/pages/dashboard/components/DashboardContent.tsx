@@ -7,6 +7,9 @@ import { FavoritesTab } from './tabs/FavoritesTab';
 import { StatisticsTab } from './tabs/StatisticsTab';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { useState } from 'react';
+import { useDeleteListing } from '@/hooks/use-api';
+import { toast } from '@/hooks/use-toast';
 
 interface DashboardContentProps {
   activePage: string;
@@ -27,6 +30,8 @@ export default function DashboardContent({
   deleteConfirmOpen,
   setDeleteConfirmOpen,
 }: DashboardContentProps) {
+  const [isDeleting, setIsDeleting] = useState(false);
+  const deleteMutation = useDeleteListing();
   
   const renderTab = () => {
     switch (activePage) {
@@ -55,10 +60,28 @@ export default function DashboardContent({
     }
   };
   
-  const handleDeleteAd = () => {
-    // Delete ad functionality would go here
-    setDeleteConfirmOpen(false);
-    setSelectedAd(null);
+  const handleDeleteAd = async () => {
+    if (!selectedAd) return;
+    
+    setIsDeleting(true);
+    try {
+      await deleteMutation.mutateAsync(selectedAd);
+      toast({
+        title: "تم حذف الإعلان بنجاح",
+        description: "تم حذف الإعلان من قائمة إعلاناتك"
+      });
+      setDeleteConfirmOpen(false);
+      setSelectedAd(null);
+    } catch (error) {
+      toast({
+        title: "فشل حذف الإعلان",
+        description: "حدث خطأ أثناء محاولة حذف الإعلان. الرجاء المحاولة مرة أخرى.",
+        variant: "destructive"
+      });
+      console.error("Error deleting listing:", error);
+    } finally {
+      setIsDeleting(false);
+    }
   };
   
   const handlePromoteAd = () => {
@@ -73,7 +96,7 @@ export default function DashboardContent({
       
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
-        <DialogContent>
+        <DialogContent className="dark:bg-gray-900 dark:border-gray-800">
           <DialogHeader>
             <DialogTitle>حذف الإعلان</DialogTitle>
             <DialogDescription>
@@ -81,11 +104,26 @@ export default function DashboardContent({
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="flex justify-between space-x-2 space-x-reverse">
-            <Button variant="outline" onClick={() => setDeleteConfirmOpen(false)}>
+            <Button 
+              variant="outline" 
+              onClick={() => setDeleteConfirmOpen(false)}
+              disabled={isDeleting}
+            >
               إلغاء
             </Button>
-            <Button variant="destructive" onClick={handleDeleteAd}>
-              حذف الإعلان
+            <Button 
+              variant="destructive" 
+              onClick={handleDeleteAd}
+              disabled={isDeleting}
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+                  جاري الحذف...
+                </>
+              ) : (
+                "حذف الإعلان"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -93,7 +131,7 @@ export default function DashboardContent({
       
       {/* Promote Dialog */}
       <Dialog open={promoteDialogOpen} onOpenChange={setPromoteDialogOpen}>
-        <DialogContent>
+        <DialogContent className="dark:bg-gray-900 dark:border-gray-800">
           <DialogHeader>
             <DialogTitle>ترقية الإعلان</DialogTitle>
             <DialogDescription>
@@ -102,7 +140,7 @@ export default function DashboardContent({
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="border rounded-md p-4 hover:border-brand">
+              <div className="border rounded-md p-4 hover:border-brand dark:border-gray-700 dark:hover:border-brand">
                 <h4 className="font-bold text-lg">باقة أساسية</h4>
                 <p className="text-2xl font-bold my-2">50 ريال</p>
                 <ul className="text-sm my-4 space-y-2">
@@ -112,7 +150,7 @@ export default function DashboardContent({
                 </ul>
                 <Button variant="outline" onClick={handlePromoteAd} className="w-full">اختيار</Button>
               </div>
-              <div className="border rounded-md p-4 border-brand bg-brand/5">
+              <div className="border rounded-md p-4 border-brand bg-brand/5 dark:bg-brand/10 dark:border-brand/30">
                 <h4 className="font-bold text-lg">باقة احترافية</h4>
                 <p className="text-2xl font-bold my-2">100 ريال</p>
                 <ul className="text-sm my-4 space-y-2">

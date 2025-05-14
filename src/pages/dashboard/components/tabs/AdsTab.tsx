@@ -6,7 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { Edit, Trash2, Eye, ArrowUpRight, Clipboard, PlusCircle, Loader2 } from 'lucide-react';
-import { useUserListings } from '@/hooks/use-api'; // Fixed import
+import { useUserListings, useDeleteListing } from '@/hooks/use-api';
+import { toast } from '@/hooks/use-toast';
 
 interface AdsTabProps {
   setSelectedAd: (id: number | null) => void;
@@ -15,9 +16,22 @@ interface AdsTabProps {
 }
 
 export function AdsTab({ setSelectedAd, setDeleteConfirmOpen, setPromoteDialogOpen }: AdsTabProps) {
-  // Fetch user's ads - using useUserListings instead of useMyAds
-  const { data: adsResponse, isLoading, error } = useUserListings();
-  const userAds = adsResponse?.data || [];
+  // Fetch user's ads
+  const { data: listings, isLoading, error, refetch } = useUserListings();
+  const userAds = listings?.data || [];
+  
+  // Delete ad mutation
+  const deleteMutation = useDeleteListing();
+  
+  const handleDeleteClick = (adId: number) => {
+    setSelectedAd(adId);
+    setDeleteConfirmOpen(true);
+  };
+  
+  const handlePromoteClick = (adId: number) => {
+    setSelectedAd(adId);
+    setPromoteDialogOpen(true);
+  };
   
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -58,9 +72,9 @@ export function AdsTab({ setSelectedAd, setDeleteConfirmOpen, setPromoteDialogOp
           <CardDescription>إدارة الإعلانات التي قمت بنشرها</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-12 bg-gray-50 rounded-lg">
+          <div className="text-center py-12 bg-gray-50 rounded-lg dark:bg-gray-800">
             <p className="text-red-500 mb-4">حدث خطأ أثناء تحميل الإعلانات</p>
-            <Button onClick={() => window.location.reload()}>إعادة المحاولة</Button>
+            <Button onClick={() => refetch()}>إعادة المحاولة</Button>
           </div>
         </CardContent>
       </Card>
@@ -68,18 +82,18 @@ export function AdsTab({ setSelectedAd, setDeleteConfirmOpen, setPromoteDialogOp
   }
   
   return (
-    <Card>
+    <Card className="dark:bg-gray-900 dark:border-gray-800">
       <CardHeader>
         <CardTitle>إعلاناتي</CardTitle>
         <CardDescription>إدارة الإعلانات التي قمت بنشرها</CardDescription>
       </CardHeader>
       <CardContent>
         {userAds.length > 0 ? (
-          <div className="rounded-md border">
+          <div className="rounded-md border dark:border-gray-800">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b bg-gray-50">
+                  <tr className="border-b bg-gray-50 dark:bg-gray-800 dark:border-gray-700">
                     <th className="py-3 px-4 text-right font-medium">الإعلان</th>
                     <th className="py-3 px-4 text-right font-medium hidden md:table-cell">السعر</th>
                     <th className="py-3 px-4 text-right font-medium hidden md:table-cell">المشاهدات</th>
@@ -90,10 +104,10 @@ export function AdsTab({ setSelectedAd, setDeleteConfirmOpen, setPromoteDialogOp
                 </thead>
                 <tbody>
                   {userAds.map((ad) => (
-                    <tr key={ad.id} className="border-b">
+                    <tr key={ad.id} className="border-b dark:border-gray-800">
                       <td className="py-3 px-4">
                         <div className="flex items-center">
-                          <div className="w-12 h-12 rounded overflow-hidden ml-3 bg-gray-100 flex-shrink-0">
+                          <div className="w-12 h-12 rounded overflow-hidden ml-3 bg-gray-100 dark:bg-gray-800 flex-shrink-0">
                             {ad.image ? (
                               <img 
                                 src={ad.image} 
@@ -142,20 +156,14 @@ export function AdsTab({ setSelectedAd, setDeleteConfirmOpen, setPromoteDialogOp
                           <Button 
                             variant="ghost" 
                             size="icon" 
-                            onClick={() => {
-                              setSelectedAd(ad.id);
-                              setDeleteConfirmOpen(true);
-                            }}
+                            onClick={() => handleDeleteClick(ad.id)}
                           >
                             <Trash2 className="h-4 w-4 text-red-600" />
                           </Button>
                           <Button 
                             variant="ghost" 
                             size="icon"
-                            onClick={() => {
-                              setSelectedAd(ad.id);
-                              setPromoteDialogOpen(true);
-                            }}
+                            onClick={() => handlePromoteClick(ad.id)}
                           >
                             <ArrowUpRight className="h-4 w-4 text-green-600" />
                           </Button>
@@ -168,7 +176,7 @@ export function AdsTab({ setSelectedAd, setDeleteConfirmOpen, setPromoteDialogOp
             </div>
           </div>
         ) : (
-          <div className="text-center py-12">
+          <div className="text-center py-12 dark:bg-gray-800/50 rounded-lg">
             <Clipboard className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-medium">لا توجد إعلانات</h3>
             <p className="text-muted-foreground mb-4">لم تقم بإضافة أي إعلانات حتى الآن</p>
