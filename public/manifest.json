@@ -1,7 +1,13 @@
 
 {
-  "short_name": "Mix Syria",
-  "name": "Mix Syria - مكس سوريا",
+  "name": "مكس سوريا",
+  "short_name": "مكس سوريا",
+  "theme_color": "#9b87f5",
+  "background_color": "#ffffff",
+  "display": "standalone",
+  "orientation": "portrait",
+  "scope": "/",
+  "start_url": "/",
   "icons": [
     {
       "src": "icons/icon-72x72.png",
@@ -42,28 +48,6 @@
       "src": "icons/icon-512x512.png",
       "sizes": "512x512",
       "type": "image/png"
-    }
-  ],
-  "start_url": ".",
-  "display": "standalone",
-  "theme_color": "#0066FF",
-  "background_color": "#ffffff",
-  "orientation": "portrait",
-  "description": "سوق إلكتروني للإعلانات المبوبة في سوريا",
-  "dir": "rtl",
-  "lang": "ar",
-  "prefer_related_applications": false,
-  "related_applications": [],
-  "shortcuts": [
-    {
-      "name": "أحدث الإعلانات",
-      "url": "/",
-      "icons": [{ "src": "icons/icon-96x96.png", "sizes": "96x96" }]
-    },
-    {
-      "name": "إعلاناتي",
-      "url": "/dashboard",
-      "icons": [{ "src": "icons/icon-96x96.png", "sizes": "96x96" }]
     }
   ]
 }

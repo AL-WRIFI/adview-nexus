@@ -204,7 +204,6 @@ export const listingsAPI = {
       method: 'POST',
       body: listingData,
       headers: {
-        // Let the browser set Content-Type with the correct boundary for FormData
       }, 
     });
   },

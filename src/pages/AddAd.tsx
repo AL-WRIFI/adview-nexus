@@ -12,7 +12,7 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { isAuthenticated } from '@/services/api';
-import { useCreateListing, useCategories, useBrands, useStates, useCities } from '@/hooks/use-api';
+import { useCreateListing, useCategories, useBrands, useStates, useCities ,useBrand} from '@/hooks/use-api';
 import {
   Select,
   SelectContent,
@@ -32,7 +32,7 @@ export default function AddAd() {
   const location = useLocation();
   const { toast } = useToast();
   const { data: categories } = useCategories();
-  const { data: brands } = useBrands();
+  // const { data: brands } = useBrands();
   const { data: states } = useStates();
   const createListingMutation = useCreateListing();
   const { user } = useAuth();
@@ -66,6 +66,7 @@ export default function AddAd() {
   
   // Get filtered cities based on selected state
   const { data: cities } = useCities(stateId || undefined);
+  const { data: brands } = useBrand(categoryId || undefined);
   
   // If coming back from login with form data, restore it
   useEffect(() => {
@@ -101,19 +102,19 @@ export default function AddAd() {
   }, [autoSubmit, savedFormData]);
   
   // Try to get user's location
-  useEffect(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setLat(position.coords.latitude);
-          setLon(position.coords.longitude);
-        },
-        (error) => {
-          console.error("Error getting geolocation:", error);
-        }
-      );
-    }
-  }, []);
+  // useEffect(() => {
+  //   if (navigator.geolocation) {
+  //     navigator.geolocation.getCurrentPosition(
+  //       (position) => {
+  //         setLat(position.coords.latitude);
+  //         setLon(position.coords.longitude);
+  //       },
+  //       (error) => {
+  //         console.error("Error getting geolocation:", error);
+  //       }
+  //     );
+  //   }
+  // }, []);
   
   const handleMainImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {

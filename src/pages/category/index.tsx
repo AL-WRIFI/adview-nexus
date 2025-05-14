@@ -1,181 +1,224 @@
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { Header } from '@/components/layout/header';
-import { CategoryBar } from '@/components/layout/category-bar';
-import { AdCard } from '@/components/ads/ad-card';
 import { Footer } from '@/components/layout/footer';
-import { MobileNav } from '@/components/layout/mobile-nav';
-import { useAds, useCategory } from '@/hooks/use-api';
-import { SearchFilters } from '@/types';
-import { Pagination } from '@/components/custom/pagination';
-import { Loader2 } from 'lucide-react';
-import { EnhancedFilterSection } from '@/components/filters/enhanced-filter-section';
+import { AdFilters } from '@/components/filters/ad-filters';
+import { AdCard } from '@/components/ads/ad-card';
 import { Button } from '@/components/ui/button';
+import { Loader2, Grid2X2, List } from 'lucide-react';
+import { MobileNav } from '@/components/layout/mobile-nav';
+import { useListings, useCategory } from '@/hooks/use-api';
+import { SearchFilters } from '@/types';
+import { useAuth } from '@/context/auth-context';
+import { CategoryBar } from '@/components/layout/category/CategoryBar';
+import { Pagination } from '@/components/custom/pagination';
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select';
 
 export default function CategoryPage() {
   const { categoryId } = useParams<{ categoryId: string }>();
   const [searchParams] = useSearchParams();
-  
-  const [filters, setFilters] = useState<SearchFilters>({});
-  const [adLayout, setAdLayout] = useState<'grid' | 'list'>('list');
-  const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [page, setPage] = useState(1);
-  
-  // Get subcategory and child category from URL params
   const subcategoryId = searchParams.get('subcategory');
-  const childCategoryId = searchParams.get('childcategory');
+  const childcategoryId = searchParams.get('childcategory');
   
-  // Fetch category details
-  const { data: categoryData, isLoading: categoryLoading } = useCategory(
-    categoryId ? parseInt(categoryId, 10) : 0
+  const [filters, setFilters] = useState<SearchFilters>({
+    category_id: categoryId ? parseInt(categoryId, 10) : undefined,
+    subcategory_id: subcategoryId ? parseInt(subcategoryId, 10) : undefined,
+    child_category_id: childcategoryId ? parseInt(childcategoryId, 10) : undefined,
+  });
+  const [adLayout, setAdLayout] = useState<'grid' | 'list'>('grid');
+  const [page, setPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(12);
+  const { isAuthenticated } = useAuth();
+  
+  // Fetch the category data to display the title, etc.
+  const { data: category, isLoading: loadingCategory } = useCategory(
+    categoryId ? parseInt(categoryId, 10) : undefined
   );
   
-  // Initialize filters based on URL parameters
-  useEffect(() => {
-    const initialFilters: SearchFilters = {
-      category_id: categoryId ? parseInt(categoryId, 10) : undefined
-    };
-    
-    if (subcategoryId) {
-      initialFilters.subcategory_id = parseInt(subcategoryId, 10);
-    }
-    
-    if (childCategoryId) {
-      initialFilters.child_category_id = parseInt(childCategoryId, 10);
-    }
-    
-    setFilters(initialFilters);
-  }, [categoryId, subcategoryId, childCategoryId]);
-  
-  // Fetch ads with filters
-  const { data: adsResponse, isLoading: isLoadingAds, error: adsError } = useAds({
+  // Fetch listings with the category filter
+  const { data: listingsResponse, isLoading, error } = useListings({
+    ...filters,
     page,
     per_page: itemsPerPage,
-    ...filters,
   });
   
+  useEffect(() => {
+    // Update filters when URL params change
+    if (categoryId || subcategoryId || childcategoryId) {
+      setFilters(prev => ({
+        ...prev,
+        category_id: categoryId ? parseInt(categoryId, 10) : undefined,
+        subcategory_id: subcategoryId ? parseInt(subcategoryId, 10) : undefined,
+        child_category_id: childcategoryId ? parseInt(childcategoryId, 10) : undefined,
+      }));
+      setPage(1); // Reset to first page on filter changes
+    }
+  }, [categoryId, subcategoryId, childcategoryId]);
+  
   const handleFilterChange = (newFilters: SearchFilters) => {
-    // Preserve category filters when applying new filters
-    setFilters({
+    setFilters(prev => ({
+      ...prev,
       ...newFilters,
-      category_id: filters.category_id,
-      subcategory_id: filters.subcategory_id,
-      child_category_id: filters.child_category_id,
-    });
+      category_id: categoryId ? parseInt(categoryId, 10) : undefined,
+      subcategory_id: subcategoryId ? parseInt(subcategoryId, 10) : newFilters.subcategory_id,
+      child_category_id: childcategoryId ? parseInt(childcategoryId, 10) : newFilters.child_category_id,
+    }));
     setPage(1); // Reset to first page when filters change
   };
   
-  // Extract data
-  const ads = adsResponse?.data || [];
-  const totalPages = adsResponse?.meta?.last_page || 1;
+  // Get the listings from the response, ensure it's an array even if undefined
+  const listings = listingsResponse?.data || [];
+  const totalPages = listingsResponse?.meta?.last_page || 1;
   
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div className="min-h-screen flex flex-col">
       <Header />
       <CategoryBar />
       
-      <main className="flex-1 pb-20 md:pb-0">
-        <div className="container px-4 mx-auto py-6">
-          {/* Category title */}
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold text-gray-900">
-              {categoryLoading ? 'جاري تحميل القسم...' : categoryData?.name}
-            </h1>
-            <p className="text-gray-600 mt-1">
-              {subcategoryId && categoryData?.subcategories?.find(s => s.id === parseInt(subcategoryId, 10))?.name}
-              {childCategoryId && subcategoryId && ' > '}
-              {childCategoryId && subcategoryId && categoryData?.subcategories
-                ?.find(s => s.id === parseInt(subcategoryId, 10))
-                ?.children?.find(c => c.id === parseInt(childCategoryId, 10))?.name
-              }
-            </p>
+      <main className="flex-1 py-8">
+        <div className="container px-4 mx-auto">
+          {/* Category header */}
+          <div className="mb-8 text-center">
+            {loadingCategory ? (
+              <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+            ) : (
+              <>
+                <h1 className="text-3xl font-bold">
+                  {category ? category.name : 'جميع التصنيفات'}
+                </h1>
+                {category && (
+                  <p className="text-muted-foreground mt-2">
+                    تصفح أحدث الإعلانات في تصنيف {category.name}
+                  </p>
+                )}
+              </>
+            )}
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             {/* Sidebar with filters */}
             <div className="col-span-1 hidden md:block">
-              <div className="bg-white rounded-xl shadow-sm p-4 border border-blue-100">
-                <h3 className="text-lg font-semibold mb-4 text-gray-800">خيارات البحث</h3>
-                <div className="space-y-6">
-                  {/* We can use the existing AdFilters component here */}
-                </div>
-              </div>
+              <AdFilters 
+                layout="sidebar" 
+                onLayoutChange={setAdLayout} 
+                currentLayout={adLayout}
+                onFilterChange={handleFilterChange}
+                selectedCategory={category}
+              />
             </div>
             
             {/* Main content */}
-            <div className="col-span-1 md:col-span-3 space-y-6">
-              {/* Enhanced filters */}
-              <div className="bg-white p-4 rounded-xl shadow-sm border border-blue-100">
-                <EnhancedFilterSection 
-                  onLayoutChange={setAdLayout} 
-                  currentLayout={adLayout} 
-                  onFilterChange={handleFilterChange}
-                  activeFilters={filters}
-                  onItemsPerPageChange={setItemsPerPage}
-                  itemsPerPage={itemsPerPage}
-                />
+            <div className="col-span-1 md:col-span-3">
+              {/* Mobile filters */}
+              <AdFilters 
+                layout="horizontal" 
+                onLayoutChange={setAdLayout} 
+                currentLayout={adLayout} 
+                className="md:hidden mb-6"
+                onFilterChange={handleFilterChange}
+                selectedCategory={category}
+              />
+              
+              {/* Compact view toggle buttons and per page select */}
+              <div className="flex flex-col sm:flex-row justify-between mb-4 gap-3">
+                <p className="text-muted-foreground">
+                  {Array.isArray(listings) && listings.length > 0 ? `${listings.length} نتيجة` : '0 نتيجة'} 
+                </p>
+                
+                <div className="flex items-center gap-3">
+                  <Select
+                    value={itemsPerPage.toString()}
+                    onValueChange={(value) => {
+                      setItemsPerPage(parseInt(value, 10));
+                      setPage(1);
+                    }}
+                  >
+                    <SelectTrigger className="w-16 h-8">
+                      <SelectValue placeholder="12" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="12">12</SelectItem>
+                      <SelectItem value="24">24</SelectItem>
+                      <SelectItem value="36">36</SelectItem>
+                      <SelectItem value="48">48</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  
+                  <div className="flex border rounded-sm overflow-hidden">
+                    <Button 
+                      variant={adLayout === 'grid' ? "default" : "ghost"} 
+                      size="icon"
+                      onClick={() => setAdLayout('grid')}
+                      className="h-8 w-8 rounded-none"
+                      aria-label="Grid view"
+                      title="عرض شبكي"
+                    >
+                      <Grid2X2 className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      variant={adLayout === 'list' ? "default" : "ghost"}
+                      size="icon" 
+                      onClick={() => setAdLayout('list')}
+                      className="h-8 w-8 rounded-none"
+                      aria-label="List view"
+                      title="عرض قائمة"
+                    >
+                      <List className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
               </div>
               
-              {/* Ads content */}
-              <div className="bg-white p-4 rounded-xl shadow-sm border border-blue-100">
-                {/* Loading state */}
-                {isLoadingAds && (
-                  <div className="flex justify-center items-center py-12">
-                    <Loader2 className="h-8 w-8 animate-spin text-brand" />
-                  </div>
-                )}
-                
-                {/* Error state */}
-                {adsError && (
-                  <div className="text-center py-12 bg-gray-50 rounded-lg">
-                    <p className="text-red-500 mb-4">حدث خطأ أثناء تحميل الإعلانات</p>
-                    <Button onClick={() => window.location.reload()}>إعادة المحاولة</Button>
-                  </div>
-                )}
-                
-                {/* Content when data is loaded */}
-                {!isLoadingAds && !adsError && (
-                  <>
-                    {/* Ads count */}
-                    <div className="mb-4">
-                      <p className="text-gray-600">
-                        تم العثور على <span className="font-bold text-brand">{ads.length}</span> إعلان
+              {/* Loading state */}
+              {isLoading && (
+                <div className="flex justify-center items-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-brand" />
+                </div>
+              )}
+              
+              {/* Error state */}
+              {error && !isLoading && (
+                <div className="text-center py-12 bg-gray-50 dark:bg-dark-surface">
+                  <p className="text-red-500 mb-4">حدث خطأ أثناء تحميل الإعلانات</p>
+                  <Button onClick={() => window.location.reload()}>إعادة المحاولة</Button>
+                </div>
+              )}
+              
+              {/* Content when data is loaded */}
+              {!isLoading && !error && (
+                <>
+                  {/* Listings grid */}
+                  {Array.isArray(listings) && listings.length > 0 ? (
+                    <div className={`grid gap-4 ${
+                      adLayout === 'grid' 
+                        ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3' 
+                        : 'grid-cols-1'
+                    }`}>
+                      {listings.map((listing) => (
+                        <AdCard 
+                          key={listing.id} 
+                          ad={listing} 
+                          layout={adLayout}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-12 bg-gray-50 dark:bg-dark-surface">
+                      <p className="text-muted-foreground mb-4">
+                        لا توجد إعلانات متطابقة مع البحث في هذا التصنيف
                       </p>
                     </div>
-                    
-                    {/* Ads grid/list */}
-                    {ads.length > 0 ? (
-                      <div className={`grid gap-4 ${
-                        adLayout === 'grid' 
-                          ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3' 
-                          : 'grid-cols-1'
-                      }`}>
-                        {ads.map((ad) => (
-                          <AdCard 
-                            key={ad.id} 
-                            ad={ad} 
-                            layout={adLayout} 
-                          />
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-12 bg-gray-50 rounded-lg">
-                        <p className="text-muted-foreground mb-4">لا توجد إعلانات في هذا القسم</p>
-                      </div>
-                    )}
-                    
-                    {/* Pagination */}
-                    <div className="mt-6">
-                      <Pagination 
-                        currentPage={page} 
-                        totalPages={totalPages}
-                        onPageChange={setPage}
-                      />
-                    </div>
-                  </>
-                )}
-              </div>
+                  )}
+                  
+                  {/* Pagination */}
+                  <Pagination 
+                    currentPage={page} 
+                    totalPages={totalPages}
+                    onPageChange={setPage}
+                  />
+                </>
+              )}
             </div>
           </div>
         </div>

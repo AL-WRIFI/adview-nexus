@@ -1,24 +1,25 @@
 
 import React from 'react';
-import { Link } from 'react-router-dom';
-import { cn } from '@/lib/utils';
 
 interface LogoProps {
-  className?: string;
-  withText?: boolean;
+  size?: 'sm' | 'md' | 'lg';
 }
 
-export function Logo({ className, withText = true }: LogoProps) {
+export function Logo({ size = 'md' }: LogoProps) {
+  const sizes = {
+    sm: 'h-6',
+    md: 'h-8',
+    lg: 'h-10'
+  };
+  
+  const sizeClass = sizes[size];
+  
   return (
-    <Link to="/" className={cn("flex items-center gap-2", className)}>
-      <div className="relative w-10 h-10 overflow-hidden bg-gradient-to-r from-brand to-brand-dark rounded-lg">
-        <span className="absolute inset-0 flex items-center justify-center text-white text-lg font-bold">مكس</span>
-      </div>
-      {withText && (
-        <div className="text-xl font-bold bg-gradient-to-r from-brand to-brand-dark bg-clip-text text-transparent dark:from-brand-light dark:to-blue-300">
-          مكس سوريا
-        </div>
-      )}
-    </Link>
+    <div className="flex items-center">
+      <img src="/logo.svg" alt="Logo" className={`${sizeClass} mr-2`} />
+      <span className={`font-bold ${size === 'sm' ? 'text-lg' : size === 'md' ? 'text-xl' : 'text-2xl'} text-brand`}>
+        سوق
+      </span>
+    </div>
   );
 }

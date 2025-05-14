@@ -4,11 +4,11 @@ const urlsToCache = [
   "/index.html",
   "/manifest.json",
   "/favicon.ico",
-  "/offline.html", // ✅ أضف صفحة الأوفلاين
+  "/offline.html",
 ];
 
 self.addEventListener("install", (event) => {
-  self.skipWaiting(); // ✅ تفعيل النسخة الجديدة فورًا
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(urlsToCache);
@@ -25,7 +25,6 @@ self.addEventListener("fetch", (event) => {
 
       return fetch(event.request)
         .then((networkResponse) => {
-          // تأكد أن الرد صالح
           if (
             !networkResponse ||
             networkResponse.status !== 200 ||
@@ -34,7 +33,6 @@ self.addEventListener("fetch", (event) => {
             return networkResponse;
           }
 
-          // انسخ الرد للكاش
           const responseToCache = networkResponse.clone();
 
           caches.open(CACHE_NAME).then((cache) => {

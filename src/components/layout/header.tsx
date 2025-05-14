@@ -1,245 +1,444 @@
-
-import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Search, Bell, MessageSquare, ChevronDown, User, LogIn, LogOut, Menu, X, Settings } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Logo } from '@/components/ui/logo';
-import { DarkModeToggle } from '@/components/theme/dark-mode-toggle';
-import { useAuth } from '@/context/auth-context';
+import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import {
+  NavigationMenu,
+  NavigationMenuContent,
+  NavigationMenuItem,
+  NavigationMenuList,
+  NavigationMenuTrigger,
+} from "@/components/ui/navigation-menu";
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Separator } from "@/components/ui/separator";
+import {
+  Search,
+  Menu,
+  Plus,
+  User,
+  Heart,
+  Bell,
+  MessageCircle,
+  Settings,
+  LogOut,
+  LogIn,
+  Home,
+  PenSquare,
+  LayoutDashboard,
+  HelpCircle,
+} from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Logo } from "@/components/ui/logo";
+import { useAuth } from "@/context/auth-context";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 export function Header() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const navigate = useNavigate();
+  const { isAuthenticated, user, logout } = useAuth();
+  const isMobile = useIsMobile();
+  const [isScrolled, setIsScrolled] = useState(false);
 
-  const { isAuthenticated, user, logout, refreshUser } = useAuth();
-
-  // Only force refresh user data once when component first mounts
+  // Handle scrolling effect for sticky header
   useEffect(() => {
-    // Only refresh if we have token but user isn't loaded yet
-    if (!user && localStorage.getItem('authToken')) {
-      refreshUser();
-    }
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 10);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
-  
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate(`/search?query=${encodeURIComponent(searchQuery.trim())}`);
-    }
+
+  // Get user initial for avatar fallback
+  const getNameInitial = () => {
+    if (!user || !user.name) return "؟";
+    return user.name.charAt(0).toUpperCase();
   };
 
-  const handleLogout = async () => {
-    await logout();
-    navigate('/');
-  };
-  
-  const notificationCount = 0; // This would come from notifications API
-  const messageCount = 0; // This would come from messages API
-
-  // Get user from cache if not in context
-  const cachedUserData = localStorage.getItem('cachedUser');
-  let cachedUser = null;
-  if (cachedUserData && !user) {
-    try {
-      cachedUser = JSON.parse(cachedUserData);
-    } catch (e) {
-      console.error('Failed to parse cached user data');
-    }
-  }
-  
-  // Use either context user or cached user
-  const displayUser = user || cachedUser;
-  const userIsAuthenticated = isAuthenticated || !!displayUser;
-  
   return (
-    <header className="sticky top-0 z-50 w-full bg-white border-b border-border shadow-sm dark:bg-gray-900 dark:border-gray-800">
-      <div className="container px-4 mx-auto">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo */}
-          <Logo className="mr-4" />
-          
-          {/* Search */}
-          <div className="hidden md:flex flex-1 mx-4">
-            <form onSubmit={handleSearch} className="w-full">
-              <div className="relative w-full">
-                <Input
-                  type="text"
-                  placeholder="ابحث عن منتجات، خدمات، وظائف..."
-                  className="w-full h-10 pr-10 rounded-lg border border-input bg-background cursor-text dark:bg-gray-800 dark:border-gray-700"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-                <button type="submit" className="absolute top-0 right-0 h-full px-3 flex items-center">
-                  <Search className="h-5 w-5 text-muted-foreground" />
-                </button>
-              </div>
-            </form>
-          </div>
-          
-          {/* Right side nav - Desktop */}
-          <div className="hidden md:flex items-center space-x-4 space-x-reverse">
-            {/* Dark mode toggle */}
-            <DarkModeToggle />
-            
-            {userIsAuthenticated && displayUser ? (
-              <>
-                <Button variant="ghost" size="icon" asChild>
-                  <Link to="/notifications" className="relative">
-                    <Bell className="h-5 w-5" />
-                    {notificationCount > 0 && (
-                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
-                        {notificationCount}
-                      </span>
-                    )}
-                  </Link>
-                </Button>
-                <Button variant="ghost" size="icon" asChild>
-                  <Link to="/messages" className="relative">
-                    <MessageSquare className="h-5 w-5" />
-                    {messageCount > 0 && (
-                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
-                        {messageCount}
-                      </span>
-                    )}
-                  </Link>
-                </Button>
-                
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm" className="flex items-center gap-2">
-                      <span>{displayUser.first_name || displayUser.name}</span>
-                      <ChevronDown className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56">
-                    <DropdownMenuLabel className="font-normal">
-                      <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-medium leading-none">{`${displayUser.first_name || ''} ${displayUser.last_name || ''}`}</p>
-                        <p className="text-xs leading-none text-muted-foreground">{displayUser.phone}</p>
-                      </div>
-                    </DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild>
-                      <Link to="/dashboard" className="w-full flex items-center">
-                        <Settings className="mr-2 h-4 w-4" />
-                        <span>لوحة التحكم</span>
+    <header
+      className={`sticky top-0 z-50 bg-white dark:bg-dark-background transition-shadow duration-300 ${
+        isScrolled ? "shadow-md dark:shadow-black/20" : ""
+      }`}
+    >
+      <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+        {isMobile ? (
+          <div className="flex items-center justify-between w-full">
+            {/* Mobile Header */}
+            <div className="flex items-center">
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon" aria-label="القائمة" className="dark:text-white">
+                    <Menu className="h-5 w-5" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="right" className="w-[80%] max-w-md p-0 dark:bg-dark-background dark:border-dark-border">
+                  <div className="flex flex-col h-full">
+                    <div className="bg-brand p-6">
+                      {isAuthenticated ? (
+                        <div className="flex items-center gap-3">
+                          <Avatar>
+                            <AvatarImage
+                              src={user?.avatar || ""}
+                              alt={user?.name || ""}
+                            />
+                            <AvatarFallback className="bg-white/20 text-white">
+                              {getNameInitial()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <h3 className="text-white font-bold">
+                              {user?.name || "مستخدم"}
+                            </h3>
+                            <p className="text-white/80 text-sm">
+                              {user?.email || ""}
+                            </p>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col gap-2">
+                          <h3 className="text-white font-bold text-lg">
+                            مرحباً بك
+                          </h3>
+                          <p className="text-white/80 text-sm">
+                            سجل الدخول للوصول إلى حسابك
+                          </p>
+                          <div className="flex gap-2 mt-2">
+                            <Button
+                              asChild
+                              size="sm"
+                              variant="outline"
+                              className="border-white/30 text-white hover:text-white hover:bg-white/20 hover:border-white/30"
+                            >
+                              <Link to="/auth/login">تسجيل الدخول</Link>
+                            </Button>
+                            <Button
+                              asChild
+                              size="sm"
+                              className="bg-white text-brand hover:bg-white/90"
+                            >
+                              <Link to="/auth/register">إنشاء حساب</Link>
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex flex-col p-2">
+                      <Link
+                        to="/"
+                        className="flex items-center gap-2 p-3 hover:bg-gray-100 dark:hover:bg-dark-surface rounded-md"
+                      >
+                        <Home className="h-5 w-5 text-brand" />
+                        <span>الرئيسية</span>
                       </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link to="/profile" className="w-full flex items-center">
-                        <User className="mr-2 h-4 w-4" />
-                        <span>الملف الشخصي</span>
+                      <Link
+                        to="/add-ad"
+                        className="flex items-center gap-2 p-3 hover:bg-gray-100 dark:hover:bg-dark-surface rounded-md"
+                      >
+                        <Plus className="h-5 w-5 text-brand" />
+                        <span>إضافة إعلان</span>
                       </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleLogout} className="flex items-center">
-                      <LogOut className="mr-2 h-4 w-4" />
-                      <span>تسجيل الخروج</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </>
-            ) : (
-              <Button variant="outline" size="sm" asChild>
-                <Link to="/auth/login" className="flex items-center gap-2">
-                  <LogIn className="h-4 w-4" />
-                  <span>تسجيل الدخول</span>
-                </Link>
-              </Button>
-            )}
-            <Button asChild>
-              <Link to="/add-ad">إضافة إعلان</Link>
-            </Button>
-          </div>
-          
-          {/* Mobile menu button */}
-          <div className="flex md:hidden items-center gap-2">
-            <DarkModeToggle />
-            <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
-              {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-            </Button>
-          </div>
-        </div>
-        
-        {/* Mobile search and menu */}
-        {mobileMenuOpen && (
-          <div className="md:hidden py-4 space-y-4 border-t border-border dark:border-gray-800">
-            <form onSubmit={handleSearch}>
-              <div className="relative">
-                <Input
-                  type="text"
-                  placeholder="ابحث عن منتجات، خدمات، وظائف..."
-                  className="w-full h-10 pr-10 rounded-lg border border-input bg-background cursor-text dark:bg-gray-800 dark:border-gray-700"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-                <button type="submit" className="absolute top-0 right-0 h-full px-3 flex items-center">
-                  <Search className="h-5 w-5 text-muted-foreground" />
-                </button>
-              </div>
-            </form>
-            <div className="flex flex-col space-y-3">
-              {userIsAuthenticated && displayUser ? (
-                <>
-                  <div className="p-3 bg-gray-50 rounded-lg dark:bg-gray-800">
-                    <div className="font-medium dark:text-white">{`${displayUser.first_name || ''} ${displayUser.last_name || ''}`}</div>
-                    <div className="text-sm text-muted-foreground">{displayUser.phone}</div>
+                      <Link
+                        to="/search"
+                        className="flex items-center gap-2 p-3 hover:bg-gray-100 dark:hover:bg-dark-surface rounded-md"
+                      >
+                        <Search className="h-5 w-5 text-brand" />
+                        <span>البحث</span>
+                      </Link>
+
+                      <Separator className="my-2 dark:bg-dark-border" />
+
+                      {isAuthenticated ? (
+                        <>
+                          <Link
+                            to="/dashboard"
+                            className="flex items-center gap-2 p-3 hover:bg-gray-100 dark:hover:bg-dark-surface rounded-md"
+                          >
+                            <LayoutDashboard className="h-5 w-5 text-brand" />
+                            <span>لوحة التحكم</span>
+                          </Link>
+                          <Link
+                            to="/favorites"
+                            className="flex items-center gap-2 p-3 hover:bg-gray-100 dark:hover:bg-dark-surface rounded-md"
+                          >
+                            <Heart className="h-5 w-5 text-brand" />
+                            <span>المفضلة</span>
+                          </Link>
+                          <Link
+                            to="/messages"
+                            className="flex items-center gap-2 p-3 hover:bg-gray-100 dark:hover:bg-dark-surface rounded-md"
+                          >
+                            <MessageCircle className="h-5 w-5 text-brand" />
+                            <span>الرسائل</span>
+                          </Link>
+                          <Link
+                            to="/notifications"
+                            className="flex items-center gap-2 p-3 hover:bg-gray-100 dark:hover:bg-dark-surface rounded-md"
+                          >
+                            <Bell className="h-5 w-5 text-brand" />
+                            <span>الإشعارات</span>
+                          </Link>
+
+                          <Separator className="my-2 dark:bg-dark-border" />
+
+                          <Link
+                            to="/settings"
+                            className="flex items-center gap-2 p-3 hover:bg-gray-100 dark:hover:bg-dark-surface rounded-md"
+                          >
+                            <Settings className="h-5 w-5 text-brand" />
+                            <span>الإعدادات</span>
+                          </Link>
+
+                          <div className="flex items-center justify-between mt-auto p-3">
+                            <ThemeToggle />
+                            
+                            <Button
+                              variant="secondary"
+                              className="text-destructive"
+                              onClick={logout}
+                            >
+                              <LogOut className="h-5 w-5 ml-2" />
+                              تسجيل الخروج
+                            </Button>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="flex items-center justify-between mt-auto p-3">
+                          <ThemeToggle />
+                          <Button variant="default" asChild>
+                            <Link to="/auth/login">
+                              <LogIn className="h-5 w-5 ml-2" />
+                              تسجيل الدخول
+                            </Link>
+                          </Button>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <Link to="/notifications" className="flex items-center gap-3 p-2 rounded-md hover:bg-muted dark:hover:bg-gray-800">
-                    <Bell className="h-5 w-5" />
-                    <span className="dark:text-white">الإشعارات</span>
-                    {notificationCount > 0 && (
-                      <span className="bg-red-500 text-white text-xs rounded-full h-5 px-2 flex items-center">
-                        {notificationCount}
-                      </span>
-                    )}
-                  </Link>
-                  <Link to="/messages" className="flex items-center gap-3 p-2 rounded-md hover:bg-muted dark:hover:bg-gray-800">
-                    <MessageSquare className="h-5 w-5" />
-                    <span className="dark:text-white">الرسائل</span>
-                    {messageCount > 0 && (
-                      <span className="bg-red-500 text-white text-xs rounded-full h-5 px-2 flex items-center">
-                        {messageCount}
-                      </span>
-                    )}
-                  </Link>
-                  <Link to="/dashboard" className="flex items-center gap-3 p-2 rounded-md hover:bg-muted dark:hover:bg-gray-800">
-                    <Settings className="h-5 w-5" />
-                    <span className="dark:text-white">لوحة التحكم</span>
-                  </Link>
-                  <Link to="/profile" className="flex items-center gap-3 p-2 rounded-md hover:bg-muted dark:hover:bg-gray-800">
-                    <User className="h-5 w-5" />
-                    <span className="dark:text-white">الملف الشخصي</span>
-                  </Link>
-                  <button 
-                    onClick={handleLogout}
-                    className="flex items-center gap-3 p-2 rounded-md hover:bg-muted text-red-500 dark:hover:bg-gray-800"
+                </SheetContent>
+              </Sheet>
+            </div>
+
+            <Link to="/" className="flex items-center">
+              {/* Fixed the logo size prop issue */}
+              <Logo />
+            </Link>
+
+            <div className="flex items-center gap-2">
+              <ThemeToggle size="sm" />
+              
+              {isAuthenticated ? (
+                <Link to="/add-ad">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-brand"
+                    aria-label="إضافة إعلان"
                   >
-                    <LogOut className="h-5 w-5" />
-                    <span>تسجيل الخروج</span>
-                  </button>
-                </>
+                    <Plus className="h-5 w-5" />
+                  </Button>
+                </Link>
               ) : (
-                <Link to="/auth/login" className="flex items-center gap-3 p-2 rounded-md hover:bg-muted dark:hover:bg-gray-800">
-                  <LogIn className="h-5 w-5" />
-                  <span className="dark:text-white">تسجيل الدخول</span>
+                <Link to="/auth/login">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-brand"
+                    aria-label="تسجيل الدخول"
+                  >
+                    <User className="h-5 w-5" />
+                  </Button>
                 </Link>
               )}
-              <Button asChild className="w-full mt-2">
-                <Link to="/add-ad">إضافة إعلان</Link>
-              </Button>
             </div>
           </div>
+        ) : (
+          <>
+            {/* Desktop Header */}
+            <div className="flex items-center gap-8">
+              <Link to="/" className="flex items-center">
+                <Logo />
+              </Link>
+
+              <NavigationMenu>
+                <NavigationMenuList>
+                  <NavigationMenuItem>
+                    <NavigationMenuTrigger className="bg-transparent">
+                      التصنيفات
+                    </NavigationMenuTrigger>
+                    <NavigationMenuContent>
+                      <div className="grid grid-cols-2 gap-3 p-4 w-[400px]">
+                        <Link
+                          to="/category/1"
+                          className="block p-2 hover:bg-gray-50 dark:hover:bg-dark-surface rounded"
+                        >
+                          سيارات
+                        </Link>
+                        <Link
+                          to="/category/2"
+                          className="block p-2 hover:bg-gray-50 dark:hover:bg-dark-surface rounded"
+                        >
+                          عقارات
+                        </Link>
+                        <Link
+                          to="/category/3"
+                          className="block p-2 hover:bg-gray-50 dark:hover:bg-dark-surface rounded"
+                        >
+                          إلكترونيات
+                        </Link>
+                        <Link
+                          to="/category/4"
+                          className="block p-2 hover:bg-gray-50 dark:hover:bg-dark-surface rounded"
+                        >
+                          أثاث
+                        </Link>
+                        <Link
+                          to="/category/5"
+                          className="block p-2 hover:bg-gray-50 dark:hover:bg-dark-surface rounded"
+                        >
+                          وظائف
+                        </Link>
+                        <Link
+                          to="/category/6"
+                          className="block p-2 hover:bg-gray-50 dark:hover:bg-dark-surface rounded"
+                        >
+                          خدمات
+                        </Link>
+                      </div>
+                    </NavigationMenuContent>
+                  </NavigationMenuItem>
+
+                  <NavigationMenuItem>
+                    <Link to="/search" className="nav-link">
+                      البحث
+                    </Link>
+                  </NavigationMenuItem>
+
+                  <NavigationMenuItem>
+                    <Link to="/add-ad" className="nav-link">
+                      أضف إعلانك
+                    </Link>
+                  </NavigationMenuItem>
+                </NavigationMenuList>
+              </NavigationMenu>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
+              
+              {isAuthenticated ? (
+                <>
+                  <Link to="/messages">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="relative"
+                      aria-label="الرسائل"
+                    >
+                      <MessageCircle className="h-5 w-5" />
+                      <span className="absolute top-0.5 right-0.5 w-2.5 h-2.5 bg-brand rounded-full" />
+                    </Button>
+                  </Link>
+
+                  <Link to="/notifications">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="relative"
+                      aria-label="الإشعارات"
+                    >
+                      <Bell className="h-5 w-5" />
+                      <span className="absolute top-0.5 right-0.5 w-2.5 h-2.5 bg-brand rounded-full" />
+                    </Button>
+                  </Link>
+
+                  <Link to="/favorites">
+                    <Button variant="ghost" size="icon" aria-label="المفضلة">
+                      <Heart className="h-5 w-5" />
+                    </Button>
+                  </Link>
+
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        className="relative h-8 w-8 rounded-full"
+                      >
+                        <Avatar className="h-8 w-8">
+                          <AvatarImage
+                            src={user?.avatar || ""}
+                            alt={user?.name || ""}
+                          />
+                          <AvatarFallback>
+                            {getNameInitial()}
+                          </AvatarFallback>
+                        </Avatar>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-56" align="end">
+                      <DropdownMenuLabel>حسابي</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuGroup>
+                        <DropdownMenuItem asChild>
+                          <Link to="/dashboard">
+                            <LayoutDashboard className="ml-2 h-4 w-4" />
+                            <span>لوحة التحكم</span>
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link to="/profile">
+                            <User className="ml-2 h-4 w-4" />
+                            <span>الملف الشخصي</span>
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link to="/add-ad">
+                            <PenSquare className="ml-2 h-4 w-4" />
+                            <span>إضافة إعلان</span>
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link to="/settings">
+                            <Settings className="ml-2 h-4 w-4" />
+                            <span>الإعدادات</span>
+                          </Link>
+                        </DropdownMenuItem>
+                      </DropdownMenuGroup>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem asChild>
+                        <Link to="/help">
+                          <HelpCircle className="ml-2 h-4 w-4" />
+                          <span>المساعدة</span>
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={logout}>
+                        <LogOut className="ml-2 h-4 w-4" />
+                        <span>تسجيل الخروج</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </>
+              ) : (
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" asChild>
+                    <Link to="/auth/login">تسجيل الدخول</Link>
+                  </Button>
+                  <Button variant="default" size="sm" asChild>
+                    <Link to="/auth/register">إنشاء حساب</Link>
+                  </Button>
+                </div>
+              )}
+            </div>
+          </>
         )}
       </div>
     </header>

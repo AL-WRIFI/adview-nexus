@@ -44,13 +44,15 @@
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
     
-    /* Brand colors */
-    --brand: 217 100% 50%;
-    --brand-foreground: 0 0% 100%;
+    --dark-bg-opacity: 0;
+    --dark-color-opacity: 0;
     
-    /* Ad borders */
-    --ad-border: 214.3 31.8% 91.4%;
-    --featured-border: 216 98% 80%;
+    /* Custom colors */
+    --background: #ffffff;
+    --card-background: #ffffff;
+    --card-border: #e5e7eb;
+    --dark-surface: #f9fafb;
+    --dark-muted: #f3f4f6;
   }
 
   .dark {
@@ -81,6 +83,7 @@
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
     --ring: 212.7 26.8% 83.9%;
+    
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;
@@ -90,13 +93,12 @@
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
     
-    /* Brand colors */
-    --brand: 217 100% 60%;
-    --brand-foreground: 0 0% 100%;
-    
-    /* Ad borders */
-    --ad-border: 217.2 32.6% 17.5%;
-    --featured-border: 216 98% 40%;
+    /* Custom dark mode colors */
+    --background: #121212;
+    --card-background: #1e1e1e;
+    --card-border: #333333;
+    --dark-surface: #282828;
+    --dark-muted: #3a3a3a;
   }
 }
 
@@ -112,15 +114,20 @@
   body {
     @apply bg-background text-foreground font-tajawal;
   }
+  
+  .dark body {
+    background-color: var(--background);
+    color: #e0e0e0;
+  }
 }
 
 @layer components {
   .category-icon {
-    @apply flex flex-col items-center justify-center p-3 rounded-lg bg-white shadow-sm hover:shadow transition-all hover:scale-105 cursor-pointer border border-ad-border;
+    @apply flex flex-col items-center justify-center rounded-lg bg-white shadow-sm transition-all hover:shadow-md cursor-pointer border border-ad-border dark:bg-dark-card dark:border-dark-border dark:text-white;
   }
   
   .ad-card {
-    @apply relative border border-ad-border rounded-lg overflow-hidden bg-white transition-all hover:shadow-md;
+    @apply relative border border-ad-border rounded-lg overflow-hidden bg-white transition-all hover:shadow-md dark:bg-dark-card dark:border-dark-border;
   }
   
   .ad-card-horizontal {
@@ -132,15 +139,15 @@
   }
   
   .featured-ad {
-    @apply border-featured-border bg-featured shadow-md;
+    @apply border-featured-border bg-featured dark:border-dark-border dark:bg-dark-primary;
   }
   
   .nav-link {
-    @apply px-3 py-2 text-gray-700 hover:text-primary rounded-md transition-colors;
+    @apply px-3 py-2 text-gray-700 hover:text-primary rounded-md transition-colors dark:text-gray-200 dark:hover:text-primary;
   }
   
   .mobile-nav-link {
-    @apply flex flex-col items-center justify-center p-2 text-xs text-gray-600 hover:text-primary transition-colors;
+    @apply flex flex-col items-center justify-center p-2 text-xs text-gray-600 hover:text-primary transition-colors dark:text-gray-300 dark:hover:text-primary;
   }
   
   .scroll-container {
@@ -156,109 +163,61 @@
     display: none;
   }
   
-  /* Card effects and animations */
-  .card-hover {
-    @apply hover:shadow-md transition-all duration-200 hover:-translate-y-1;
+  .category-pill {
+    @apply px-3 py-1.5 rounded-full bg-gray-100 text-sm font-medium text-gray-700 whitespace-nowrap dark:bg-dark-card dark:text-gray-200 dark:border dark:border-dark-border;
   }
   
-  .pulse-animation {
-    @apply animate-pulse;
+  .category-pill-active {
+    @apply bg-brand text-white dark:bg-brand dark:text-white;
   }
-}
-
-/* Hide cursor on non-interactive elements */
-body * {
-  cursor: default;
-}
-
-/* Show text cursor only on text inputs and elements that should have it */
-input[type="text"],
-input[type="email"],
-input[type="password"],
-input[type="number"],
-input[type="search"],
-input[type="tel"],
-input[type="url"],
-textarea,
-[contenteditable="true"],
-.cursor-text {
-  cursor: text !important;
-}
-
-/* Show pointer cursor on clickable elements */
-a, 
-button, 
-[role="button"], 
-input[type="submit"],
-input[type="button"],
-input[type="checkbox"],
-input[type="radio"],
-select,
-summary,
-[tabindex]:not([tabindex="-1"]),
-.cursor-pointer,
-.category-icon,
-.ad-card {
-  cursor: pointer !important;
-}
-
-/* Custom scrollbar styling */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.05);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb {
-  background-color: rgba(0, 0, 0, 0.2);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(0, 0, 0, 0.3);
-}
-
-/* Custom design elements */
-.glass-effect {
-  @apply bg-white/80 backdrop-filter backdrop-blur-sm border border-white/20;
-}
-
-.brand-gradient {
-  @apply bg-gradient-to-r from-blue-500 to-indigo-600;
-}
-
-.shadow-soft {
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-}
-
-.badge-status {
-  @apply inline-flex items-center justify-center px-2 py-0.5 rounded text-xs font-medium;
-}
-
-.badge-featured {
-  @apply badge-status bg-amber-50 text-amber-600 border border-amber-200;
-}
-
-.badge-verified {
-  @apply badge-status bg-green-50 text-green-600 border border-green-200;
-}
-
-.text-truncate-1 {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.text-truncate-2 {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  
+  .pagination-dot {
+    @apply w-2 h-2 mx-1 rounded-full bg-gray-300 dark:bg-dark-muted;
+  }
+  
+  .pagination-dot-active {
+    @apply bg-brand;
+  }
+  
+  .filter-drawer {
+    @apply fixed bottom-0 left-0 right-0 bg-white dark:bg-dark-background rounded-t-xl border-t border-gray-200 dark:border-dark-border;
+  }
+  
+  .no-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  
+  /* Dark mode UI element enhancements */
+  .dark .ad-card,
+  .dark .btn,
+  .dark .dropdown-menu,
+  .dark input,
+  .dark select,
+  .dark textarea {
+    @apply bg-[var(--card-background)] border-[var(--card-border)];
+  }
+  
+  .dark .modal-content {
+    @apply bg-[var(--background)] border-[var(--card-border)];
+  }
+  
+  /* Enhanced dark mode styles */
+  .dark .drawer-content,
+  .dark .popover-content,
+  .dark .dialog-content {
+    @apply bg-[var(--background)] border-[var(--card-border)];
+  }
+  
+  .dark .button-secondary {
+    @apply bg-[var(--dark-muted)] text-white hover:bg-[var(--dark-surface)];
+  }
+  
+  .dark .input-field {
+    @apply bg-[var(--dark-surface)] border-[var(--card-border)] text-white;
+  }
 }

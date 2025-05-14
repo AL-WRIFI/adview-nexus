@@ -55,7 +55,7 @@ export default function AdDetails() {
   
   // Get the ad data if available
   const ad = adResponse?.data;
-  const relatedAds = adResponse?.data?.related || [];
+  const relatedAds = relatedAdsResponse?.data || [];
   const comments = ad?.comments || [];
   
   // Handle previous/next image navigation

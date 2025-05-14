@@ -81,9 +81,13 @@ export default {
 					DEFAULT: '#FFF8E6',
 					border: '#FFEEC0'
 				},
-				gray: {
-					750: '#2D3748', // Additional gray shade for dark mode
-					850: '#1A202C', // Additional gray shade for dark mode
+				dark: {
+					background: '#121212',
+					card: '#1E1E1E',
+					border: '#2A2A2A',
+					muted: '#2E2E2E',
+					primary: '#3B3B3B',
+					surface: '#242424'
 				}
 			},
 			borderRadius: {
@@ -119,6 +123,14 @@ export default {
 				'fade-in': {
 					'0%': { opacity: '0' },
 					'100%': { opacity: '1' }
+				},
+				'slide-up': {
+					'0%': { transform: 'translateY(100%)' },
+					'100%': { transform: 'translateY(0)' }
+				},
+				'slide-down': {
+					'0%': { transform: 'translateY(0)' },
+					'100%': { transform: 'translateY(100%)' }
 				}
 			},
 			animation: {
@@ -126,7 +138,9 @@ export default {
 				'accordion-up': 'accordion-up 0.2s ease-out',
 				'slide-in': 'slide-in 0.3s ease-out',
 				'slide-out': 'slide-out 0.3s ease-out',
-				'fade-in': 'fade-in 0.3s ease-out'
+				'fade-in': 'fade-in 0.3s ease-out',
+				'slide-up': 'slide-up 0.3s ease-out',
+				'slide-down': 'slide-down 0.3s ease-out'
 			}
 		}
 	},

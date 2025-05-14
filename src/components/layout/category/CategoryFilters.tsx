@@ -1,0 +1,149 @@
+
+import React, { useState } from 'react';
+import { MapPin, Search, Filter, ChevronDown } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Drawer, DrawerContent, DrawerTrigger } from '@/components/ui/drawer';
+import { useIsMobile } from '@/hooks/use-mobile';
+
+interface CategoryFiltersProps {
+  onNearbyClick: () => void;
+  onRegionSelect: (region: string) => void;
+  onFilterClick: () => void;
+  selectedRegion?: string;
+}
+
+export function CategoryFilters({ 
+  onNearbyClick, 
+  onRegionSelect, 
+  onFilterClick, 
+  selectedRegion = 'كل المناطق' 
+}: CategoryFiltersProps) {
+  const [showRegions, setShowRegions] = useState(false);
+  const isMobile = useIsMobile();
+  
+  // Default regions list
+  const regions = [
+    'كل المناطق',
+    'الرياض',
+    'جدة',
+    'مكة المكرمة',
+    'المدينة المنورة',
+    'الدمام',
+    'الخبر',
+    'تبوك',
+    'أبها',
+    'حائل',
+    'عسير'
+  ];
+  
+  return (
+    <div className="sticky top-0 z-20 bg-white dark:bg-dark-background shadow-sm">
+      <div className="container px-4 mx-auto py-3">
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="flex items-center gap-1 flex-shrink-0 bg-white dark:bg-dark-card"
+            onClick={onNearbyClick}
+          >
+            <MapPin className="w-4 h-4 text-brand" />
+            <span className="text-sm">القريب</span>
+          </Button>
+          
+          <div className="relative">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="flex items-center gap-1 flex-shrink-0 bg-white dark:bg-dark-card"
+              onClick={() => setShowRegions(!showRegions)}
+            >
+              <span className="text-sm">{selectedRegion}</span>
+              <ChevronDown className="w-3.5 h-3.5" />
+            </Button>
+            
+            {/* Regions list */}
+            {showRegions && (
+              <div 
+                className="absolute z-30 mt-1 bg-white dark:bg-dark-card rounded-md shadow-lg border border-gray-200 dark:border-dark-border py-1 w-48 max-h-60 overflow-y-auto"
+              >
+                {regions.map(region => (
+                  <button
+                    key={region}
+                    className="w-full text-right px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-dark-muted"
+                    onClick={() => {
+                      onRegionSelect(region);
+                      setShowRegions(false);
+                    }}
+                  >
+                    {region}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          
+          {isMobile ? (
+            <Drawer>
+              <DrawerTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="flex-1 flex items-center gap-1 justify-between bg-white dark:bg-dark-card"
+                >
+                  <Search className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground truncate">بحث...</span>
+                  <Filter className="w-4 h-4 text-brand" />
+                </Button>
+              </DrawerTrigger>
+              <DrawerContent className="p-4 max-h-[80vh] overflow-y-auto bg-white dark:bg-dark-background">
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-lg font-bold">خيارات الفلترة</h3>
+                    <Button variant="ghost" size="sm">إغلاق</Button>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-3">
+                    <Button variant="outline" className="flex items-center gap-2">
+                      <Filter className="h-4 w-4" />
+                      <span>تصفية حسب السعر</span>
+                    </Button>
+                    
+                    <Button variant="outline" className="flex items-center gap-2">
+                      <Filter className="h-4 w-4" />
+                      <span>تصفية حسب الموديل</span>
+                    </Button>
+                    
+                    <Button variant="outline" className="flex items-center gap-2">
+                      <Filter className="h-4 w-4" />
+                      <span>تصفية حسب الحالة</span>
+                    </Button>
+                    
+                    <Button variant="outline" className="flex items-center gap-2">
+                      <Filter className="h-4 w-4" />
+                      <span>تصفية حسب التاريخ</span>
+                    </Button>
+                  </div>
+                  
+                  <Button className="w-full mt-4">تطبيق الفلاتر</Button>
+                </div>
+              </DrawerContent>
+            </Drawer>
+          ) : (
+            <div className="flex-1 min-w-0">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="w-full flex items-center gap-1 bg-white dark:bg-dark-card justify-between"
+                onClick={onFilterClick}
+              >
+                <Search className="w-4 h-4 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground truncate">بحث...</span>
+                <Filter className="w-4 h-4 text-brand" />
+              </Button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
