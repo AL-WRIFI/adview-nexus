@@ -55,10 +55,10 @@ export function CategoryIcon({ category, isSelected, onClick, size = 'md' }: Cat
   // Different sizes based on requested size
   const sizes = {
     sm: {
-      container: "min-w-[55px] max-w-[55px]", // Made smaller for mobile
-      icon: "p-2 h-9 w-9",
-      iconSize: "h-4 w-4",
-      text: "text-[10px] mt-1"
+      container: "min-w-[80px]", // Made smaller for mobile
+      icon: "p-2 h-10 w-10",
+      iconSize: "h-5 w-5",
+      text: "text-xs mt-1"
     },
     md: {
       container: "min-w-[85px]",
@@ -78,7 +78,7 @@ export function CategoryIcon({ category, isSelected, onClick, size = 'md' }: Cat
   
   return (
     <div
-      className={`category-icon flex flex-col items-center justify-center ${currentSize.container} cursor-pointer transition-all`}
+      className={`category-icon min-h-[80px] flex flex-col items-center justify-center ${currentSize.container} cursor-pointer transition-all`}
       onClick={onClick}
     >
       <div 

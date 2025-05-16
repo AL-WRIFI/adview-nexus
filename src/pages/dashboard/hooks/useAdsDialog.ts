@@ -1,9 +1,8 @@
 
 import { useState } from 'react';
-import { Ad } from '@/types';
 
-export const useAdsDialog = () => {
-  const [selectedAd, setSelectedAd] = useState<Ad | null>(null);
+export function useAdsDialog() {
+  const [selectedAd, setSelectedAd] = useState<string | null>(null);
   const [promoteDialogOpen, setPromoteDialogOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   
@@ -15,4 +14,4 @@ export const useAdsDialog = () => {
     deleteConfirmOpen,
     setDeleteConfirmOpen
   };
-};
+}

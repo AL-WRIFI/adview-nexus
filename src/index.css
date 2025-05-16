@@ -122,8 +122,9 @@
 }
 
 @layer components {
+  
   .category-icon {
-    @apply flex flex-col items-center justify-center rounded-lg bg-white shadow-sm transition-all hover:shadow-md cursor-pointer border border-ad-border dark:bg-dark-card dark:border-dark-border dark:text-white;
+    @apply flex flex-col items-center justify-center p-3 rounded-lg bg-white shadow-sm transition-all hover:shadow-md cursor-pointer border border-ad-border;
   }
   
   .ad-card {

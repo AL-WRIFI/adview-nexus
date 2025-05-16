@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { CategoryGrid } from './CategoryGrid';
@@ -6,8 +5,9 @@ import { SubCategoryButtons } from './SubCategoryButtons';
 import { useCategories } from '@/hooks/use-api';
 import { Category } from '@/types';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { MobileFilterBar } from './MobileFilterBar';
-import { WithSkeleton, CategorySkeleton } from '@/components/ui/loading-skeleton';
+import { MobileFilterDrawer } from '@/components/filters/MobileFilterDrawer';
+import { WithSkeleton } from '@/components/ui/loading-skeleton';
+import { MobilePagination } from './MobilePagination';
 
 export function CategoryBar() {
   const isMobile = useIsMobile();
@@ -15,168 +15,179 @@ export function CategoryBar() {
   const params = useParams<{ categoryId: string }>();
   const [searchParams] = useSearchParams();
   const scrollContainer = useRef<HTMLDivElement>(null);
-  const [isSticky, setIsSticky] = useState(false);
-  
+
   // Get category IDs from current URL
-  const categoryIdFromUrl = params.categoryId 
-    ? parseInt(params.categoryId, 10) 
-    : null;
-    
-  const subcategoryIdFromUrl = searchParams.get('subcategory')
-    ? parseInt(searchParams.get('subcategory')!, 10)
-    : null;
-    
-  const childCategoryIdFromUrl = searchParams.get('childcategory')
-    ? parseInt(searchParams.get('childcategory')!, 10)
-    : null;
-  
+  const categoryIdFromUrl = params.categoryId ? parseInt(params.categoryId, 10) : null;
+  const subcategoryIdFromUrl = searchParams.get('subcategory') ? parseInt(searchParams.get('subcategory')!, 10) : null;
+  const childCategoryIdFromUrl = searchParams.get('childcategory') ? parseInt(searchParams.get('childcategory')!, 10) : null;
+
   // Component state
   const [selectedCategory, setSelectedCategory] = useState<number | null>(categoryIdFromUrl);
   const [selectedSubcategory, setSelectedSubcategory] = useState<number | null>(subcategoryIdFromUrl);
   const [selectedChildCategory, setSelectedChildCategory] = useState<number | null>(childCategoryIdFromUrl);
   const [selectedRegion, setSelectedRegion] = useState<string>('كل المناطق');
-  
-  // Fetch categories from API
+
   const { data: categories, isLoading: loadingCategories } = useCategories();
-  
+
+  // Pagination state
+  const categoriesPerPage = 8; // 4 تصنيفات × صفين
+  const totalPages = categories ? Math.ceil(categories.length / categoriesPerPage) : 1;
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Touch state for swipe
+  const touchStartX = useRef<number | null>(null);
+  const touchEndX = useRef<number | null>(null);
+
   // Update state when URL changes
   useEffect(() => {
-    if (categoryIdFromUrl !== selectedCategory) {
-      setSelectedCategory(categoryIdFromUrl);
-    }
-    
-    if (subcategoryIdFromUrl !== selectedSubcategory) {
-      setSelectedSubcategory(subcategoryIdFromUrl);
-    }
-    
-    if (childCategoryIdFromUrl !== selectedChildCategory) {
-      setSelectedChildCategory(childCategoryIdFromUrl);
-    }
+    if (categoryIdFromUrl !== selectedCategory) setSelectedCategory(categoryIdFromUrl);
+    if (subcategoryIdFromUrl !== selectedSubcategory) setSelectedSubcategory(subcategoryIdFromUrl);
+    if (childCategoryIdFromUrl !== selectedChildCategory) setSelectedChildCategory(childCategoryIdFromUrl);
   }, [categoryIdFromUrl, subcategoryIdFromUrl, childCategoryIdFromUrl]);
-  
-  // Get subcategories for selected category
-  const subcategories = selectedCategory && categories 
+
+  // Get subcategories and child categories (كما في الكود الأصلي)
+  const subcategories = selectedCategory && categories
     ? categories.find(cat => cat.id === selectedCategory)?.subcategories || []
     : [];
-  
-  // Get child categories for selected subcategory
+
   const childCategories = selectedSubcategory && subcategories
     ? subcategories.find(sub => sub.id === selectedSubcategory)?.children || []
     : [];
-  
-  // Event handlers
+
+  // Handlers
   const handleCategorySelect = (category: Category) => {
     if (selectedCategory === category.id) {
-      // Deselect if clicked on the same category
       setSelectedCategory(null);
       setSelectedSubcategory(null);
       setSelectedChildCategory(null);
       navigate('/');
     } else {
-      // Select new category
       setSelectedCategory(category.id);
       setSelectedSubcategory(null);
       setSelectedChildCategory(null);
       navigate(`/category/${category.id}`);
     }
   };
-  
+
   const handleSubcategorySelect = (subcategoryId: number) => {
     if (selectedSubcategory === subcategoryId) {
-      // Deselect if clicked on the same subcategory
       setSelectedSubcategory(null);
       setSelectedChildCategory(null);
       navigate(`/category/${selectedCategory}`);
     } else {
-      // Select new subcategory
       setSelectedSubcategory(subcategoryId);
       setSelectedChildCategory(null);
       navigate(`/category/${selectedCategory}?subcategory=${subcategoryId}`);
     }
   };
-  
+
   const handleChildCategorySelect = (childCategoryId: number) => {
     if (selectedChildCategory === childCategoryId) {
-      // Deselect if clicked on the same child category
       setSelectedChildCategory(null);
       navigate(`/category/${selectedCategory}?subcategory=${selectedSubcategory}`);
     } else {
-      // Select new child category
       setSelectedChildCategory(childCategoryId);
       navigate(`/category/${selectedCategory}?subcategory=${selectedSubcategory}&childcategory=${childCategoryId}`);
     }
   };
-  
+
   const handleFilterChange = (filters: any) => {
     console.log('Filters applied:', filters);
-    // Logic for filtering ads
   };
-  
-  const handleNearbyClick = () => {
-    console.log('Nearby clicked');
-    // Logic for nearby ads
+
+  // Touch event handlers for swipe (مع مراعاة الاتجاه العربي RTL)
+  const onTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
   };
-  
-  // Handle scroll with IntersectionObserver
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        setIsSticky(!entry.isIntersecting);
-      },
-      { threshold: 0, rootMargin: '-1px 0px 0px 0px' }
-    );
-    
-    const categoryBarElement = scrollContainer.current;
-    if (categoryBarElement) {
-      observer.observe(categoryBarElement);
-    }
-    
-    return () => {
-      if (categoryBarElement) {
-        observer.unobserve(categoryBarElement);
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    touchEndX.current = e.touches[0].clientX;
+  };
+
+  const onTouchEnd = () => {
+    if (touchStartX.current !== null && touchEndX.current !== null) {
+      const deltaX = touchStartX.current - touchEndX.current;
+      const swipeThreshold = 50; // حد السحب للتغيير
+
+      // في اتجاه RTL السحب لليسار يعني الصفحة السابقة، ولليمين الصفحة القادمة
+      if (deltaX > swipeThreshold && currentPage > 1) {
+        // سحب لليسار → الصفحة السابقة (العكس لأن RTL)
+        setCurrentPage(currentPage - 1);
+      } else if (deltaX < -swipeThreshold && currentPage < totalPages) {
+        // سحب لليمين → الصفحة القادمة
+        setCurrentPage(currentPage + 1);
       }
-    };
-  }, []);
-  
+    }
+    touchStartX.current = null;
+    touchEndX.current = null;
+  };
+
   return (
-    <div 
-      className={`bg-white dark:bg-dark-background border-b border-border dark:border-dark-border relative`}
+    <div
+      dir="rtl"
+      className="bg-white dark:bg-dark-background border-b border-border dark:border-dark-border"
       ref={scrollContainer}
     >
-      {/* Main categories grid */}
-      <div className="container px-4 mx-auto py-3 overflow-x-auto no-scrollbar">
-        <WithSkeleton
-          isLoading={loadingCategories}
-          data={categories}
-          skeletonCount={8}
-          SkeletonComponent={CategorySkeleton}
-        >
-          {(categoriesData) => (
-            <CategoryGrid
-              categories={categoriesData}
-              selectedCategoryId={selectedCategory}
-              onCategorySelect={handleCategorySelect}
-              itemsPerRow={isMobile ? 4 : 8}
-            />
-          )}
+      {/* <div className="container px-4 mx-auto py-3">
+        <MobileFilterDrawer
+          onFilterChange={handleFilterChange}
+          selectedCategory={selectedCategory && categories ? categories.find(cat => cat.id === selectedCategory) : undefined}
+        />
+      </div> */}
+
+      {/* Carousel container */}
+      <div
+        className="container px-4 mx-auto overflow-hidden"
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+        style={{ touchAction: 'pan-y' }} // يسمح بالسحب العمودي بدون تعارض
+      >
+        <WithSkeleton isLoading={loadingCategories} data={categories} skeletonCount={8}>
+          {(categoriesData) => {
+            // تقسيم التصنيفات إلى صفحات
+            const pages = [];
+            for (let i = 0; i < totalPages; i++) {
+              pages.push(categoriesData.slice(i * categoriesPerPage, (i + 1) * categoriesPerPage));
+            }
+
+            return (
+              <div
+                className="flex flex-nowrap transition-transform duration-300 ease-in-out"
+                style={{
+                  width: `${totalPages * 100}%`,
+                  // هنا تعكس الترجمة ليتناسب مع RTL
+                  transform: `translateX(${(currentPage - 1) * (100 / totalPages)}%)`
+                }}
+              >
+                {pages.map((pageCategories, idx) => (
+                  <div
+                    key={idx}
+                    className="flex-shrink-0"
+                    style={{ width: `${100 / totalPages}%` }}
+                  >
+                    <CategoryGrid
+                      categories={pageCategories}
+                      selectedCategoryId={selectedCategory}
+                      onCategorySelect={handleCategorySelect}
+                    />
+                  </div>
+                ))}
+              </div>
+            );
+          }}
         </WithSkeleton>
       </div>
-      
-      {/* Mobile filter bar */}
-      {isMobile && (
-        <div className="container px-4 mx-auto pb-2">
-          <MobileFilterBar 
-            onFilterChange={handleFilterChange}
-            onNearbyClick={handleNearbyClick}
-            selectedRegion={selectedRegion}
-            isLoading={loadingCategories}
-          />
-        </div>
-      )}
-      
-      {/* Subcategories - only show if a main category is selected */}
+
+      <MobilePagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onChange={(page) => setCurrentPage(page)}
+      />
+
+      {/* Subcategories */}
       {selectedCategory && subcategories.length > 0 && (
-        <div className="container px-0 mx-auto border-t border-gray-100 dark:border-dark-border">
+        <div className="container px-4 mx-auto border-t border-gray-100 dark:border-dark-border">
           <SubCategoryButtons
             items={subcategories}
             selectedId={selectedSubcategory}
@@ -185,10 +196,10 @@ export function CategoryBar() {
           />
         </div>
       )}
-      
-      {/* Child categories - only show if a subcategory is selected */}
+
+      {/* Child categories */}
       {selectedSubcategory && childCategories.length > 0 && (
-        <div className="container px-0 mx-auto border-t border-gray-100 dark:border-dark-border bg-gray-50 dark:bg-dark-surface">
+        <div className="container px-4 mx-auto border-t border-gray-100 dark:border-dark-border bg-gray-50 dark:bg-dark-surface">
           <SubCategoryButtons
             items={childCategories}
             selectedId={selectedChildCategory}

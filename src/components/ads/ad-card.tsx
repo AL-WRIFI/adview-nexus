@@ -1,232 +1,196 @@
 
-import React from 'react';
 import { Link } from 'react-router-dom';
-import { Eye, MapPin, Clock } from 'lucide-react';
+import { Clock, MapPin, Star, Eye, Image as ImageIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Ad, Listing } from '@/types';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Card, CardContent, CardFooter } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Listing, Ad } from '@/types';
 
 interface AdCardProps {
   ad: Listing | Ad;
-  showUser?: boolean;
-  featured?: boolean;
-  horizontal?: boolean;
-  compact?: boolean;
+  layout?: 'grid' | 'list';
+  className?: string;
+  onFavoriteToggle?: (adId: string | number) => void;
+  isFavorite?: boolean;
 }
 
-export const AdCard = ({ ad, showUser = true, featured = false, horizontal = false, compact = false }: AdCardProps) => {
-  // Get the image URL with fallbacks
-  const getImage = () => {
-    if ('image' in ad && ad.image) {
-      return ad.image;
-    } else if ('images' in ad && ad.images && ad.images.length > 0) {
-      return ad.images[0];
-    }
-    return '/placeholder.svg';
-  };
+export function AdCard({ ad, layout = 'list', className, onFavoriteToggle, isFavorite }: AdCardProps) {
+  const timeAgo = formatDistanceToNow(new Date(ad.created_at), { 
+    addSuffix: true,
+    locale: ar
+  });
 
-  // Get the city name with fallbacks
-  const getCityName = () => {
-    if ('city_name' in ad && ad.city_name) {
-      return ad.city_name;
-    } else if ('city' in ad && ad.city) {
-      return ad.city;
-    }
-    return '';
-  };
+  const hasValidImage = ad.image || (ad.images && ad.images.length > 0);
+  const imageUrl = hasValidImage ? (ad.image || (ad.images && ad.images[0])) : null;
 
-  // Get view count with fallbacks
-  const getViewCount = () => {
-    if ('views_count' in ad && ad.views_count) {
-      return ad.views_count;
-    } else if ('viewCount' in ad && ad.viewCount) {
-      return ad.viewCount;
-    }
-    return 0;
-  };
-
-  // Get the correct seller/user information
-  const getSeller = () => {
-    if ('seller' in ad && ad.seller) {
-      return {
-        id: ad.seller.id,
-        name: ad.seller.name,
-        avatar: ad.seller.avatar,
-        verified: ad.seller.verified,
-      };
-    } else if ('user' in ad && ad.user) {
-      return {
-        id: ad.user.id,
-        name: `${ad.user.first_name} ${ad.user.last_name}`,
-        avatar: ad.user.avatar || ad.user.image,
-        verified: ad.user.is_verified || ad.user.verified,
-      };
-    }
-    return null;
-  };
-
-  // Format the date
-  const formatDate = (dateString: string) => {
-    try {
-      return formatDistanceToNow(new Date(dateString), {
-        addSuffix: true,
-        locale: ar,
-      });
-    } catch (error) {
-      console.error('Date formatting error:', error);
-      return 'غير محدد';
-    }
-  };
-
-  const seller = getSeller();
-
-  // Horizontal card layout for wider screens
-  if (horizontal) {
+  // Grid view renders a vertical card
+  if (layout === 'grid') {
     return (
-      <Card className="overflow-hidden transition-all hover:shadow-md dark:bg-gray-800 dark:border-gray-700">
-        <div className="flex flex-row">
-          <div className="relative w-1/3">
-            <Link to={`/ads/${ad.id}`}>
-              <img
-                src={getImage()}
-                alt={ad.title}
-                className="object-cover w-full h-full aspect-square"
-              />
-            </Link>
-            {featured && (
-              <Badge variant="secondary" className="absolute top-2 right-2">
-                مميز
-              </Badge>
-            )}
-          </div>
-          <div className="flex flex-col justify-between p-4 w-2/3">
-            <div>
-              <Link to={`/ads/${ad.id}`}>
-                <h3 className="font-bold text-lg line-clamp-2 hover:text-blue-600 dark:hover:text-blue-400">
-                  {ad.title}
-                </h3>
-              </Link>
-              <div className="mt-2 text-2xl font-bold text-green-600 dark:text-green-400">
-                {ad.price > 0 ? `${ad.price} ريال` : 'اتصل لمعرفة السعر'}
-              </div>
-              
-              <div className="flex items-center mt-2 text-sm text-muted-foreground">
-                <MapPin className="h-3 w-3 ml-1" />
-                <span>{getCityName()}</span>
-              </div>
-            </div>
-            
-            {showUser && seller && (
-              <div className="flex justify-between items-center mt-3">
-                <Link to={`/user/${seller.id}`} className="flex items-center">
-                  <Avatar className="h-6 w-6 ml-2">
-                    <AvatarImage src={seller.avatar || ''} alt={seller.name} />
-                    <AvatarFallback>{seller.name?.charAt(0)?.toUpperCase()}</AvatarFallback>
-                  </Avatar>
-                  <span className="text-sm">{seller.name}</span>
-                  {seller.verified && (
-                    <Badge variant="outline" className="mr-1 px-1 py-0 h-5 border-blue-500 text-blue-500">
-                      <span>✓</span>
-                    </Badge>
-                  )}
-                </Link>
-                <div className="flex items-center text-xs text-muted-foreground">
-                  <Eye className="h-3 w-3 ml-1" />
-                  <span>{getViewCount()}</span>
-                  <Clock className="h-3 w-3 mr-2 ml-1" />
-                  <span>{formatDate(ad.created_at)}</span>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </Card>
-    );
-  }
-
-  // Compact card layout for smaller spaces
-  if (compact) {
-    return (
-      <Card className="overflow-hidden transition-all hover:shadow-md dark:bg-gray-800 dark:border-gray-700">
-        <div className="relative h-32">
-          <Link to={`/ads/${ad.id}`}>
-            <img
-              src={getImage()}
-              alt={ad.title}
-              className="object-cover w-full h-full"
+      <Link
+        to={`/ad/${ad.id}`}
+        className={cn(
+          "ad-card block border border-border hover:shadow-md transition-shadow bg-white",
+          ad.featured && "featured-ad border-t-2 border-t-brand",
+          className
+        )}
+      >
+        {/* Image section */}
+        <div className="relative w-full h-40">
+          {imageUrl ? (
+            <img 
+              src={imageUrl} 
+              alt={ad.title} 
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                (e.target as HTMLImageElement).style.display = 'none';
+                const parent = e.currentTarget.parentElement;
+                if (parent) {
+                  parent.classList.add('flex', 'items-center', 'justify-center', 'bg-muted');
+                  const icon = document.createElement('div');
+                  icon.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-muted-foreground"><rect x="2" y="2" width="20" height="20" rx="0" ry="0"></rect><circle cx="12" cy="9" r="3"></circle><path d="M12 12v3"></path><line x1="5" y1="19" x2="19" y2="19"></line></svg>';
+                  parent.appendChild(icon);
+                }
+              }}
             />
-          </Link>
-          {featured && (
-            <Badge variant="secondary" className="absolute top-2 right-2">
-              مميز
-            </Badge>
+          ) : (
+            <div className="w-full h-full bg-muted flex items-center justify-center flex-col text-muted-foreground">
+              <ImageIcon className="h-8 w-8" />
+              <span className="text-xs mt-1">لا توجد صورة</span>
+            </div>
+          )}
+          {ad.featured && (
+            <div className="absolute top-2 left-2 rtl:right-2 rtl:left-auto">
+              <Star className="h-5 w-5 fill-yellow-400 text-yellow-400 drop-shadow-md" />
+            </div>
+          )}
+          {onFavoriteToggle && (
+            <div 
+              className="absolute top-2 right-2 rtl:left-2 rtl:right-auto cursor-pointer"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onFavoriteToggle(ad.id);
+              }}
+            >
+              <Star className={`h-5 w-5 ${isFavorite ? 'fill-brand text-brand' : 'text-muted-foreground'}`} />
+            </div>
           )}
         </div>
-        <CardContent className="p-3">
-          <Link to={`/ads/${ad.id}`}>
-            <h3 className="font-semibold text-sm line-clamp-1 hover:text-blue-600 dark:hover:text-blue-400">
-              {ad.title}
-            </h3>
-          </Link>
-          <div className="mt-1 text-sm font-bold text-green-600 dark:text-green-400">
-            {ad.price > 0 ? `${ad.price} ريال` : 'اتصل لمعرفة السعر'}
+        
+        {/* Content section */}
+        <div className="p-3">
+          <div className="flex justify-between items-start">
+            <h3 className="font-bold text-sm truncate max-w-[180px]" title={ad.title}>{ad.title}</h3>
+            {ad.price > 0 && (
+              <span className="font-bold text-brand whitespace-nowrap mr-2 text-sm">
+                {ad.price.toLocaleString()} ريال
+              </span>
+            )}
           </div>
-        </CardContent>
-      </Card>
+          
+          <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2 text-xs text-muted-foreground">
+            <div className="flex items-center">
+              <MapPin className="h-3 w-3 ml-1" />
+              <span className="truncate max-w-[80px]">{ad.city}</span>
+            </div>
+            <div className="flex items-center">
+              <Clock className="h-3 w-3 ml-1" />
+              <span>{timeAgo}</span>
+            </div>
+            <div className="flex items-center">
+              <Eye className="h-3 w-3 ml-1" />
+              <span>{ad.views_count || ad.viewCount || 0}</span>
+            </div>
+          </div>
+        </div>
+      </Link>
     );
   }
 
-  // Default card layout for grid views
+  // List view renders a horizontal card
   return (
-    <Card className="overflow-hidden transition-all hover:shadow-md dark:bg-gray-800 dark:border-gray-700">
-      <div className="relative">
-        <Link to={`/ads/${ad.id}`}>
-          <img
-            src={getImage()}
-            alt={ad.title}
-            className="object-cover w-full h-48"
+    <Link 
+      to={`/ad/${ad.id}`}
+      className={cn(
+        "ad-card flex border border-border hover:shadow-md transition-shadow bg-white",
+        ad.featured && "featured-ad border-r-2 border-r-brand",
+        className
+      )}
+    >
+      {/* Image section */}
+      <div className="w-28 md:w-36 h-28 flex-shrink-0 relative">
+        {imageUrl ? (
+          <img 
+            src={imageUrl} 
+            alt={ad.title} 
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              (e.target as HTMLImageElement).style.display = 'none';
+              const parent = e.currentTarget.parentElement;
+              if (parent) {
+                parent.classList.add('flex', 'items-center', 'justify-center', 'bg-muted');
+                const icon = document.createElement('div');
+                icon.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-muted-foreground"><rect x="2" y="2" width="20" height="20" rx="0" ry="0"></rect><circle cx="12" cy="9" r="3"></circle><path d="M12 12v3"></path><line x1="5" y1="19" x2="19" y2="19"></line></svg>';
+                parent.appendChild(icon);
+              }
+            }}
           />
-        </Link>
-        {featured && (
-          <Badge variant="secondary" className="absolute top-2 right-2">
-            مميز
-          </Badge>
+        ) : (
+          <div className="w-full h-full bg-muted flex items-center justify-center text-muted-foreground">
+            <ImageIcon className="h-6 w-6" />
+          </div>
+        )}
+        {ad.featured && (
+          <div className="absolute top-2 left-2 rtl:right-2 rtl:left-auto">
+            <Star className="h-4 w-4 fill-yellow-400 text-yellow-400 drop-shadow-md" />
+          </div>
+        )}
+        {onFavoriteToggle && (
+          <div 
+            className="absolute top-2 right-2 rtl:left-2 rtl:right-auto cursor-pointer"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onFavoriteToggle(ad.id);
+            }}
+          >
+            <Star className={`h-4 w-4 ${isFavorite ? 'fill-brand text-brand' : 'text-muted-foreground'}`} />
+          </div>
         )}
       </div>
-      <CardContent className="p-4">
-        <Link to={`/ads/${ad.id}`}>
-          <h3 className="font-semibold line-clamp-2 hover:text-blue-600 dark:hover:text-blue-400">
-            {ad.title}
-          </h3>
-        </Link>
-        <div className="mt-2 text-xl font-bold text-green-600 dark:text-green-400">
-          {ad.price > 0 ? `${ad.price} ريال` : 'اتصل لمعرفة السعر'}
+      
+      {/* Content section */}
+      <div className="p-3 flex flex-col flex-1 justify-between">
+        <div>
+          <div className="flex justify-between items-start">
+            <h3 className="font-bold text-base truncate max-w-[180px] md:max-w-xs" title={ad.title}>{ad.title}</h3>
+            {ad.price > 0 && (
+              <span className="font-bold text-brand whitespace-nowrap mr-2 text-sm">
+                {ad.price.toLocaleString()} ريال
+              </span>
+            )}
+          </div>
+          
+          <p className="text-muted-foreground text-xs line-clamp-2 mt-1">
+            {ad.description}
+          </p>
         </div>
         
-        <div className="flex items-center mt-2 text-sm text-muted-foreground">
-          <MapPin className="h-3 w-3 ml-1" />
-          <span>{getCityName()}</span>
-        </div>
-      </CardContent>
-      
-      {showUser && seller && (
-        <CardFooter className="p-4 pt-0 border-t flex justify-between items-center dark:border-gray-700">
-          <Link to={`/user/${seller.id}`} className="flex items-center">
-            <Avatar className="h-6 w-6 ml-2">
-              <AvatarImage src={seller.avatar || ''} alt={seller.name} />
-              <AvatarFallback>{seller.name?.charAt(0)?.toUpperCase()}</AvatarFallback>
-            </Avatar>
-            <span className="text-sm">{seller.name}</span>
-          </Link>
-          <div className="flex items-center text-xs text-muted-foreground">
-            <Eye className="h-3 w-3 ml-1" />
-            <span>{getViewCount()}</span>
+        <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2 text-xs text-muted-foreground">
+          <div className="flex items-center">
+            <MapPin className="h-3 w-3 ml-1" />
+            <span className="truncate max-w-[80px]">{ad.city}</span>
           </div>
-        </CardFooter>
-      )}
-    </Card>
+          <div className="flex items-center">
+            <Clock className="h-3 w-3 ml-1" />
+            <span>{timeAgo}</span>
+          </div>
+          <div className="flex items-center">
+            <Eye className="h-3 w-3 ml-1" />
+            <span>{ad.views_count || ad.viewCount || 0}</span>
+          </div>
+        </div>
+      </div>
+    </Link>
   );
-};
+}

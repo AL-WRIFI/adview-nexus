@@ -1,58 +1,39 @@
 
-import React from 'react';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 
 interface DeleteConfirmDialogProps {
   open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onConfirm: () => void;
-  title: string;
-  description: string;
-  confirmText?: React.ReactNode;
-  cancelText?: string;
-  isLoading?: boolean;
+  setOpen: (open: boolean) => void;
 }
 
-export function DeleteConfirmDialog({
-  open,
-  onOpenChange,
-  onConfirm,
-  title,
-  description,
-  confirmText = 'حذف',
-  cancelText = 'إلغاء',
-  isLoading = false,
-}: DeleteConfirmDialogProps) {
+export function DeleteConfirmDialog({ open, setOpen }: DeleteConfirmDialogProps) {
   return (
-    <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent className="dark:bg-gray-800 dark:border-gray-700">
-        <AlertDialogHeader>
-          <AlertDialogTitle>{title}</AlertDialogTitle>
-          <AlertDialogDescription>{description}</AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel disabled={isLoading}>{cancelText}</AlertDialogCancel>
-          <AlertDialogAction
-            onClick={(e) => {
-              e.preventDefault();
-              onConfirm();
-            }}
-            disabled={isLoading}
-            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-          >
-            {confirmText}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>حذف الإعلان</DialogTitle>
+          <DialogDescription>
+            هل أنت متأكد من رغبتك في حذف هذا الإعلان؟ لا يمكن التراجع عن هذا الإجراء.
+          </DialogDescription>
+        </DialogHeader>
+        
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setOpen(false)}>
+            إلغاء
+          </Button>
+          <Button variant="destructive" onClick={() => setOpen(false)}>
+            تأكيد الحذف
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

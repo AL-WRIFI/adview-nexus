@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
-import AdFilters from '@/components/filters/ad-filters';
+import { AdFilters } from '@/components/filters/ad-filters';
 import { AdCard } from '@/components/ads/ad-card';
 import { Button } from '@/components/ui/button';
 import { Loader2, Grid2X2, List } from 'lucide-react';
@@ -13,7 +14,6 @@ import { useAuth } from '@/context/auth-context';
 import { CategoryBar } from '@/components/layout/category/CategoryBar';
 import { Pagination } from '@/components/custom/pagination';
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select';
-import { WithSkeleton, CardSkeleton } from '@/components/ui/loading-skeleton';
 
 export default function CategoryPage() {
   const { categoryId } = useParams<{ categoryId: string }>();

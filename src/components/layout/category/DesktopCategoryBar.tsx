@@ -34,7 +34,7 @@ const iconMap: Record<string, React.ComponentType<any>> = {
     'Train': Train
 };
 
-export function CategoryBar() {
+export function DesktopCategoryBar() {
     const scrollRef = useRef<HTMLDivElement>(null);
     const [showLeftScroll, setShowLeftScroll] = useState(false);
     const [showRightScroll, setShowRightScroll] = useState(true);
@@ -100,9 +100,8 @@ export function CategoryBar() {
     };
 
     return (
-        <div className="relative bg-white border-b border-border">
+        <div className="relative bg-white border-b border-border dark:bg-dark-background">
             <div className="container px-4 mx-auto relative py-4">
-                {/* Scroll shadow/gradient on left */}
                 {showLeftScroll && (
                     <div className="absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-white to-transparent z-10 flex items-center">
                         <Button
@@ -117,7 +116,6 @@ export function CategoryBar() {
                     </div>
                 )}
 
-                {/* Categories scroll area */}
                 <div
                     ref={scrollRef}
                     className="scroll-container gap-3 py-1 pl-10 pr-10"
@@ -128,7 +126,6 @@ export function CategoryBar() {
                         </div>
                     ) : categories && categories.length > 0 ? (
                         categories.map((category) => {
-                            // Use icon from category.icon if it exists in the iconMap, otherwise default to Car
                             const iconName = category.icon || 'Car';
                             const Icon = iconMap[iconName] || Car;
                             const isSelected = selectedCategory?.id === category.id;
@@ -157,7 +154,6 @@ export function CategoryBar() {
                     )}
                 </div>
 
-                {/* Scroll shadow/gradient on right */}
                 {showRightScroll && (
                     <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-white to-transparent z-10 flex items-center">
                         <Button
@@ -173,9 +169,8 @@ export function CategoryBar() {
                 )}
             </div>
 
-            {/* Subcategories area */}
             {selectedCategory && selectedCategory.subcategories && selectedCategory.subcategories.length > 0 && (
-                <div className="bg-gray-50 border-t border-border transition-all">
+                <div className="bg-gray-50 border-t border-border transition-all dark:bg-dark-background">
                     <div className="container px-4 mx-auto py-3">
                         <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
                             {selectedCategory.subcategories.map((subcategory) => {
@@ -199,9 +194,8 @@ export function CategoryBar() {
                 </div>
             )}
 
-            {/* Third level categories */}
             {selectedSubcategory && selectedSubcategory.subcategories && selectedSubcategory.subcategories.length > 0 && (
-                <div className="bg-gray-100 border-t border-border">
+                <div className="bg-gray-100 border-t border-border dark:bg-dark-background">
                     <div className="container px-4 mx-auto py-2">
                         <div className="flex flex-wrap items-center gap-2">
                             {selectedSubcategory.subcategories.map((thirdLevel) => (
