@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Search, X, Filter, ArrowRight, Check, ChevronRight, MapPin } from 'lucide-react';
 import { 
@@ -162,7 +161,7 @@ export function MobileFilterDrawer({
     // Add location if nearby ads is selected
     if (nearbyAds && locationData) {
       filters.lat = locationData.lat;
-      filters.lon = locationData.lng;
+      filters.lng = locationData.lng;
       filters.radius = 20; // 20 km radius
     }
     

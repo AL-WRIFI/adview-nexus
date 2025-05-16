@@ -72,7 +72,7 @@ export default function CategoryPage() {
   const totalPages = listingsResponse?.meta?.last_page || 1;
   
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col dark:bg-dark-background">
       <Header />
       <CategoryBar />
       
@@ -81,14 +81,14 @@ export default function CategoryPage() {
           {/* Category header */}
           <div className="mb-8 text-center">
             {loadingCategory ? (
-              <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+              <Loader2 className="h-6 w-6 animate-spin mx-auto dark:text-gray-300" />
             ) : (
               <>
-                <h1 className="text-3xl font-bold">
+                <h1 className="text-3xl font-bold dark:text-gray-100">
                   {category ? category.name : 'جميع التصنيفات'}
                 </h1>
                 {category && (
-                  <p className="text-muted-foreground mt-2">
+                  <p className="text-muted-foreground mt-2 dark:text-gray-400">
                     تصفح أحدث الإعلانات في تصنيف {category.name}
                   </p>
                 )}
@@ -122,7 +122,7 @@ export default function CategoryPage() {
               
               {/* Compact view toggle buttons and per page select */}
               <div className="flex flex-col sm:flex-row justify-between mb-4 gap-3">
-                <p className="text-muted-foreground">
+                <p className="text-muted-foreground dark:text-gray-400">
                   {Array.isArray(listings) && listings.length > 0 ? `${listings.length} نتيجة` : '0 نتيجة'} 
                 </p>
                 
@@ -134,10 +134,10 @@ export default function CategoryPage() {
                       setPage(1);
                     }}
                   >
-                    <SelectTrigger className="w-16 h-8">
+                    <SelectTrigger className="w-16 h-8 dark:bg-dark-card dark:border-dark-border dark:text-gray-200">
                       <SelectValue placeholder="12" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="dark:bg-dark-card dark:border-dark-border">
                       <SelectItem value="12">12</SelectItem>
                       <SelectItem value="24">24</SelectItem>
                       <SelectItem value="36">36</SelectItem>
@@ -145,12 +145,12 @@ export default function CategoryPage() {
                     </SelectContent>
                   </Select>
                   
-                  <div className="flex border rounded-sm overflow-hidden">
+                  <div className="flex border rounded-sm overflow-hidden dark:border-dark-border">
                     <Button 
                       variant={adLayout === 'grid' ? "default" : "ghost"} 
                       size="icon"
                       onClick={() => setAdLayout('grid')}
-                      className="h-8 w-8 rounded-none"
+                      className={`h-8 w-8 rounded-none ${adLayout !== 'grid' && 'dark:text-gray-400 dark:hover:text-gray-200'}`}
                       aria-label="Grid view"
                       title="عرض شبكي"
                     >
@@ -160,7 +160,7 @@ export default function CategoryPage() {
                       variant={adLayout === 'list' ? "default" : "ghost"}
                       size="icon" 
                       onClick={() => setAdLayout('list')}
-                      className="h-8 w-8 rounded-none"
+                      className={`h-8 w-8 rounded-none ${adLayout !== 'list' && 'dark:text-gray-400 dark:hover:text-gray-200'}`}
                       aria-label="List view"
                       title="عرض قائمة"
                     >
@@ -179,7 +179,7 @@ export default function CategoryPage() {
               
               {/* Error state */}
               {error && !isLoading && (
-                <div className="text-center py-12 bg-gray-50 dark:bg-dark-surface">
+                <div className="text-center py-12 bg-gray-50 dark:bg-dark-card">
                   <p className="text-red-500 mb-4">حدث خطأ أثناء تحميل الإعلانات</p>
                   <Button onClick={() => window.location.reload()}>إعادة المحاولة</Button>
                 </div>
@@ -204,8 +204,8 @@ export default function CategoryPage() {
                       ))}
                     </div>
                   ) : (
-                    <div className="text-center py-12 bg-gray-50 dark:bg-dark-surface">
-                      <p className="text-muted-foreground mb-4">
+                    <div className="text-center py-12 bg-gray-50 dark:bg-dark-card">
+                      <p className="text-muted-foreground mb-4 dark:text-gray-400">
                         لا توجد إعلانات متطابقة مع البحث في هذا التصنيف
                       </p>
                     </div>

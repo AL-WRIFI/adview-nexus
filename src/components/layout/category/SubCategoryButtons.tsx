@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useState } from 'react';
 import { Category } from '@/types';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
@@ -46,7 +45,7 @@ export function SubCategoryButtons({
     if (isMobile) {
       container.style.scrollBehavior = 'smooth';
       container.style.overscrollBehavior = 'contain';
-      container.style.WebkitOverflowScrolling = 'touch';
+      container.style.overflowScrolling = 'touch';
     }
     
     return () => {
