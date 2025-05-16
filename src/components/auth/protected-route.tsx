@@ -1,48 +1,49 @@
 
-import { ReactNode, useEffect } from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from '@/context/auth-context';
-import { Loader2 } from 'lucide-react';
-import { tokenStorage } from '@/context/auth-context';
+import { Navigate, useLocation } from "react-router-dom";
+import { useEffect } from "react";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth, tokenStorage } from '@/context/auth-context';
 
 interface ProtectedRouteProps {
-  children: ReactNode;
-  isLoggedIn?: boolean; // Add optional isLoggedIn prop
+  children: React.ReactNode;
+  redirectTo?: string;
 }
 
-export function ProtectedRoute({ children, isLoggedIn: externalIsLoggedIn }: ProtectedRouteProps) {
-  const location = useLocation();
+export function ProtectedRoute({ children, redirectTo = "/auth/login" }: ProtectedRouteProps) {
   const { isAuthenticated, loading, refreshUser } = useAuth();
-  
-  // Use either external value or context value
-  const isLoggedIn = externalIsLoggedIn !== undefined ? externalIsLoggedIn : isAuthenticated;
+  const { toast } = useToast();
+  const location = useLocation();
 
-  const hasToken = !!tokenStorage.getToken();
-  const hasCachedUser = !!localStorage.getItem('cachedUser');
-  
-  // Force refresh user data when component mounts, but only once
+  // Check token existence
+  const token = tokenStorage.getToken();
+  const hasToken = !!token;
+
   useEffect(() => {
-    // Only refresh if we have a token but aren't authenticated yet
-    if (hasToken && !isLoggedIn) {
+    // If there's a token but user is not authenticated, try refreshing user data
+    if (hasToken && !isAuthenticated && !loading) {
       refreshUser();
     }
-  }, [refreshUser, isLoggedIn, hasToken]);
+  }, [hasToken, isAuthenticated, loading, refreshUser]);
 
-  // If still loading authentication status and we have token or cached data, show loading spinner
-  if (loading && (hasToken || hasCachedUser)) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-brand" />
-      </div>
-    );
+  // While checking authentication, show nothing
+  if (loading) {
+    return <div className="h-screen flex items-center justify-center">جاري التحميل...</div>;
   }
 
-  // If not authenticated and no token, redirect to login page
-  if (!isLoggedIn && !hasToken && !hasCachedUser) {
-    // Save the current location so we can redirect after login
-    return <Navigate to="/auth/login" state={{ from: location.pathname }} replace />;
+  // If not authenticated, redirect to login
+  if (!isAuthenticated) {
+    // Show toast only when redirected from a non-auth page
+    if (!location.pathname.startsWith("/auth/")) {
+      toast({
+        title: "يجب تسجيل الدخول",
+        description: "يرجى تسجيل الدخول للوصول إلى هذه الصفحة",
+        variant: "destructive",
+      });
+    }
+
+    // Redirect with the current location so we can return after login
+    return <Navigate to={redirectTo} state={{ from: location }} replace />;
   }
 
-  // If authenticated or has token/cached data, render the protected component
   return <>{children}</>;
 }

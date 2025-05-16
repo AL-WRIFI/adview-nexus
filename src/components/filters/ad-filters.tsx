@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Search, SlidersHorizontal, Grid2X2, List, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -9,7 +10,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { MobileFilterDrawer } from './MobileFilterDrawer';
-import { useSubcategories, useChildCategories, useCities } from '@/hooks/use-api';
+import { useSubCategories as useSubcategories, useChildCategories, useCities } from '@/hooks/use-api';
 import { Category, SearchFilters } from '@/types';
 import { cn } from '@/lib/utils';
 import { useDebounce } from '@/hooks/use-debounce';
@@ -39,11 +40,11 @@ export function AdFilters({
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState<number | null>(null);
   const [selectedChildCategory, setSelectedChildCategory] = useState<number | null>(null);
-  const [condition, setCondition] = useState<string | null>(null);
+  const [condition, setCondition] = useState<'' | 'new' | 'used' | null>(null);
   const [hasImage, setHasImage] = useState(false);
   const [hasDelivery, setHasDelivery] = useState(false);
   const [nearbyOnly, setNearbyOnly] = useState(false);
-  const [sortBy, setSortBy] = useState<string>('newest');
+  const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'price_asc' | 'price_desc'>('newest');
   const [filters, setFilters] = useState<SearchFilters>({});
   
   // Get user's location for nearby search
@@ -141,12 +142,12 @@ export function AdFilters({
         distance: undefined
       });
     }
-  }, [nearbyOnly]);
+  }, [nearbyOnly, filters, onFilterChange, getLocation]);
   
   // Update filters with location data when available
   useEffect(() => {
     if (locationData && typeof locationData === 'object' && 'lat' in locationData && 'lng' in locationData) {
-      const typedLocation = locationData as { lat: number; lng: number };
+      const typedLocation = locationData;
       setFilters(prev => ({
         ...prev,
         lat: typedLocation.lat,
@@ -159,7 +160,7 @@ export function AdFilters({
         distance: 10 // Default to 10km radius
       });
     }
-  }, [locationData]);
+  }, [locationData, filters, onFilterChange]);
   
   // Reset child category when subcategory changes
   useEffect(() => {
@@ -224,14 +225,7 @@ export function AdFilters({
         )}
         
         <MobileFilterDrawer 
-          isOpen={isFilterDrawerOpen} 
-          onClose={() => setIsFilterDrawerOpen(false)}
           onFilterChange={onFilterChange}
-          subcategories={subcategories || []}
-          childCategories={childCategories || []}
-          cities={cities || []}
-          selectedCategory={selectedCategory}
-          currentFilters={filters}
         />
       </div>
     );
@@ -294,7 +288,7 @@ export function AdFilters({
               <SelectValue placeholder="اختر التصنيف الفرعي" />
             </SelectTrigger>
             <SelectContent className="dark:bg-dark-card dark:border-dark-border">
-              <SelectItem value="">الكل</SelectItem>
+              <SelectItem value="all">الكل</SelectItem>
               {subcategories.map((subcategory) => (
                 <SelectItem key={subcategory.id} value={subcategory.id.toString()}>
                   {subcategory.name}
@@ -317,7 +311,7 @@ export function AdFilters({
               <SelectValue placeholder="اختر التصنيف الفرعي الثانوي" />
             </SelectTrigger>
             <SelectContent className="dark:bg-dark-card dark:border-dark-border">
-              <SelectItem value="">الكل</SelectItem>
+              <SelectItem value="all">الكل</SelectItem>
               {childCategories.map((childCategory) => (
                 <SelectItem key={childCategory.id} value={childCategory.id.toString()}>
                   {childCategory.name}
@@ -341,7 +335,7 @@ export function AdFilters({
             <SelectValue placeholder="اختر المدينة" />
           </SelectTrigger>
           <SelectContent className="dark:bg-dark-card dark:border-dark-border">
-            <SelectItem value="">الكل</SelectItem>
+            <SelectItem value="all">الكل</SelectItem>
             {cities && cities.map((city) => (
               <SelectItem key={city.id} value={city.name}>
                 {city.name}
@@ -408,7 +402,7 @@ export function AdFilters({
         <Label className="text-base font-medium dark:text-gray-200">الحالة</Label>
         <RadioGroup 
           value={condition || ""} 
-          onValueChange={(value) => setCondition(value || null)}
+          onValueChange={(value) => setCondition(value as '' | 'new' | 'used' || null)}
           className="flex flex-col space-y-1"
         >
           <div className="flex items-center space-x-2 space-x-reverse">
@@ -460,7 +454,7 @@ export function AdFilters({
         <Label className="text-base font-medium dark:text-gray-200">ترتيب حسب</Label>
         <Select
           value={sortBy}
-          onValueChange={(value) => setSortBy(value)}
+          onValueChange={(value) => setSortBy(value as 'newest' | 'oldest' | 'price_asc' | 'price_desc')}
         >
           <SelectTrigger className="dark:bg-dark-card dark:border-dark-border dark:text-gray-200">
             <SelectValue placeholder="الترتيب" />
@@ -468,9 +462,8 @@ export function AdFilters({
           <SelectContent className="dark:bg-dark-card dark:border-dark-border">
             <SelectItem value="newest">الأحدث</SelectItem>
             <SelectItem value="oldest">الأقدم</SelectItem>
-            <SelectItem value="price_low">السعر: من الأقل للأعلى</SelectItem>
-            <SelectItem value="price_high">السعر: من الأعلى للأقل</SelectItem>
-            <SelectItem value="most_viewed">الأكثر مشاهدة</SelectItem>
+            <SelectItem value="price_asc">السعر: من الأقل للأعلى</SelectItem>
+            <SelectItem value="price_desc">السعر: من الأعلى للأقل</SelectItem>
           </SelectContent>
         </Select>
       </div>

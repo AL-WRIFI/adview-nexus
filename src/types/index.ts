@@ -147,30 +147,28 @@ export interface Brand {
   title?: string; 
 }
 
+// Update SearchFilters to include missing properties
 export interface SearchFilters {
-  page?: number;
-  per_page?: number;
+  search?: string;
   category_id?: number | number[];
   subcategory_id?: number | number[];
+  child_category_id?: number | number[];
   brand_id?: number | number[];
   city_id?: number | number[];
   state_id?: number | number[];
   district_id?: number | number[];
-  price_min?: number;
-  price_max?: number;
-  condition?: 'new' | 'used' | '';
-  listing_type?: 'sell' | 'buy' | 'exchange' | 'service' | '';
-  featured?: boolean;
-  sort?: 'newest' | 'oldest' | 'price_asc' | 'price_desc' | 'popular';
-  lat?: number;
-  lon?: number;
-  radius?: number; // in km
-  query?: string;
   min_price?: number;
   max_price?: number;
+  page?: number;
+  per_page?: number;
+  city?: string;
   sort_by?: 'newest' | 'oldest' | 'price_asc' | 'price_desc';
-  // Add property for child category
-  child_category_id?: number | number[];
+  condition?: '' | 'new' | 'used';
+  has_image?: boolean;
+  has_delivery?: boolean;
+  lat?: number;
+  lng?: number;
+  distance?: number;
 }
 
 export interface PaginatedResponse<T> {

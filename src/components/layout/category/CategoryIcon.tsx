@@ -1,14 +1,26 @@
 
 import React from 'react';
+import { Category } from '@/types';
 
 export interface CategoryIconProps {
   iconName?: string;
   name?: string;
   className?: string;
   size?: 'sm' | 'md' | 'lg';
+  category?: Category;
+  isSelected?: boolean;
+  onClick?: () => void;
 }
 
-export function CategoryIcon({ iconName, name, className = "", size = "md" }: CategoryIconProps) {
+export function CategoryIcon({ 
+  iconName, 
+  name, 
+  className = "", 
+  size = "md",
+  category,
+  isSelected,
+  onClick
+}: CategoryIconProps) {
   const sizeClasses = {
     sm: "w-8 h-8",
     md: "w-12 h-12",
@@ -20,13 +32,22 @@ export function CategoryIcon({ iconName, name, className = "", size = "md" }: Ca
     md: "w-6 h-6",
     lg: "w-8 h-8"
   };
+
+  // Use category icon if provided via category prop
+  const icon = category?.icon || iconName;
+  const displayName = category?.name || name;
   
   return (
-    <div className={`flex items-center justify-center rounded-full bg-gray-100 dark:bg-dark-muted ${sizeClasses[size]} ${className}`}>
-      {iconName ? (
+    <div
+      className={`flex items-center justify-center rounded-full bg-gray-100 dark:bg-dark-muted ${sizeClasses[size]} ${className} ${
+        isSelected ? 'border-2 border-brand' : ''
+      }`}
+      onClick={onClick}
+    >
+      {icon ? (
         <img 
-          src={iconName}
-          alt={name || "category icon"}
+          src={icon}
+          alt={displayName || "category icon"}
           className={`object-contain ${iconSize[size]}`}
           onError={(e) => {
             const target = e.target as HTMLImageElement;
