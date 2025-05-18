@@ -1,3 +1,4 @@
+
 import { PaginatedResponse, Ad, Comment, User, Category, Brand, Listing, ListingDetails, SearchFilters, ApiResponse } from '@/types';
 
 // Base API URL for the application
@@ -188,23 +189,20 @@ export const listingsAPI = {
   
   // Create a new listing
   createListing: async (listingData: FormData): Promise<ApiResponse<Listing>> => {
-    console.log("Form Data => :", listingData);
     return fetchAPI('/user/listings', {
       method: 'POST',
       body: listingData,
-      headers: {
-      }, 
     });
   },
   
   // Update an existing listing
   updateListing: async (id: number, listingData: FormData): Promise<ApiResponse<Listing>> => {
+    // Make sure to add the _method field for Laravel to recognize this as a PUT request
+    listingData.append('_method', 'PUT');
+    
     return fetchAPI(`/user/listings/${id}`, {
-      method: 'POST', // Most APIs use POST for form-data with a _method field for PUT
+      method: 'POST', 
       body: listingData,
-      headers: {
-        // Let the browser set Content-Type with the correct boundary for FormData
-      },
     });
   },
   
@@ -325,9 +323,6 @@ export const userAPI = {
     return fetchAPI('/user/profile/update', {
       method: 'POST',
       body: userData,
-      headers: {
-        // Let the browser set Content-Type with the correct boundary for FormData
-      },
     });
   },
   

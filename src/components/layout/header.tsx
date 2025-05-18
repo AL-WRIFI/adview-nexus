@@ -1,7 +1,7 @@
+
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from 'react-router-dom';
 import {
-  NavigationMenu,
   NavigationMenuContent,
   NavigationMenuItem,
   NavigationMenuList,
@@ -67,6 +67,7 @@ export function Header() {
       navigate(`/search?query=${encodeURIComponent(searchQuery.trim())}`);
     }
   };
+  
   // Get user initial for avatar fallback
   const getNameInitial = () => {
     if (!user || !user.name) return "؟";
@@ -143,6 +144,13 @@ export function Header() {
                     </div>
 
                     <div className="flex flex-col p-2">
+                      <div className="flex items-center justify-between p-3">
+                        <span className="font-medium">الوضع المظلم</span>
+                        <ThemeToggle />
+                      </div>
+                      
+                      <Separator className="my-2 dark:bg-dark-border" />
+                      
                       <Link
                         to="/"
                         className="flex items-center gap-2 p-3 hover:bg-gray-100 dark:hover:bg-dark-surface rounded-md"
@@ -209,8 +217,6 @@ export function Header() {
                           </Link>
 
                           <div className="flex items-center justify-between mt-auto p-3">
-                            <ThemeToggle />
-                            
                             <Button
                               variant="secondary"
                               className="text-destructive"
@@ -223,7 +229,6 @@ export function Header() {
                         </>
                       ) : (
                         <div className="flex items-center justify-between mt-auto p-3">
-                          <ThemeToggle />
                           <Button variant="default" asChild>
                             <Link to="/auth/login">
                               <LogIn className="h-5 w-5 ml-2" />
@@ -239,7 +244,6 @@ export function Header() {
             </div>
 
             <Link to="/" className="flex items-center">
-              {/* Fixed the logo size prop issue */}
               <Logo />
             </Link>
 
@@ -278,108 +282,40 @@ export function Header() {
               <Link to="/" className="flex items-center">
                 <Logo />
               </Link>
-
-              {/* <NavigationMenu>
-                <NavigationMenuList>
-                  <NavigationMenuItem>
-                    <NavigationMenuTrigger className="bg-transparent">
-                      التصنيفات
-                    </NavigationMenuTrigger>
-                    <NavigationMenuContent>
-                      <div className="grid grid-cols-2 gap-3 p-4 w-[400px]">
-                        <Link
-                          to="/category/1"
-                          className="block p-2 hover:bg-gray-50 dark:hover:bg-dark-surface rounded"
-                        >
-                          سيارات
-                        </Link>
-                        <Link
-                          to="/category/2"
-                          className="block p-2 hover:bg-gray-50 dark:hover:bg-dark-surface rounded"
-                        >
-                          عقارات
-                        </Link>
-                        <Link
-                          to="/category/3"
-                          className="block p-2 hover:bg-gray-50 dark:hover:bg-dark-surface rounded"
-                        >
-                          إلكترونيات
-                        </Link>
-                        <Link
-                          to="/category/4"
-                          className="block p-2 hover:bg-gray-50 dark:hover:bg-dark-surface rounded"
-                        >
-                          أثاث
-                        </Link>
-                        <Link
-                          to="/category/5"
-                          className="block p-2 hover:bg-gray-50 dark:hover:bg-dark-surface rounded"
-                        >
-                          وظائف
-                        </Link>
-                        <Link
-                          to="/category/6"
-                          className="block p-2 hover:bg-gray-50 dark:hover:bg-dark-surface rounded"
-                        >
-                          خدمات
-                        </Link>
-                      </div>
-                    </NavigationMenuContent>
-                  </NavigationMenuItem>
-
-                  <NavigationMenuItem>
-                    <Link to="/search" className="nav-link">
-                      البحث
-                    </Link>
-                  </NavigationMenuItem>
-
-                  <NavigationMenuItem>
-                    <Link to="/add-ad" className="nav-link">
-                      أضف إعلانك
-                    </Link>
-                  </NavigationMenuItem>
-                </NavigationMenuList>
-              </NavigationMenu> */}
             </div>
+            
             <div className="hidden md:flex flex-1 mx-4">
-            <form onSubmit={handleSearch} className="w-full">
-              <div className="relative w-full">
-                <Input
-                  type="text"
-                  placeholder="ابحث عن منتجات، خدمات، وظائف..."
-                  className="w-full h-10 pr-10 rounded-lg border border-input bg-background"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-                <button type="submit" className="absolute top-0 right-0 h-full px-3 flex items-center">
-                  <Search className="h-5 w-5 text-muted-foreground" />
-                </button>
-              </div>
-            </form>
-          </div>
+              <form onSubmit={handleSearch} className="w-full">
+                <div className="relative w-full">
+                  <Input
+                    type="text"
+                    placeholder="ابحث عن منتجات، خدمات، وظائف..."
+                    className="w-full h-10 pr-10 rounded-lg border border-input bg-background dark:bg-dark-surface dark:text-gray-200"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                  <button type="submit" className="absolute top-0 right-0 h-full px-3 flex items-center">
+                    <Search className="h-5 w-5 text-muted-foreground" />
+                  </button>
+                </div>
+              </form>
+            </div>
 
-            <div className="flex items-center gap-2">
-              <ThemeToggle />
+            <div className="flex items-center gap-3">
+              {/* Prominent theme toggle */}
+              <ThemeToggle 
+                variant="outline" 
+                size="default"
+                className="mr-2 dark:border-dark-border dark:text-gray-200 dark:hover:bg-dark-surface"
+              />
               
               {isAuthenticated ? (
                 <>
-                  {/* <Link to="/messages">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="relative"
-                      aria-label="الرسائل"
-                    >
-                      <MessageCircle className="h-5 w-5" />
-                      <span className="absolute top-0.5 right-0.5 w-2.5 h-2.5 bg-brand rounded-full" />
-                    </Button>
-                  </Link> */}
-
                   <Link to="/notifications">
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="relative"
+                      className="relative dark:text-gray-200 dark:hover:bg-dark-surface"
                       aria-label="الإشعارات"
                     >
                       <Bell className="h-5 w-5" />
@@ -388,119 +324,76 @@ export function Header() {
                   </Link>
 
                   <Link to="/favorites">
-                    <Button variant="ghost" size="icon" aria-label="المفضلة">
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      aria-label="المفضلة"
+                      className="dark:text-gray-200 dark:hover:bg-dark-surface"
+                    >
                       <Heart className="h-5 w-5" />
                     </Button>
                   </Link>
 
-                  {/* <DropdownMenu>
+                  <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        className="relative h-8 w-8 rounded-full"
-                      >
-                        <Avatar className="h-8 w-8">
-                          <AvatarImage
-                            src={user?.avatar || ""}
-                            alt={user?.name || ""}
-                          />
-                          <AvatarFallback>
-                            {getNameInitial()}
-                          </AvatarFallback>
-                        </Avatar>
+                      <Button variant="outline" size="sm" className="flex items-center gap-2 dark:border-dark-border dark:bg-dark-card dark:text-gray-200">
+                        <span>{user?.first_name || user?.name}</span>
+                        <ChevronDown className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent className="w-56" align="end">
-                      <DropdownMenuLabel>حسابي</DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuGroup>
-                        <DropdownMenuItem asChild>
-                          <Link to="/dashboard">
-                            <LayoutDashboard className="ml-2 h-4 w-4" />
-                            <span>لوحة التحكم</span>
-                          </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem asChild>
-                          <Link to="/profile">
-                            <User className="ml-2 h-4 w-4" />
-                            <span>الملف الشخصي</span>
-                          </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem asChild>
-                          <Link to="/add-ad">
-                            <PenSquare className="ml-2 h-4 w-4" />
-                            <span>إضافة إعلان</span>
-                          </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem asChild>
-                          <Link to="/settings">
-                            <Settings className="ml-2 h-4 w-4" />
-                            <span>الإعدادات</span>
-                          </Link>
-                        </DropdownMenuItem>
-                      </DropdownMenuGroup>
-                      <DropdownMenuSeparator />
+                    <DropdownMenuContent align="end" className="w-56 dark:bg-dark-card dark:border-dark-border">
+                      <DropdownMenuLabel className="font-normal">
+                        <div className="flex flex-col space-y-1">
+                          <p className="text-sm font-medium leading-none dark:text-gray-200">
+                            {`${user?.first_name || ''} ${user?.last_name || ''}`}
+                          </p>
+                          <p className="text-xs leading-none text-muted-foreground dark:text-gray-400">
+                            {user?.phone || user?.email}
+                          </p>
+                        </div>
+                      </DropdownMenuLabel>
+                      <DropdownMenuSeparator className="dark:bg-dark-border" />
                       <DropdownMenuItem asChild>
-                        <Link to="/help">
-                          <HelpCircle className="ml-2 h-4 w-4" />
-                          <span>المساعدة</span>
+                        <Link to="/dashboard" className="w-full flex items-center dark:focus:bg-dark-surface dark:text-gray-200">
+                          <Settings className="mr-2 h-4 w-4" />
+                          <span>لوحة التحكم</span>
                         </Link>
                       </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={logout}>
-                        <LogOut className="ml-2 h-4 w-4" />
+                      <DropdownMenuItem asChild>
+                        <Link to="/profile" className="w-full flex items-center dark:focus:bg-dark-surface dark:text-gray-200">
+                          <User className="mr-2 h-4 w-4" />
+                          <span>الملف الشخصي</span>
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator className="dark:bg-dark-border" />
+                      <DropdownMenuItem onClick={logout} className="flex items-center dark:focus:bg-dark-surface dark:text-gray-200">
+                        <LogOut className="mr-2 h-4 w-4" />
                         <span>تسجيل الخروج</span>
                       </DropdownMenuItem>
                     </DropdownMenuContent>
-                  </DropdownMenu> */}
-                  <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm" className="flex items-center gap-2">
-                      <span>{user.first_name}</span>
-                      <ChevronDown className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56">
-                    <DropdownMenuLabel className="font-normal">
-                      <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-medium leading-none">{`${user.first_name} ${user.last_name}`}</p>
-                        <p className="text-xs leading-none text-muted-foreground">{user.phone}</p>
-                      </div>
-                    </DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild>
-                      <Link to="/dashboard" className="w-full flex items-center">
-                        <Settings className="mr-2 h-4 w-4" />
-                        <span>لوحة التحكم</span>
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link to="/profile" className="w-full flex items-center">
-                        <User className="mr-2 h-4 w-4" />
-                        <span>الملف الشخصي</span>
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={logout} className="flex items-center">
-                      <LogOut className="mr-2 h-4 w-4" />
-                      <span>تسجيل الخروج</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                  </DropdownMenu>
                 </>
               ) : (
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm" asChild>
-                <Link to="/auth/login" className="flex items-center gap-2">
-                  <LogIn className="h-4 w-4" />
-                  <span>تسجيل الدخول</span>
-                </Link>
-              </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    asChild
+                    className="dark:border-dark-border dark:bg-dark-card dark:text-gray-200 dark:hover:bg-dark-surface"
+                  >
+                    <Link to="/auth/login" className="flex items-center gap-2">
+                      <LogIn className="h-4 w-4" />
+                      <span>تسجيل الدخول</span>
+                    </Link>
+                  </Button>
                 </div>
-                
               )}
-              <Button asChild>
-                  <Link to="/add-ad">إضافة إعلان</Link>
+              
+              <Button 
+                asChild
+                className="dark:text-white"
+              >
+                <Link to="/add-ad">إضافة إعلان</Link>
               </Button>
             </div>
           </>

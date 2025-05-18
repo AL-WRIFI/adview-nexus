@@ -1,226 +1,208 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '@/services/api';
-import { SearchFilters, PaginatedResponse, Listing, ApiResponse, Category, Brand, User } from '@/types';
+import { listingsAPI, categoriesAPI, brandsAPI, locationAPI, userAPI } from '@/services/api';
+import { SearchFilters, PaginatedResponse, Listing, ApiResponse, Category, Brand } from '@/types';
 
 // Cache time settings
 const defaultCacheTime = 5 * 60 * 1000; // 5 minutes
 const extendedCacheTime = 15 * 60 * 1000; // 15 minutes
 
-// Add useMyAds function
-export const useMyAds = () => {
+// Listings related hooks
+export const useListings = (filters: SearchFilters) => {
   return useQuery({
-    queryKey: ['myAds'],
-    queryFn: async () => {
-      try {
-        const response = await api.get('/user/listings');
-        return response.data;
-      } catch (error) {
-        console.error('Error fetching my ads:', error);
-        throw error;
-      }
-    },
+    queryKey: ['listings', filters],
+    queryFn: () => listingsAPI.getListings(filters),
     staleTime: defaultCacheTime
   });
 };
 
-// Add useFavorites function
-export const useFavorites = () => {
+export const useListing = (id: number | undefined) => {
   return useQuery({
-    queryKey: ['favorites'],
-    queryFn: async () => {
-      try {
-        const response = await api.get('/user/favorites');
-        return response.data;
-      } catch (error) {
-        console.error('Error fetching favorites:', error);
-        throw error;
-      }
-    },
+    queryKey: ['listing', id],
+    queryFn: () => id ? listingsAPI.getListing(id) : Promise.reject('No listing ID provided'),
+    enabled: !!id,
     staleTime: defaultCacheTime
   });
 };
 
-// Add useRemoveFromFavorites function
-export const useRemoveFromFavorites = () => {
+export const useRelatedListings = (listingId: number | undefined, limit: number = 4) => {
+  return useQuery({
+    queryKey: ['relatedListings', listingId, limit],
+    queryFn: () => listingId ? listingsAPI.getRelatedListings(listingId, limit) : Promise.reject('No listing ID provided'),
+    enabled: !!listingId,
+    staleTime: defaultCacheTime
+  });
+};
+
+export const useCreateListing = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async (adId: number) => {
-      try {
-        const response = await api.delete(`/user/favorites/${adId}`);
-        return response.data;
-      } catch (error) {
-        console.error('Error removing from favorites:', error);
-        throw error;
-      }
-    },
+    mutationFn: (listingData: FormData) => listingsAPI.createListing(listingData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['listings'] });
+      queryClient.invalidateQueries({ queryKey: ['myListings'] });
+    }
+  });
+};
+
+export const useUpdateListing = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ id, formData }: { id: number; formData: FormData }) => listingsAPI.updateListing(id, formData),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['listing', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ['listings'] });
+      queryClient.invalidateQueries({ queryKey: ['myListings'] });
+    }
+  });
+};
+
+export const useDeleteListing = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (id: number) => listingsAPI.deleteListing(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['listings'] });
+      queryClient.invalidateQueries({ queryKey: ['myListings'] });
+    }
+  });
+};
+
+// User listings hooks
+export const useMyListings = () => {
+  return useQuery({
+    queryKey: ['myListings'],
+    queryFn: () => userAPI.getUserListings(),
+    staleTime: defaultCacheTime
+  });
+};
+
+// Favorites related hooks
+export const useFavorites = () => {
+  return useQuery({
+    queryKey: ['favorites'],
+    queryFn: () => listingsAPI.getFavorites(),
+    staleTime: defaultCacheTime
+  });
+};
+
+export const useAddToFavorites = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (listingId: number) => listingsAPI.addToFavorites(listingId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['favorites'] });
     }
   });
 };
 
-// Export all the query hooks you might need
-export const useAds = (filters: SearchFilters) => {
+export const useRemoveFromFavorites = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (listingId: number) => listingsAPI.removeFromFavorites(listingId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['favorites'] });
+    }
+  });
+};
+
+export const useIsFavorite = (listingId: number | undefined) => {
   return useQuery({
-    queryKey: ['ads', filters],
-    queryFn: async () => {
-      try {
-        const response = await api.get('/listings', { params: filters });
-        return response.data;
-      } catch (error) {
-        console.error('Error fetching ads:', error);
-        throw error;
-      }
-    },
+    queryKey: ['isFavorite', listingId],
+    queryFn: () => listingId ? listingsAPI.isFavorite(listingId) : Promise.reject('No listing ID provided'),
+    enabled: !!listingId,
     staleTime: defaultCacheTime
   });
 };
 
-export const useListings = (filters: SearchFilters) => {
-  return useQuery({
-    queryKey: ['listings', filters],
-    queryFn: async () => {
-      try {
-        const response = await api.get('/listings', { params: filters });
-        return response.data;
-      } catch (error) {
-        console.error('Error fetching listings:', error);
-        throw error;
-      }
-    },
-    staleTime: defaultCacheTime
-  });
-};
-
-export const useCategory = (categoryId?: number) => {
+// Category related hooks
+export const useCategory = (categoryId: number | undefined) => {
   return useQuery({
     queryKey: ['category', categoryId],
-    queryFn: async () => {
-      if (!categoryId) return null;
-      try {
-        const response = await api.get(`/categories/${categoryId}`);
-        return response.data.data;
-      } catch (error) {
-        console.error('Error fetching category:', error);
-        throw error;
-      }
-    },
+    queryFn: () => categoryId ? categoriesAPI.getCategory(categoryId) : Promise.reject('No category ID provided'),
     enabled: !!categoryId,
-    staleTime: extendedCacheTime // Categories change less frequently
+    staleTime: extendedCacheTime
   });
 };
 
 export const useCategories = () => {
   return useQuery({
     queryKey: ['categories'],
-    queryFn: async () => {
-      try {
-        const response = await api.get('/categories');
-        return response.data.data;
-      } catch (error) {
-        console.error('Error fetching categories:', error);
-        throw error;
-      }
-    },
-    staleTime: extendedCacheTime // Categories change less frequently
+    queryFn: () => categoriesAPI.getCategories(),
+    staleTime: extendedCacheTime
   });
 };
 
+export const useSubCategories = () => {
+  return useQuery({
+    queryKey: ['subcategories'],
+    queryFn: () => categoriesAPI.getSubCategories(),
+    staleTime: extendedCacheTime
+  });
+};
+
+export const useChildCategories = () => {
+  return useQuery({
+    queryKey: ['childcategories'],
+    queryFn: () => categoriesAPI.getChildCategories(),
+    staleTime: extendedCacheTime
+  });
+};
+
+// Brand related hooks
 export const useBrands = () => {
   return useQuery({
     queryKey: ['brands'],
-    queryFn: async () => {
-      try {
-        const response = await api.get('/brands');
-        return response.data.data;
-      } catch (error) {
-        console.error('Error fetching brands:', error);
-        throw error;
-      }
-    },
-    staleTime: extendedCacheTime // Brands change less frequently
+    queryFn: () => brandsAPI.getBrands(),
+    staleTime: extendedCacheTime
+  });
+};
+
+// Location related hooks
+export const useStates = () => {
+  return useQuery({
+    queryKey: ['states'],
+    queryFn: () => locationAPI.getStates(),
+    staleTime: extendedCacheTime
+  });
+};
+
+export const useCities = (stateId: number | undefined) => {
+  return useQuery({
+    queryKey: ['cities', stateId],
+    queryFn: () => stateId ? locationAPI.getCities(stateId) : Promise.reject('No state ID provided'),
+    enabled: !!stateId,
+    staleTime: extendedCacheTime
   });
 };
 
 export const useAllCities = () => {
   return useQuery({
-    queryKey: ['cities'],
-    queryFn: async () => {
-      try {
-        const response = await api.get('/cities');
-        return response.data.data;
-      } catch (error) {
-        console.error('Error fetching cities:', error);
-        throw error;
-      }
-    },
-    staleTime: extendedCacheTime // Cities change less frequently
-  });
-};
-
-export const useStates = () => {
-  return useQuery({
-    queryKey: ['states'],
-    queryFn: async () => {
-      try {
-        const response = await api.get('/states');
-        return response.data.data;
-      } catch (error) {
-        console.error('Error fetching states:', error);
-        throw error;
-      }
-    },
-    staleTime: extendedCacheTime // States change less frequently
+    queryKey: ['allCities'],
+    queryFn: () => locationAPI.getAllCities(),
+    staleTime: extendedCacheTime
   });
 };
 
 export const useCurrentLocation = () => {
   return useQuery({
-    queryKey: ['location'],
-    queryFn: async () => {
-      return new Promise<{ lat: number; lng: number }>((resolve, reject) => {
-        if (!navigator.geolocation) {
-          reject(new Error('Geolocation is not supported by your browser'));
-          return;
-        }
-        
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            resolve({
-              lat: position.coords.latitude,
-              lng: position.coords.longitude
-            });
-          },
-          (error) => {
-            console.warn('Error getting location:', error);
-            reject(error);
-          }
-        );
-      });
-    },
+    queryKey: ['currentLocation'],
+    queryFn: locationAPI.getCurrentLocation,
     retry: false,
     refetchOnWindowFocus: false,
     staleTime: 60 * 60 * 1000 // 1 hour - location doesn't change often
   });
 };
 
-export const useRegister = () => {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: async (userData: any) => {
-      try {
-        const response = await api.post('/auth/register', userData);
-        return response.data;
-      } catch (error) {
-        console.error('Error registering user:', error);
-        throw error;
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['user'] });
-    }
-  });
-};
+// For backward compatibility
+export const useAds = useListings;
+export const useAd = useListing;
+export const useCreateAd = useCreateListing;
+export const useUpdateAd = useUpdateListing;
+export const useDeleteAd = useDeleteListing;
+export const useRelatedAds = useRelatedListings;

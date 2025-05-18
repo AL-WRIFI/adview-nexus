@@ -55,7 +55,7 @@ export function ThemeProvider({
     const root = window.document.documentElement;
     
     if (isDark) {
-      // Enhanced dark mode colors - changed to soft black and dark gray
+      // Enhanced dark mode colors - soft black and dark gray theme
       root.style.setProperty('--background', 'hsl(0 0% 7%)');
       root.style.setProperty('--foreground', 'hsl(0 0% 98%)');
       root.style.setProperty('--card', 'hsl(0 0% 10%)');

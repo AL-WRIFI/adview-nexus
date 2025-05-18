@@ -65,8 +65,8 @@
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 210 100% 50%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 142 71% 45%;
+    --primary-foreground: 144 70% 10%;
 
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
@@ -97,8 +97,8 @@
     --background: #121212;
     --card-background: #1e1e1e;
     --card-border: #333333;
-    --dark-surface: #282828;
-    --dark-muted: #3a3a3a;
+    --dark-surface: #242424;
+    --dark-muted: #2a2a2a;
   }
 }
 
@@ -124,11 +124,11 @@
 @layer components {
   
   .category-icon {
-    @apply flex flex-col items-center justify-center p-3 rounded-lg bg-white shadow-sm transition-all hover:shadow-md cursor-pointer border border-ad-border;
+    @apply flex flex-col items-center justify-center p-3 rounded-lg bg-white shadow-sm transition-all hover:shadow-md cursor-pointer border border-ad-border dark:bg-dark-card dark:border-dark-border dark:text-gray-200;
   }
   
   .ad-card {
-    @apply relative border border-ad-border rounded-lg overflow-hidden bg-white transition-all hover:shadow-md dark:bg-dark-card dark:border-dark-border;
+    @apply relative border border-ad-border rounded-lg overflow-hidden bg-white transition-all hover:shadow-md dark:bg-dark-card dark:border-dark-border dark:text-gray-200;
   }
   
   .ad-card-horizontal {
@@ -200,7 +200,7 @@
   .dark input,
   .dark select,
   .dark textarea {
-    @apply bg-[var(--card-background)] border-[var(--card-border)];
+    @apply bg-[var(--card-background)] border-[var(--card-border)] text-gray-200;
   }
   
   .dark .modal-content {
@@ -220,5 +220,29 @@
   
   .dark .input-field {
     @apply bg-[var(--dark-surface)] border-[var(--card-border)] text-white;
+  }
+  
+  /* Form elements in dark mode */
+  .dark input,
+  .dark select,
+  .dark textarea {
+    @apply bg-dark-surface border-dark-border text-gray-200;
+  }
+  
+  /* Buttons in dark mode */
+  .dark button:not([class*="bg-"]) {
+    @apply dark:hover:bg-dark-surface;
+  }
+  
+  /* Card backgrounds in dark mode */
+  .dark .card,
+  .dark [class*="bg-white"] {
+    @apply bg-dark-card text-gray-200;
+  }
+  
+  /* Surface background elements in dark mode */
+  .dark [class*="bg-gray-50"],
+  .dark [class*="bg-gray-100"] {
+    @apply bg-dark-surface;
   }
 }
