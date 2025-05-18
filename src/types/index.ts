@@ -19,7 +19,6 @@ export interface User {
   city_id?: number;
   address?: string | null;
   created_at?: string;
-  updated_at?: string;
   is_verified?: boolean;
   // Add missing properties that are being used in components
   bio?: string;
@@ -97,7 +96,6 @@ export interface Listing {
   user_id: number;
   user?: User;
   attributes?: Record<string, any>;
-  has_delivery?: boolean;
   // For compatibility with Ad type
   category?: string;
   city?: string;
