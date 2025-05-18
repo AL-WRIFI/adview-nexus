@@ -12,7 +12,7 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { isAuthenticated } from '@/services/api';
-import { useUpdateListing, useGetListing, useCategories, useBrands, useStates, useCities, useBrand } from '@/hooks/use-api';
+import { useUpdateListing, useListing, useCategories, useBrands, useStates, useCities, useBrand } from '@/hooks/use-api';
 import {
   Select,
   SelectContent,
@@ -44,12 +44,12 @@ export default function EditAd() {
   const { toast } = useToast();
   const { data: categories } = useCategories();
   const { data: states } = useStates();
-  const { data: listing, isLoading: isLoadingListing } = useGetListing(listingId);
-  const updateListingMutation = useUpdateListing();
+  const { data: listing, isLoading: isLoadingListing } = useListing(Number(listingId));
+  const updateListingMutation = useUpdateListing(Number(listingId));
   const { user } = useAuth();
   
   // Local state for form
-  const [currentStep, setCurrentStep] = useState(4); // Start at final step
+  const [currentStep, setCurrentStep] = useState(3); // Start at final step
   const [adType, setAdType] = useState<'sell' | 'rent' | 'job' | 'service'>('sell');
   const [categoryId, setCategoryId] = useState<number | null>(null);
   const [subCategoryId, setSubCategoryId] = useState<number | null>(null);
@@ -99,17 +99,17 @@ export default function EditAd() {
       setAdType(listing.listing_type as any || 'sell');
       setCategoryId(listing.category_id || null);
       setSubCategoryId(listing.sub_category_id || null);
-      setChildCategoryId(listing.child_category_id || null);
+      setChildCategoryId(listing?.child_category_id || null);
       setBrandId(listing.brand_id || null);
       setAdTitle(listing.title || '');
       setAdDescription(listing.description || '');
       setAdPrice(listing.price ? listing.price.toString() : '');
-      setIsNegotiable(listing.negotiable || false);
+      setIsNegotiable(listing.is_negotiable || false);
       setStateId(listing.state_id || null);
       setCityId(listing.city_id || null);
       setAddress(listing.address || '');
-      setPhoneHidden(listing.phone_hidden || false);
-      setProductCondition(listing.product_condition as 'new' | 'used' || 'used');
+      setPhoneHidden(listing?.phone_hidden || false);
+      setProductCondition(listing.condition as 'new' | 'used' || 'used');
       
       // Set location data if available
       if (listing.lat && listing.lon) {
@@ -123,9 +123,9 @@ export default function EditAd() {
         setOriginalMainImage(listing.image);
       }
       
-      if (listing.gallery_images && listing.gallery_images.length > 0) {
-        setGalleryImagePreviews(listing.gallery_images);
-        setOriginalGalleryImages(listing.gallery_images);
+      if (listing.images && listing.images.length > 0) {
+        setGalleryImagePreviews(listing.images);
+        setOriginalGalleryImages(listing.images);
       }
     }
   }, [listing]);
@@ -244,7 +244,7 @@ export default function EditAd() {
     try {
       setIsSubmitting(true);
       const formData = new FormData();
-      formData.append('_method', 'PATCH'); // Laravel convention for PUT/PATCH requests
+      formData.append('_method', 'POST'); // Laravel convention for PUT/PATCH requests
       formData.append('listing_type', adType);
       formData.append('category_id', categoryId.toString());
       if (subCategoryId) formData.append('sub_category_id', subCategoryId.toString());
@@ -258,7 +258,7 @@ export default function EditAd() {
       formData.append('city_id', cityId.toString());
       formData.append('address', address);
       formData.append('phone_hidden', phoneHidden ? '1' : '0');
-      formData.append('product_condition', productCondition);
+      formData.append('condition', productCondition);
       
       // Add main image if changed
       if (mainImage) {
@@ -267,13 +267,13 @@ export default function EditAd() {
       
       // Add gallery images if new ones were added
       galleryImages.forEach((image) => {
-        formData.append('gallery_images[]', image);
+        formData.append('images[]', image);
       });
       
       // Add original images to keep (if any were removed, they won't be in the list)
       if (originalGalleryImages.length > 0) {
         const keptImages = originalGalleryImages.filter(img => galleryImagePreviews.includes(img));
-        formData.append('original_gallery_images', JSON.stringify(keptImages));
+        formData.append('original_images', JSON.stringify(keptImages));
       }
       
       // Add location if available
