@@ -50,7 +50,7 @@ export default function EditAd() {
   
   // Local state for form
   const [currentStep, setCurrentStep] = useState(3); // Start at final step
-  const [adType, setAdType] = useState<'sell' | 'rent' | 'job' | 'service'>('sell');
+  const [adType, setAdType] = useState<'sell' | 'buy' | 'exchange' | 'service'>('sell');
   const [categoryId, setCategoryId] = useState<number | null>(null);
   const [subCategoryId, setSubCategoryId] = useState<number | null>(null);
   const [childCategoryId, setChildCategoryId] = useState<number | null>(null);
@@ -244,7 +244,7 @@ export default function EditAd() {
     try {
       setIsSubmitting(true);
       const formData = new FormData();
-      formData.append('_method', 'POST'); // Laravel convention for PUT/PATCH requests
+      formData.append('_method', 'PUT'); // Laravel convention for PUT/PATCH requests
       formData.append('listing_type', adType);
       formData.append('category_id', categoryId.toString());
       if (subCategoryId) formData.append('sub_category_id', subCategoryId.toString());
@@ -253,7 +253,7 @@ export default function EditAd() {
       formData.append('title', adTitle);
       formData.append('description', adDescription);
       formData.append('price', adPrice || '0');
-      formData.append('negotiable', isNegotiable ? '1' : '0');
+      formData.append('is_negotiable', isNegotiable ? '1' : '0');
       formData.append('state_id', stateId.toString());
       formData.append('city_id', cityId.toString());
       formData.append('address', address);
@@ -283,7 +283,7 @@ export default function EditAd() {
       }
       
       // Submit the update
-      await updateListingMutation.mutateAsync({ id: listingId, data: formData });
+      await updateListingMutation.mutateAsync(formData);
       
       // Navigate to dashboard on success
       navigate('/dashboard', {
@@ -309,10 +309,10 @@ export default function EditAd() {
   const confirmDelete = async () => {
     try {
       // API call to delete listing
-      await updateListingMutation.mutateAsync({ 
-        id: listingId, 
-        data: { _method: 'DELETE' } 
-      });
+      const deleteFormData = new FormData();
+      deleteFormData.append('_method', 'DELETE');
+      
+      await updateListingMutation.mutateAsync(deleteFormData);
       
       setIsDeleteDialogOpen(false);
       navigate('/dashboard', {
@@ -383,8 +383,8 @@ export default function EditAd() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {[
                     { id: 'sell', label: 'بيع منتج', desc: 'بيع أي منتج تملكه' },
-                    { id: 'rent', label: 'تأجير', desc: 'عقار، سيارة، معدات' },
-                    { id: 'job', label: 'وظيفة', desc: 'إعلان توظيف' },
+                    { id: 'buy', label: 'شراء', desc: 'البحث عن منتج' },
+                    { id: 'exchange', label: 'مقايضة', desc: 'مقايضة منتج بآخر' },
                     { id: 'service', label: 'خدمة', desc: 'تقديم خدمة احترافية' }
                   ].map((type) => (
                     <button
@@ -420,7 +420,7 @@ export default function EditAd() {
                   </div>
                   
                   {/* Brand selection, only for certain categories */}
-                  {(adType === 'sell' || adType === 'rent') && categoryId && (
+                  {(adType === 'sell' || adType === 'buy' || adType === 'exchange') && categoryId && (
                     <div>
                       <Label className="dark:text-gray-200">اختر الماركة</Label>
                       <Select value={brandId?.toString()} onValueChange={(value) => setBrandId(parseInt(value))}>
@@ -484,7 +484,6 @@ export default function EditAd() {
                       onChange={(e) => setAdPrice(e.target.value)}
                       placeholder="أدخل السعر"
                       className="mt-1 dark:bg-dark-card dark:border-dark-border dark:text-gray-200"
-                      disabled={adType === 'job'}
                     />
                   </div>
                   
@@ -495,7 +494,6 @@ export default function EditAd() {
                         id="negotiable" 
                         checked={isNegotiable}
                         onCheckedChange={setIsNegotiable}
-                        disabled={adType === 'job'}
                         className="dark:bg-dark-muted"
                       />
                       <Label htmlFor="negotiable" className="dark:text-gray-200">السعر قابل للتفاوض</Label>
@@ -503,7 +501,7 @@ export default function EditAd() {
                   </div>
                 </div>
                 
-                {(adType === 'sell' || adType === 'rent') && (
+                {(adType === 'sell' || adType === 'exchange') && (
                   <div>
                     <Label htmlFor="condition" className="dark:text-gray-200">حالة المنتج</Label>
                     <div className="grid grid-cols-2 gap-4 mt-1">
@@ -615,7 +613,7 @@ export default function EditAd() {
                   </Button>
                   <Button 
                     onClick={handleNextStep} 
-                    disabled={!adTitle || !adDescription || (adType !== 'job' && !adPrice) || !stateId || !cityId}
+                    disabled={!adTitle || !adDescription || !stateId || !cityId}
                   >
                     التالي
                   </Button>
@@ -754,13 +752,13 @@ export default function EditAd() {
                         <h4 className="text-sm text-muted-foreground dark:text-gray-400">نوع الإعلان</h4>
                         <p className="dark:text-gray-200">
                           {adType === 'sell' && 'بيع منتج'}
-                          {adType === 'rent' && 'تأجير'}
-                          {adType === 'job' && 'وظيفة'}
+                          {adType === 'buy' && 'شراء'}
+                          {adType === 'exchange' && 'مقايضة'}
                           {adType === 'service' && 'خدمة'}
                         </p>
                       </div>
                       
-                      {(adType === 'sell' || adType === 'rent') && (
+                      {(adType === 'sell' || adType === 'exchange') && (
                         <div>
                           <h4 className="text-sm text-muted-foreground dark:text-gray-400">حالة المنتج</h4>
                           <p className="dark:text-gray-200">{productCondition === 'new' ? 'جديد' : 'مستعمل'}</p>

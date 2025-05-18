@@ -1,131 +1,106 @@
 
-import React, { useRef, useEffect, useState } from 'react';
-import { Category } from '@/types';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import React, { useRef, useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface SubCategoryButtonsProps {
-  items: Category[] | { id: number; name: string }[];
-  selectedId: number | null;
-  onSelect: (id: number) => void;
-  level?: 'sub' | 'child';
+  categories: { id: number; name: string }[];
+  selectedCategoryId: number | null;
+  onSelectCategory: (id: number) => void;
+  className?: string;
 }
 
-export function SubCategoryButtons({ 
-  items, 
-  selectedId, 
-  onSelect,
-  level = 'sub'
-}: SubCategoryButtonsProps) {
-  const isSubLevel = level === 'sub';
-  const isMobile = useIsMobile();
-  const scrollRef = useRef<HTMLDivElement>(null);
+const SubCategoryButtons: React.FC<SubCategoryButtonsProps> = ({
+  categories,
+  selectedCategoryId,
+  onSelectCategory,
+  className = '',
+}) => {
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [showLeftScroll, setShowLeftScroll] = useState(false);
-  const [showRightScroll, setShowRightScroll] = useState(true);
-  
-  // Check scroll position
-  const checkScroll = () => {
-    const container = scrollRef.current;
-    if (!container) return;
-    
-    setShowLeftScroll(container.scrollLeft > 0);
-    setShowRightScroll(container.scrollLeft < container.scrollWidth - container.clientWidth - 5);
-  };
-  
-  // Handle scroll events
-  useEffect(() => {
-    const container = scrollRef.current;
-    if (!container) return;
-    
-    container.addEventListener('scroll', checkScroll);
-    // Check initial scroll state
-    checkScroll();
-    
-    // Add touch scroll momentum for mobile
-    if (isMobile) {
-      container.style.scrollBehavior = 'smooth';
-      container.style.overscrollBehavior = 'contain';
-      container.style.WebkitOverflowScrolling = 'touch';
+  const [showRightScroll, setShowRightScroll] = useState(false);
+
+  const checkScrollButtons = () => {
+    if (scrollContainerRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current;
+      setShowLeftScroll(scrollLeft > 0);
+      setShowRightScroll(scrollLeft + clientWidth < scrollWidth);
     }
+  };
+
+  useEffect(() => {
+    checkScrollButtons();
+    window.addEventListener('resize', checkScrollButtons);
     
     return () => {
-      container.removeEventListener('scroll', checkScroll);
+      window.removeEventListener('resize', checkScrollButtons);
     };
-  }, [items, isMobile]);
-  
-  // Scroll buttons handlers
-  const scrollLeft = () => {
-    if (!scrollRef.current) return;
-    scrollRef.current.scrollBy({ left: -200, behavior: 'smooth' });
+  }, [categories]);
+
+  const scroll = (direction: 'left' | 'right') => {
+    if (scrollContainerRef.current) {
+      const scrollAmount = 200;
+      const newScrollLeft =
+        direction === 'left'
+          ? scrollContainerRef.current.scrollLeft - scrollAmount
+          : scrollContainerRef.current.scrollLeft + scrollAmount;
+      
+      scrollContainerRef.current.scrollTo({
+        left: newScrollLeft,
+        behavior: 'smooth',
+      });
+      
+      setTimeout(checkScrollButtons, 300);
+    }
   };
-  
-  const scrollRight = () => {
-    if (!scrollRef.current) return;
-    scrollRef.current.scrollBy({ left: 200, behavior: 'smooth' });
-  };
-  
-  const buttonSizeClass = isSubLevel 
-    ? 'py-1.5 px-3 text-sm' 
-    : 'py-1 px-2 text-xs';
-  
-  const selectedClasses = isSubLevel
-    ? 'bg-brand text-white shadow-sm' 
-    : 'bg-white border-brand border text-brand shadow-sm';
-  
-  const unselectedClasses = isSubLevel
-    ? 'bg-gray-100 text-gray-700 dark:bg-dark-card dark:text-gray-300' 
-    : 'bg-gray-50 border border-gray-200 text-gray-700 dark:bg-dark-surface dark:border-dark-border dark:text-gray-300';
-  
+
   return (
-    <div className="relative w-full">
-      {/* Left scroll button */}
+    <div className={`relative ${className}`}>
       {showLeftScroll && (
-        <div className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-full flex items-center bg-gradient-to-r from-white dark:from-dark-background via-white/90 dark:via-dark-background/90 to-transparent">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 w-7 rounded-full bg-white/80 dark:bg-dark-card/80 shadow-sm border border-gray-100 dark:border-dark-border"
-            onClick={scrollLeft}
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-        </div>
+        <button 
+          onClick={() => scroll('left')}
+          className="absolute left-0 top-1/2 transform -translate-y-1/2 bg-white/80 dark:bg-dark-background/80 rounded-full p-1 shadow-md z-10"
+          aria-label="Scroll left"
+        >
+          <ChevronLeft className="h-4 w-4 dark:text-gray-300" />
+        </button>
       )}
       
-      {/* Scrollable content */}
       <div 
-        ref={scrollRef}
-        className="flex overflow-x-auto py-2 px-4 gap-2 no-scrollbar snap-x"
-        style={{ scrollSnapType: 'x mandatory' }}
+        ref={scrollContainerRef}
+        className="flex gap-2 overflow-x-auto pb-2 scrollbar-none scroll-smooth"
+        style={{
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none',
+        }}
+        onScroll={checkScrollButtons}
       >
-        {items.map((item) => (
-          <button
-            key={item.id}
-            className={`${buttonSizeClass} whitespace-nowrap rounded-md transition-all snap-start
-              ${selectedId === item.id ? selectedClasses : unselectedClasses}
-              hover:opacity-90 active:scale-95`
-            }
-            onClick={() => onSelect(item.id)}
+        {categories.map((category) => (
+          <Button
+            key={category.id}
+            variant={selectedCategoryId === category.id ? 'default' : 'outline'}
+            onClick={() => onSelectCategory(category.id)}
+            size="sm"
+            className={`whitespace-nowrap dark:bg-dark-card dark:text-gray-200 dark:border-dark-border ${
+              selectedCategoryId === category.id ? 'dark:bg-brand dark:text-white' : 'dark:hover:bg-dark-muted'
+            }`}
           >
-            {item.name}
-          </button>
+            {category.name}
+          </Button>
         ))}
       </div>
       
-      {/* Right scroll button */}
       {showRightScroll && (
-        <div className="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-full flex items-center bg-gradient-to-l from-white dark:from-dark-background via-white/90 dark:via-dark-background/90 to-transparent">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 w-7 rounded-full bg-white/80 dark:bg-dark-card/80 shadow-sm border border-gray-100 dark:border-dark-border"
-            onClick={scrollRight}
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        </div>
+        <button 
+          onClick={() => scroll('right')}
+          className="absolute right-0 top-1/2 transform -translate-y-1/2 bg-white/80 dark:bg-dark-background/80 rounded-full p-1 shadow-md z-10"
+          aria-label="Scroll right"
+        >
+          <ChevronRight className="h-4 w-4 dark:text-gray-300" />
+        </button>
       )}
     </div>
   );
-}
+};
+
+export default SubCategoryButtons;

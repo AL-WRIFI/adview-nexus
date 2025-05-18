@@ -1,4 +1,3 @@
-
 import { PaginatedResponse, Ad, Comment, User, Category, Brand, Listing, ListingDetails, SearchFilters, ApiResponse } from '@/types';
 
 // Base API URL for the application
@@ -15,66 +14,6 @@ export const isAuthenticated = () => {
 };
 
 // Helper function for making API requests with error handling
-// async function fetchAPI<T>(endpoint: string, options?: RequestInit): Promise<T> {
-//   try {
-//     const url = `${API_BASE_URL}${endpoint}`;
-    
-//     // Setup default headers
-//     const defaultHeaders: Record<string, string> = {
-//       'Content-Type': 'application/json',
-//       'Accept': 'application/json',
-//     };
-    
-//     // Add auth token if available
-//     const token = getAuthToken();
-//     if (token) {
-//       defaultHeaders['Authorization'] = `Bearer ${token}`;
-//     }
-    
-//     // Make the request
-//     const response = await fetch(url, {
-//       ...options,
-//       headers: {
-//         ...defaultHeaders,
-//         ...(options?.headers || {}),
-//       },
-//     });
-    
-//     // Handle non-success responses
-//     if (!response.ok) {
-//       // Try to parse error response
-//       const errorData = await response.json().catch(() => ({}));
-      
-//       // If unauthorized (401), clear the token
-//       if (response.status === 401) {
-//         localStorage.removeItem('authToken');
-//         sessionStorage.removeItem('authToken');
-        
-//         // Redirect to login if unauthorized and not already on login page
-//         if (!window.location.pathname.includes('/auth/login')) {
-//           window.location.href = '/auth/login';
-//         }
-//       }
-      
-//       throw new Error(errorData.message || `API Error: ${response.status} ${response.statusText}`);
-//     }
-    
-//     // Parse successful response
-//     const data = await response.json();
-    
-//     // Check if the API response follows our expected structure
-//     if (data.success === false) {
-//       throw new Error(data.message || 'Unknown API error');
-//     }
-    
-//     // Return the whole data object with the ApiResponse structure
-//     return data as T;
-//   } catch (error) {
-//     console.error('API request failed:', error);
-//     throw error;
-//   }
-// }
-
 async function fetchAPI<T>(endpoint: string, options?: RequestInit): Promise<T> {
   try {
     const url = `${API_BASE_URL}${endpoint}`;
@@ -123,7 +62,6 @@ async function fetchAPI<T>(endpoint: string, options?: RequestInit): Promise<T> 
     throw error;
   }
 }
-
 
 // Authentication related API calls
 export const authAPI = {

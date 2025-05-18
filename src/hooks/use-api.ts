@@ -234,7 +234,10 @@ export function useUpdateListing(id: number) {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: (formData: FormData) => API.listingsAPI.updateListing(id, formData),
+    mutationFn: async (formData: FormData) => {
+      const response = await API.listingsAPI.updateListing(id, formData);
+      return response.data;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['listing', id] });
       queryClient.invalidateQueries({ queryKey: ['listings'] });
