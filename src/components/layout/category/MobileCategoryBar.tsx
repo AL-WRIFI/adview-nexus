@@ -94,8 +94,8 @@ export function MobileCategoryBar({ className, selectedCategoryId }: MobileCateg
             )}
           >
             <CategoryIcon 
-              name={category.name} 
-              icon={category.icon}
+              iconName={category.name}  // Changed from 'name' to 'iconName'
+              iconPath={category.icon}   // Changed from 'icon' to 'iconPath'
               className={cn(
                 "h-8 w-8 mb-1",
                 selectedCategoryId === category.id
