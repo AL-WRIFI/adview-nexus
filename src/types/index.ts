@@ -40,6 +40,8 @@ export interface Ad {
   subcategory?: string;
   city: string;
   district?: string;
+  state?: string;
+  address?: string;
   images: string[];
   featured: boolean;
   views_count: number;
@@ -73,8 +75,8 @@ export interface Listing {
   listing_type: 'sell' | 'buy' | 'exchange' | 'service';
   category_id: number;
   category_name: string;
-  subcategory_id?: number;
-  subcategory_name?: string;
+  sub_category_id?: number;
+  sub_category_name?: string;
   brand_id?: number;
   brand_name?: string;
   model?: string;
@@ -97,6 +99,8 @@ export interface Listing {
   // For compatibility with Ad type
   category?: string;
   city?: string;
+  state?: string;
+  address?: string;
   seller?: {
     id: number;
     name: string;
@@ -147,28 +151,30 @@ export interface Brand {
   title?: string; 
 }
 
-// Update SearchFilters to include missing properties
 export interface SearchFilters {
-  search?: string;
+  page?: number;
+  per_page?: number;
   category_id?: number | number[];
-  subcategory_id?: number | number[];
-  child_category_id?: number | number[];
+  sub_category_id?: number | number[];
   brand_id?: number | number[];
   city_id?: number | number[];
   state_id?: number | number[];
   district_id?: number | number[];
+  price_min?: number;
+  price_max?: number;
+  condition?: 'new' | 'used' | '';
+  listing_type?: 'sell' | 'buy' | 'exchange' | 'service' | '';
+  featured?: boolean;
+  sort?: 'newest' | 'oldest' | 'price_asc' | 'price_desc' | 'popular';
+  lat?: number;
+  lon?: number;
+  radius?: number; // in km
+  query?: string;
   min_price?: number;
   max_price?: number;
-  page?: number;
-  per_page?: number;
-  city?: string;
   sort_by?: 'newest' | 'oldest' | 'price_asc' | 'price_desc';
-  condition?: '' | 'new' | 'used';
-  has_image?: boolean;
-  has_delivery?: boolean;
-  lat?: number;
-  lng?: number;
-  distance?: number;
+  // Add property for child category
+  child_category_id?: number | number[];
 }
 
 export interface PaginatedResponse<T> {

@@ -18,7 +18,7 @@ export function Logo({ size = 'md' }: LogoProps) {
     <div className="flex items-center">
       <img src="/logo.svg" alt="Logo" className={`${sizeClass} mr-2`} />
       <span className={`font-bold ${size === 'sm' ? 'text-lg' : size === 'md' ? 'text-xl' : 'text-2xl'} text-brand`}>
-        سوق
+        مكس سوريا
       </span>
     </div>
   );

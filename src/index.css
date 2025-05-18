@@ -93,12 +93,12 @@
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
     
-    /* Custom dark mode colors - enhanced soft black */
+    /* Custom dark mode colors */
     --background: #121212;
-    --card-background: #1a1a1a;
+    --card-background: #1e1e1e;
     --card-border: #333333;
-    --dark-surface: #222222;
-    --dark-muted: #2a2a2a;
+    --dark-surface: #282828;
+    --dark-muted: #3a3a3a;
   }
 }
 
@@ -117,18 +117,18 @@
   
   .dark body {
     background-color: var(--background);
-    color: #f5f5f5;
+    color: #e0e0e0;
   }
 }
 
 @layer components {
   
   .category-icon {
-    @apply flex flex-col items-center justify-center p-3 rounded-lg bg-white shadow-sm transition-all hover:shadow-md cursor-pointer border border-ad-border dark:bg-dark-card dark:border-dark-border dark:text-gray-200;
+    @apply flex flex-col items-center justify-center p-3 rounded-lg bg-white shadow-sm transition-all hover:shadow-md cursor-pointer border border-ad-border;
   }
   
   .ad-card {
-    @apply relative border border-ad-border rounded-lg overflow-hidden bg-white transition-all hover:shadow-md dark:bg-dark-card dark:border-dark-border dark:text-gray-200;
+    @apply relative border border-ad-border rounded-lg overflow-hidden bg-white transition-all hover:shadow-md dark:bg-dark-card dark:border-dark-border;
   }
   
   .ad-card-horizontal {
@@ -220,28 +220,5 @@
   
   .dark .input-field {
     @apply bg-[var(--dark-surface)] border-[var(--card-border)] text-white;
-  }
-  
-  /* Enhanced dark mode styles for common UI elements */
-  .dark [data-radix-popper-content-wrapper] {
-    @apply bg-[var(--card-background)];
-  }
-  
-  .dark .menu-item {
-    @apply hover:bg-dark-surface;
-  }
-  
-  .dark .mobile-filter-drawer,
-  .dark .mobile-menu-drawer,
-  .dark .bottom-sheet {
-    @apply bg-dark-background border-dark-border;
-  }
-  
-  .dark .table-row {
-    @apply border-dark-border;
-  }
-  
-  .dark .form-card {
-    @apply bg-dark-card border-dark-border;
   }
 }

@@ -92,7 +92,7 @@ export function CategoryGrid({
   
   if (isMobile) {
     return (
-      <div>
+      <div className='dark:border-dark-border border-border bg-white dark:bg-dark-background'>
         {/* Category grid with touch gestures */}
         <div 
           className="grid grid-cols-4 gap-2 py-4 px-1 animate-in fade-in"

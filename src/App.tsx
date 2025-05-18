@@ -97,7 +97,7 @@ function App() {
                 <Route path="/ad/:id" element={<AdDetails />} />
                 <Route path="/category/:categoryId" element={<CategoryPage />} />
                 <Route path="/add-ad" element={<AddAd />} />
-                <Route path="/edit-ad/:adId" element={
+                <Route path="/edit-ad/:listingId" element={
                   <ProtectedRoute>
                     <EditAd />
                   </ProtectedRoute>

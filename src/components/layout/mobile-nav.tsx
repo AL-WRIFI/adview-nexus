@@ -1,4 +1,3 @@
-
 import { Link, useLocation } from 'react-router-dom';
 import { Home, Search, PlusCircle, Heart, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -35,7 +34,7 @@ export function MobileNav() {
   ];
 
   return (
-    <div className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-white dark:bg-[#121212] border-t border-border dark:border-dark-border">
+    <div className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-white dark:bg-neutral-900 border-t border-border dark:border-neutral-700">
       <div className="grid grid-cols-5 h-16">
         {items.map((item) => {
           const Icon = item.icon;
@@ -51,7 +50,7 @@ export function MobileNav() {
                 "flex flex-col items-center justify-center text-xs font-medium transition-colors",
                 isActive
                   ? "text-primary dark:text-white"
-                  : "text-gray-600 dark:text-gray-400",
+                  : "text-gray-600 dark:text-neutral-400",
                 isAddAd && "text-primary"
               )}
             >

@@ -29,8 +29,8 @@ export function AdCard({ ad, layout = 'list', className, onFavoriteToggle, isFav
       <Link
         to={`/ad/${ad.id}`}
         className={cn(
-          "ad-card block border border-border hover:shadow-md transition-shadow bg-white dark:bg-dark-card dark:border-dark-border dark:text-gray-200",
-          ad.featured && "featured-ad border-t-2 border-t-brand dark:border-t-brand",
+          "ad-card block border border-border hover:shadow-md transition-shadow bg-white",
+          ad.featured && "featured-ad border-t-2 border-t-brand",
           className
         )}
       >
@@ -45,15 +45,15 @@ export function AdCard({ ad, layout = 'list', className, onFavoriteToggle, isFav
                 (e.target as HTMLImageElement).style.display = 'none';
                 const parent = e.currentTarget.parentElement;
                 if (parent) {
-                  parent.classList.add('flex', 'items-center', 'justify-center', 'bg-muted', 'dark:bg-dark-muted');
+                  parent.classList.add('flex', 'items-center', 'justify-center', 'bg-muted');
                   const icon = document.createElement('div');
-                  icon.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-muted-foreground dark:text-gray-500"><rect x="2" y="2" width="20" height="20" rx="0" ry="0"></rect><circle cx="12" cy="9" r="3"></circle><path d="M12 12v3"></path><line x1="5" y1="19" x2="19" y2="19"></line></svg>';
+                  icon.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-muted-foreground"><rect x="2" y="2" width="20" height="20" rx="0" ry="0"></rect><circle cx="12" cy="9" r="3"></circle><path d="M12 12v3"></path><line x1="5" y1="19" x2="19" y2="19"></line></svg>';
                   parent.appendChild(icon);
                 }
               }}
             />
           ) : (
-            <div className="w-full h-full bg-muted dark:bg-dark-muted flex items-center justify-center flex-col text-muted-foreground dark:text-gray-400">
+            <div className="w-full h-full bg-muted flex items-center justify-center flex-col text-muted-foreground">
               <ImageIcon className="h-8 w-8" />
               <span className="text-xs mt-1">لا توجد صورة</span>
             </div>
@@ -72,7 +72,7 @@ export function AdCard({ ad, layout = 'list', className, onFavoriteToggle, isFav
                 onFavoriteToggle(ad.id);
               }}
             >
-              <Star className={`h-5 w-5 ${isFavorite ? 'fill-brand text-brand' : 'text-muted-foreground dark:text-gray-400'}`} />
+              <Star className={`h-5 w-5 ${isFavorite ? 'fill-brand text-brand' : 'text-muted-foreground'}`} />
             </div>
           )}
         </div>
@@ -80,7 +80,7 @@ export function AdCard({ ad, layout = 'list', className, onFavoriteToggle, isFav
         {/* Content section */}
         <div className="p-3">
           <div className="flex justify-between items-start">
-            <h3 className="font-bold text-sm truncate max-w-[180px] dark:text-gray-100" title={ad.title}>{ad.title}</h3>
+            <h3 className="font-bold text-sm truncate max-w-[180px]" title={ad.title}>{ad.title}</h3>
             {ad.price > 0 && (
               <span className="font-bold text-brand whitespace-nowrap mr-2 text-sm">
                 {ad.price.toLocaleString()} ريال
@@ -88,7 +88,7 @@ export function AdCard({ ad, layout = 'list', className, onFavoriteToggle, isFav
             )}
           </div>
           
-          <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2 text-xs text-muted-foreground dark:text-gray-400">
+          <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2 text-xs text-muted-foreground">
             <div className="flex items-center">
               <MapPin className="h-3 w-3 ml-1" />
               <span className="truncate max-w-[80px]">{ad.city}</span>
@@ -112,8 +112,8 @@ export function AdCard({ ad, layout = 'list', className, onFavoriteToggle, isFav
     <Link 
       to={`/ad/${ad.id}`}
       className={cn(
-        "ad-card flex border border-border hover:shadow-md transition-shadow bg-white dark:bg-dark-card dark:border-dark-border dark:text-gray-200",
-        ad.featured && "featured-ad border-r-2 border-r-brand dark:border-r-brand",
+        "ad-card flex border border-border hover:shadow-md transition-shadow bg-white",
+        ad.featured && "featured-ad border-r-2 border-r-brand",
         className
       )}
     >
@@ -128,15 +128,15 @@ export function AdCard({ ad, layout = 'list', className, onFavoriteToggle, isFav
               (e.target as HTMLImageElement).style.display = 'none';
               const parent = e.currentTarget.parentElement;
               if (parent) {
-                parent.classList.add('flex', 'items-center', 'justify-center', 'bg-muted', 'dark:bg-dark-muted');
+                parent.classList.add('flex', 'items-center', 'justify-center', 'bg-muted');
                 const icon = document.createElement('div');
-                icon.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-muted-foreground dark:text-gray-500"><rect x="2" y="2" width="20" height="20" rx="0" ry="0"></rect><circle cx="12" cy="9" r="3"></circle><path d="M12 12v3"></path><line x1="5" y1="19" x2="19" y2="19"></line></svg>';
+                icon.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-muted-foreground"><rect x="2" y="2" width="20" height="20" rx="0" ry="0"></rect><circle cx="12" cy="9" r="3"></circle><path d="M12 12v3"></path><line x1="5" y1="19" x2="19" y2="19"></line></svg>';
                 parent.appendChild(icon);
               }
             }}
           />
         ) : (
-          <div className="w-full h-full bg-muted dark:bg-dark-muted flex items-center justify-center text-muted-foreground dark:text-gray-400">
+          <div className="w-full h-full bg-muted flex items-center justify-center text-muted-foreground">
             <ImageIcon className="h-6 w-6" />
           </div>
         )}
@@ -154,7 +154,7 @@ export function AdCard({ ad, layout = 'list', className, onFavoriteToggle, isFav
               onFavoriteToggle(ad.id);
             }}
           >
-            <Star className={`h-4 w-4 ${isFavorite ? 'fill-brand text-brand' : 'text-muted-foreground dark:text-gray-400'}`} />
+            <Star className={`h-4 w-4 ${isFavorite ? 'fill-brand text-brand' : 'text-muted-foreground'}`} />
           </div>
         )}
       </div>
@@ -163,7 +163,7 @@ export function AdCard({ ad, layout = 'list', className, onFavoriteToggle, isFav
       <div className="p-3 flex flex-col flex-1 justify-between">
         <div>
           <div className="flex justify-between items-start">
-            <h3 className="font-bold text-base truncate max-w-[180px] md:max-w-xs dark:text-gray-100" title={ad.title}>{ad.title}</h3>
+            <h3 className="font-bold text-base truncate max-w-[180px] md:max-w-xs" title={ad.title}>{ad.title}</h3>
             {ad.price > 0 && (
               <span className="font-bold text-brand whitespace-nowrap mr-2 text-sm">
                 {ad.price.toLocaleString()} ريال
@@ -171,12 +171,12 @@ export function AdCard({ ad, layout = 'list', className, onFavoriteToggle, isFav
             )}
           </div>
           
-          <p className="text-muted-foreground text-xs line-clamp-2 mt-1 dark:text-gray-400">
+          <p className="text-muted-foreground text-xs line-clamp-2 mt-1">
             {ad.description}
           </p>
         </div>
         
-        <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2 text-xs text-muted-foreground dark:text-gray-400">
+        <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2 text-xs text-muted-foreground">
           <div className="flex items-center">
             <MapPin className="h-3 w-3 ml-1" />
             <span className="truncate max-w-[80px]">{ad.city}</span>

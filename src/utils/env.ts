@@ -9,7 +9,7 @@ interface EnvironmentVariables {
 
 // Default values for development
 const defaultValues: EnvironmentVariables = {
-  API_BASE_URL: 'https://api.example.com/v1',
+  API_BASE_URL: 'http://admin2.mixsyria.com/api/v1',
   APP_ENV: 'development',
   DEBUG_MODE: true,
 };

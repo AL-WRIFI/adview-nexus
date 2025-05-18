@@ -134,7 +134,7 @@ export function DesktopCategoryBar() {
                                 <div key={category.id} className="flex flex-col items-center">
                                     <button
                                         onClick={() => handleCategoryClick(category)}
-                                        className={`category-icon min-w-[100px] text-center transition-all ${isSelected ? 'scale-105' : ''}`}
+                                        className={`category-icon dark:border-dark-border bg-white dark:bg-dark-background min-w-[100px] text-center transition-all ${isSelected ? 'scale-105' : ''}`}
                                     >
                                         <div className={`p-3 rounded-full mx-auto mb-2 transition-colors ${isSelected ? 'bg-brand text-white' : 'bg-brand-light'}`} style={{ width: '56px', height: '56px' }}>
                                             <Icon className={`h-full w-full ${isSelected ? 'text-white' : 'text-brand'}`} />

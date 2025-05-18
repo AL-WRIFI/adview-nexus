@@ -42,7 +42,7 @@ export default function ProfilePage() {
   // Set initial values when user data is loaded
   useState(() => {
     if (user) {
-      setName(user.name);
+      setName(user.first_name);
       setPhone(user.phone);
       setEmail(user.email || '');
       setCity(user.city);
@@ -193,7 +193,7 @@ export default function ProfilePage() {
                   </CardHeader>
                   <form onSubmit={handleProfileSubmit}>
                     <CardContent className="space-y-6">
-                      <div className="flex flex-col items-center justify-center md:flex-row md:items-start md:justify-start space-y-4 md:space-y-0 md:space-x-4 md:space-x-reverse">
+                      <div className="flex flex-col items-center justify-center md:flex-row md:items-start md:justify-start space-y-4 md:space-y-0 md:space-x-6 ">
                         <div className="relative">
                           <Avatar className="w-24 h-24 border-2 border-border">
                             <AvatarImage src={avatarPreview || user?.avatar} alt={user?.name} />

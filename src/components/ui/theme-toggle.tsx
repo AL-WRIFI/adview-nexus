@@ -20,7 +20,7 @@ export function ThemeToggle({
     <Button 
       variant={variant} 
       size={size} 
-      className={`relative ${className} ${theme === "dark" ? "text-gray-200" : ""}`}
+      className={`relative ${className}`}
       onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
       title={theme === "dark" ? "وضع النهار" : "الوضع الداكن"}
     >

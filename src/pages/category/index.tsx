@@ -23,7 +23,7 @@ export default function CategoryPage() {
   
   const [filters, setFilters] = useState<SearchFilters>({
     category_id: categoryId ? parseInt(categoryId, 10) : undefined,
-    subcategory_id: subcategoryId ? parseInt(subcategoryId, 10) : undefined,
+    sub_category_id: subcategoryId ? parseInt(subcategoryId, 10) : undefined,
     child_category_id: childcategoryId ? parseInt(childcategoryId, 10) : undefined,
   });
   const [adLayout, setAdLayout] = useState<'grid' | 'list'>('grid');
@@ -49,7 +49,7 @@ export default function CategoryPage() {
       setFilters(prev => ({
         ...prev,
         category_id: categoryId ? parseInt(categoryId, 10) : undefined,
-        subcategory_id: subcategoryId ? parseInt(subcategoryId, 10) : undefined,
+        sub_category_id: subcategoryId ? parseInt(subcategoryId, 10) : undefined,
         child_category_id: childcategoryId ? parseInt(childcategoryId, 10) : undefined,
       }));
       setPage(1); // Reset to first page on filter changes
@@ -61,7 +61,7 @@ export default function CategoryPage() {
       ...prev,
       ...newFilters,
       category_id: categoryId ? parseInt(categoryId, 10) : undefined,
-      subcategory_id: subcategoryId ? parseInt(subcategoryId, 10) : newFilters.subcategory_id,
+      sub_category_id: subcategoryId ? parseInt(subcategoryId, 10) : newFilters.sub_category_id,
       child_category_id: childcategoryId ? parseInt(childcategoryId, 10) : newFilters.child_category_id,
     }));
     setPage(1); // Reset to first page when filters change
@@ -72,7 +72,7 @@ export default function CategoryPage() {
   const totalPages = listingsResponse?.meta?.last_page || 1;
   
   return (
-    <div className="min-h-screen flex flex-col dark:bg-dark-background">
+    <div className="min-h-screen flex flex-col">
       <Header />
       <CategoryBar />
       
@@ -81,14 +81,14 @@ export default function CategoryPage() {
           {/* Category header */}
           <div className="mb-8 text-center">
             {loadingCategory ? (
-              <Loader2 className="h-6 w-6 animate-spin mx-auto dark:text-gray-300" />
+              <Loader2 className="h-6 w-6 animate-spin mx-auto" />
             ) : (
               <>
-                <h1 className="text-3xl font-bold dark:text-gray-100">
+                <h1 className="text-3xl font-bold">
                   {category ? category.name : 'جميع التصنيفات'}
                 </h1>
                 {category && (
-                  <p className="text-muted-foreground mt-2 dark:text-gray-400">
+                  <p className="text-muted-foreground mt-2">
                     تصفح أحدث الإعلانات في تصنيف {category.name}
                   </p>
                 )}
@@ -122,7 +122,7 @@ export default function CategoryPage() {
               
               {/* Compact view toggle buttons and per page select */}
               <div className="flex flex-col sm:flex-row justify-between mb-4 gap-3">
-                <p className="text-muted-foreground dark:text-gray-400">
+                <p className="text-muted-foreground">
                   {Array.isArray(listings) && listings.length > 0 ? `${listings.length} نتيجة` : '0 نتيجة'} 
                 </p>
                 
@@ -134,10 +134,10 @@ export default function CategoryPage() {
                       setPage(1);
                     }}
                   >
-                    <SelectTrigger className="w-16 h-8 dark:bg-dark-card dark:border-dark-border dark:text-gray-200">
+                    <SelectTrigger className="w-16 h-8">
                       <SelectValue placeholder="12" />
                     </SelectTrigger>
-                    <SelectContent className="dark:bg-dark-card dark:border-dark-border">
+                    <SelectContent>
                       <SelectItem value="12">12</SelectItem>
                       <SelectItem value="24">24</SelectItem>
                       <SelectItem value="36">36</SelectItem>
@@ -145,12 +145,12 @@ export default function CategoryPage() {
                     </SelectContent>
                   </Select>
                   
-                  <div className="flex border rounded-sm overflow-hidden dark:border-dark-border">
+                  <div className="flex border rounded-sm overflow-hidden">
                     <Button 
                       variant={adLayout === 'grid' ? "default" : "ghost"} 
                       size="icon"
                       onClick={() => setAdLayout('grid')}
-                      className={`h-8 w-8 rounded-none ${adLayout !== 'grid' && 'dark:text-gray-400 dark:hover:text-gray-200'}`}
+                      className="h-8 w-8 rounded-none"
                       aria-label="Grid view"
                       title="عرض شبكي"
                     >
@@ -160,7 +160,7 @@ export default function CategoryPage() {
                       variant={adLayout === 'list' ? "default" : "ghost"}
                       size="icon" 
                       onClick={() => setAdLayout('list')}
-                      className={`h-8 w-8 rounded-none ${adLayout !== 'list' && 'dark:text-gray-400 dark:hover:text-gray-200'}`}
+                      className="h-8 w-8 rounded-none"
                       aria-label="List view"
                       title="عرض قائمة"
                     >
@@ -179,7 +179,7 @@ export default function CategoryPage() {
               
               {/* Error state */}
               {error && !isLoading && (
-                <div className="text-center py-12 bg-gray-50 dark:bg-dark-card">
+                <div className="text-center py-12 bg-gray-50 dark:bg-dark-surface">
                   <p className="text-red-500 mb-4">حدث خطأ أثناء تحميل الإعلانات</p>
                   <Button onClick={() => window.location.reload()}>إعادة المحاولة</Button>
                 </div>
@@ -204,8 +204,8 @@ export default function CategoryPage() {
                       ))}
                     </div>
                   ) : (
-                    <div className="text-center py-12 bg-gray-50 dark:bg-dark-card">
-                      <p className="text-muted-foreground mb-4 dark:text-gray-400">
+                    <div className="text-center py-12 bg-gray-50 dark:bg-dark-surface">
+                      <p className="text-muted-foreground mb-4">
                         لا توجد إعلانات متطابقة مع البحث في هذا التصنيف
                       </p>
                     </div>

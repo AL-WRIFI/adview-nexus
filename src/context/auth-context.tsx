@@ -1,142 +1,285 @@
 
-import React, { createContext, useContext, useState, useEffect } from "react";
-import { User } from "@/types";
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { authAPI, isAuthenticated } from '@/services/api';
+import { User, ApiResponse } from '@/types';
+import { toast } from '@/hooks/use-toast';
 
-// Export tokenStorage for use in other files
-export const tokenStorage = {
-  getToken: () => localStorage.getItem("auth_token"),
-  setToken: (token: string) => localStorage.setItem("auth_token", token),
-  clearToken: () => localStorage.removeItem("auth_token"),
-};
-
-export interface AuthContextProps {
-  user: User | null;
+interface AuthContextType {
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  logout: () => void;
-  register: (data: any) => Promise<void>;
+  user: User | null;
   loading: boolean;
+  error: Error | null;
+  login: (identifier: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextProps>({
-  user: null,
-  isAuthenticated: false,
-  login: async () => {},
-  logout: () => {},
-  register: async () => {},
-  loading: false,
-  refreshUser: async () => {},
-});
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const useAuth = () => useContext(AuthContext);
+// Create a storage helper to handle token storage consistently
+export const tokenStorage = {
+  getToken: () => localStorage.getItem('authToken') || sessionStorage.getItem('authToken'),
+  setToken: (token: string, rememberMe: boolean = true) => {
+    if (rememberMe) {
+      localStorage.setItem('authToken', token);
+      // Clear session storage to prevent conflicts
+      sessionStorage.removeItem('authToken');
+    } else {
+      sessionStorage.setItem('authToken', token);
+      // Clear local storage to prevent conflicts
+      localStorage.removeItem('authToken');
+    }
+  },
+  clearToken: () => {
+    localStorage.removeItem('authToken');
+    sessionStorage.removeItem('authToken');
+  }
+};
 
-export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+  const [tokenChecked, setTokenChecked] = useState(false);
+  const [lastAttemptTime, setLastAttemptTime] = useState(0);
+  const [apiErrorCount, setApiErrorCount] = useState(0); // Track consecutive API errors
 
-  // Mock user data for development
-  const mockUserData: User = {
-    id: 1,
-    name: "محمد أحمد",
-    email: "user@example.com",
-    avatar: "https://ui-avatars.com/api/?name=محمد+أحمد&background=random",
-    phone: "966500000000",
-    bio: "مرحباً بكم في ملفي الشخصي",
-    created_at: "2023-01-01",
-    updated_at: "2023-06-15",
-    listings_count: 10,
-    followers_count: 25,
-    following_count: 15,
-    location: "الرياض",
-    verified: true
-  };
-
+  // Cache time in milliseconds (15 minutes)
+  const USER_CACHE_TIME = 15 * 60 * 1000;
+  
+  // Try to get user from localStorage cache first
   useEffect(() => {
-    // Check if user is logged in on mount
-    const token = tokenStorage.getToken();
-    if (token) {
-      setUser(mockUserData); // In production, would verify token and fetch user data
+    const cachedUserData = localStorage.getItem('cachedUser');
+    const cachedTime = localStorage.getItem('cachedUserTime');
+    
+    if (cachedUserData && cachedTime) {
+      const now = Date.now();
+      const timeCached = parseInt(cachedTime, 10);
+      
+      // If cache is still valid (less than 15 minutes old)
+      if (now - timeCached < USER_CACHE_TIME) {
+        try {
+          const userData = JSON.parse(cachedUserData);
+          setUser(userData);
+          setLoading(false);
+          // We still refresh user data in background, but don't wait for it
+          setTimeout(() => refreshUser(), 1000);
+          return;
+        } catch (e) {
+          // If parsing fails, continue with normal loading
+          console.error('Error parsing cached user data', e);
+        }
+      }
     }
-    setLoading(false);
+    
+    // No valid cache, load user normally
+    if (tokenStorage.getToken()) {
+      loadUser();
+    } else {
+      setLoading(false);
+    }
+    setTokenChecked(true);
   }, []);
 
-  const login = async (email: string, password: string) => {
-    setLoading(true);
+  const loadUser = async () => {
     try {
-      // In production, would call API
-      // const { data } = await api.post("/auth/login", { email, password });
-      // tokenStorage.setToken(data.token);
+      // Check if we attempted to load the user in the last 10 seconds - if so, don't try again
+      const now = Date.now();
+      if (now - lastAttemptTime < 10000) {
+        return false;
+      }
       
-      // Mock successful login
-      await new Promise(resolve => setTimeout(resolve, 500));
-      tokenStorage.setToken("mock-jwt-token");
-      setUser(mockUserData);
-    } catch (error) {
-      console.error("Login failed:", error);
-      throw new Error("فشل تسجيل الدخول. تحقق من بريدك الإلكتروني وكلمة المرور.");
+      setLastAttemptTime(now);
+      setLoading(true);
+      
+      // Check if we've had too many consecutive errors - stop trying after 5 errors
+      if (apiErrorCount >= 5) {
+        console.log("Too many consecutive API errors, stopping user loading attempts");
+        setLoading(false);
+        return false;
+      }
+      
+      const response = await authAPI.getCurrentUser();
+      
+      // Store user in state and cache
+      setUser(response.data);
+      localStorage.setItem('cachedUser', JSON.stringify(response.data));
+      localStorage.setItem('cachedUserTime', now.toString());
+      
+      setError(null);
+      setApiErrorCount(0); // Reset error count on successful API call
+      return true;
+    } catch (err) {
+      console.error('Error loading user:', err);
+      setError(err instanceof Error ? err : new Error('Failed to load user'));
+      setApiErrorCount(prev => prev + 1); // Increment error count
+      
+      // If hitting specific error thresholds, take different actions
+      if (apiErrorCount >= 3) {
+        console.log(`Multiple API failures (${apiErrorCount}), possibly backing off...`);
+        
+        // Try to use cached data even if it's expired as a fallback
+        const cachedUserData = localStorage.getItem('cachedUser');
+        if (cachedUserData) {
+          try {
+            const userData = JSON.parse(cachedUserData);
+            setUser(userData);
+            // Don't reset error count but use cached data
+          } catch (e) {
+            console.error('Error parsing cached user data', e);
+          }
+        }
+      }
+      
+      // Check if error is due to unauthorized access
+      if (err instanceof Error && err.message.includes('401')) {
+        // If failed to load user due to unauthorized, clear token as it might be invalid
+        tokenStorage.clearToken();
+        
+        toast({
+          title: "انتهت جلسة تسجيل الدخول",
+          description: "يرجى تسجيل الدخول مرة أخرى",
+          variant: "destructive"
+        });
+      } else if (err instanceof Error && (
+          err.message.includes('not be found') || 
+          err.message.includes('could not be found')
+      )) {
+        // If the route doesn't exist, don't keep trying
+        console.log("Auth API route not found, won't retry");
+        // Set a higher error count to prevent further attempts
+        setApiErrorCount(10);
+      }
+      return false;
     } finally {
       setLoading(false);
     }
   };
 
-  const register = async (data: any) => {
-    setLoading(true);
-    try {
-      // In production, would call API
-      // const response = await api.post("/auth/register", data);
-      // tokenStorage.setToken(response.data.token);
-      
-      // Mock successful registration
-      await new Promise(resolve => setTimeout(resolve, 500));
-      tokenStorage.setToken("mock-jwt-token");
-      setUser(mockUserData);
-    } catch (error) {
-      console.error("Registration failed:", error);
-      throw new Error("فشل التسجيل. يرجى التحقق من البيانات والمحاولة مرة أخرى.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Check for token changes (e.g., if another tab logs in/out)
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'authToken') {
+        if (e.newValue && e.newValue !== e.oldValue) {
+          loadUser();
+        } else if (!e.newValue) {
+          setUser(null);
+        }
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
 
-  const logout = () => {
-    tokenStorage.clearToken();
-    setUser(null);
-  };
+  // Set up interval to refresh token and user data (only if API is working)
+  useEffect(() => {
+    if (!tokenChecked || apiErrorCount >= 5) return;
+    
+    // Set up interval to refresh token less frequently (every 30 minutes)
+    const intervalId = setInterval(() => {
+      if (tokenStorage.getToken() && apiErrorCount < 5) {
+        loadUser();
+      }
+    }, 60 * 60 * 1000); // 30 minutes
+    
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [tokenChecked, apiErrorCount]);
 
-  const refreshUser = async () => {
-    setLoading(true);
+  const login = async (identifier: string, password: string): Promise<void> => {
     try {
-      // In production, would call API to get latest user data
-      // const { data } = await api.get("/auth/me");
-      // setUser(data);
+      setLoading(true);
+      const response = await authAPI.login(identifier, password);
+      if (response.data?.token) {
+        // Store token in localStorage for persistence (default to rememberMe = true)
+        tokenStorage.setToken(response.data.token, true);
+        // Store user data in state and cache
+        setUser(response.data.user);
+        localStorage.setItem('cachedUser', JSON.stringify(response.data.user));
+        localStorage.setItem('cachedUserTime', Date.now().toString());
+      }
+      setError(null);
+      setApiErrorCount(0); // Reset error count on successful login
       
-      // Mock refreshing user data
-      await new Promise(resolve => setTimeout(resolve, 300));
-      setUser({
-        ...mockUserData,
-        updated_at: new Date().toISOString()
+      toast({
+        title: "تم تسجيل الدخول بنجاح",
+        description: `مرحباً، ${response.data.user.first_name}!`
       });
-    } catch (error) {
-      console.error("Failed to refresh user:", error);
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Failed to login'));
+      toast({
+        title: "فشل تسجيل الدخول",
+        description: err instanceof Error ? err.message : "خطأ في تسجيل الدخول",
+        variant: "destructive"
+      });
+      throw err;
     } finally {
       setLoading(false);
     }
   };
 
-  return (
-    <AuthContext.Provider
-      value={{
-        user,
-        isAuthenticated: !!user,
-        login,
-        logout,
-        register,
-        loading,
-        refreshUser
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
-  );
-};
+  const logout = async (): Promise<void> => {
+    try {
+      setLoading(true);
+      await authAPI.logout();
+      // Clear token and cached user data
+      tokenStorage.clearToken();
+      localStorage.removeItem('cachedUser');
+      localStorage.removeItem('cachedUserTime');
+      
+      setUser(null);
+      setApiErrorCount(0); // Reset API error count on logout
+      toast({
+        title: "تم تسجيل الخروج بنجاح",
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Failed to logout'));
+      toast({
+        title: "فشل تسجيل الخروج",
+        description: "حدث خطأ أثناء تسجيل الخروج. تم تسجيل الخروج محلياً.",
+        variant: "destructive"
+      });
+      // Even if logout fails on server, clear local token and cache
+      tokenStorage.clearToken();
+      localStorage.removeItem('cachedUser');
+      localStorage.removeItem('cachedUserTime');
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const refreshUser = async (): Promise<void> => {
+    // Only attempt to refresh if we haven't hit error threshold and 
+    // haven't refreshed in the last 10 seconds
+    const now = Date.now();
+    if (apiErrorCount < 5 && now - lastAttemptTime >= 10000) {
+      await loadUser();
+    }
+  };
+
+  const value: AuthContextType = {
+    isAuthenticated: !!user,
+    user,
+    loading,
+    error,
+    login,
+    logout,
+    refreshUser
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+}

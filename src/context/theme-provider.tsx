@@ -55,37 +55,37 @@ export function ThemeProvider({
     const root = window.document.documentElement;
     
     if (isDark) {
-      // Enhanced dark mode colors - soft black theme
-      root.style.setProperty('--background', '#121212');
-      root.style.setProperty('--foreground', '#f5f5f5');
-      root.style.setProperty('--card', '#1a1a1a');
-      root.style.setProperty('--card-foreground', '#f5f5f5');
-      root.style.setProperty('--popover', '#1a1a1a');
-      root.style.setProperty('--popover-foreground', '#f5f5f5');
+      // Enhanced dark mode colors
+      root.style.setProperty('--background', 'hsl(0 0% 7%)');
+      root.style.setProperty('--foreground', 'hsl(0 0% 98%)');
+      root.style.setProperty('--card', 'hsl(0 0% 10%)');
+      root.style.setProperty('--card-foreground', 'hsl(0 0% 98%)');
+      root.style.setProperty('--popover', 'hsl(0 0% 10%)');
+      root.style.setProperty('--popover-foreground', 'hsl(0 0% 98%)');
       root.style.setProperty('--primary', 'hsl(142 71% 45%)');
-      root.style.setProperty('--primary-foreground', '#121212');
-      root.style.setProperty('--secondary', '#222222');
-      root.style.setProperty('--secondary-foreground', '#f5f5f5');
-      root.style.setProperty('--muted', '#2a2a2a');
-      root.style.setProperty('--muted-foreground', '#a1a1aa');
-      root.style.setProperty('--accent', '#333333');
-      root.style.setProperty('--accent-foreground', '#f5f5f5');
-      root.style.setProperty('--destructive', '#7f1d1d');
-      root.style.setProperty('--destructive-foreground', '#f5f5f5');
-      root.style.setProperty('--border', '#333333');
-      root.style.setProperty('--input', '#333333');
+      root.style.setProperty('--primary-foreground', 'hsl(144 70% 10%)');
+      root.style.setProperty('--secondary', 'hsl(0 0% 15%)');
+      root.style.setProperty('--secondary-foreground', 'hsl(0 0% 98%)');
+      root.style.setProperty('--muted', 'hsl(0 0% 15%)');
+      root.style.setProperty('--muted-foreground', 'hsl(240 5% 64.9%)');
+      root.style.setProperty('--accent', 'hsl(0 0% 15%)');
+      root.style.setProperty('--accent-foreground', 'hsl(0 0% 98%)');
+      root.style.setProperty('--destructive', 'hsl(0 62.8% 30.6%)');
+      root.style.setProperty('--destructive-foreground', 'hsl(0 0% 98%)');
+      root.style.setProperty('--border', 'hsl(0 0% 20%)');
+      root.style.setProperty('--input', 'hsl(0 0% 20%)');
       root.style.setProperty('--ring', 'hsl(142 71% 45%)');
       
       // Custom dark theme variables
       root.style.setProperty('--dark-background', '#121212');
-      root.style.setProperty('--dark-card', '#1a1a1a');
+      root.style.setProperty('--dark-card', '#1e1e1e');
       root.style.setProperty('--dark-border', '#333333');
-      root.style.setProperty('--dark-surface', '#222222');
-      root.style.setProperty('--dark-muted', '#2a2a2a');
+      root.style.setProperty('--dark-surface', '#282828');
+      root.style.setProperty('--dark-muted', '#3a3a3a');
       
       // Brand color in dark mode
       root.style.setProperty('--brand', 'hsl(142 71% 45%)');
-      root.style.setProperty('--brand-foreground', '#121212');
+      root.style.setProperty('--brand-foreground', 'hsl(144 70% 10%)');
     } else {
       // Light mode - reset to default theme
       root.style.removeProperty('--background');

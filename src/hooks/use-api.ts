@@ -187,7 +187,7 @@ export function useListing(id: number | undefined) {
     queryFn: async () => {
       if (!id) return Promise.reject('No listing ID provided');
       const response = await API.listingsAPI.getListing(id);
-      return response;
+      return response.data;
     },
     enabled: !!id,
   });

@@ -55,7 +55,8 @@ export default function Home() {
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      {isMobile ? <CategoryBar /> : <DesktopCategoryBar/>}
+      <CategoryBar />
+      {/* {isMobile ? <CategoryBar /> : <DesktopCategoryBar/>} */}
       
       
       <main className="flex-1 pb-20 md:pb-0">
