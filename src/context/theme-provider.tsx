@@ -55,7 +55,7 @@ export function ThemeProvider({
     const root = window.document.documentElement;
     
     if (isDark) {
-      // Enhanced dark mode colors
+      // Enhanced dark mode colors - changed to soft black and dark gray
       root.style.setProperty('--background', 'hsl(0 0% 7%)');
       root.style.setProperty('--foreground', 'hsl(0 0% 98%)');
       root.style.setProperty('--card', 'hsl(0 0% 10%)');
@@ -67,7 +67,7 @@ export function ThemeProvider({
       root.style.setProperty('--secondary', 'hsl(0 0% 15%)');
       root.style.setProperty('--secondary-foreground', 'hsl(0 0% 98%)');
       root.style.setProperty('--muted', 'hsl(0 0% 15%)');
-      root.style.setProperty('--muted-foreground', 'hsl(240 5% 64.9%)');
+      root.style.setProperty('--muted-foreground', 'hsl(0 5% 65%)');
       root.style.setProperty('--accent', 'hsl(0 0% 15%)');
       root.style.setProperty('--accent-foreground', 'hsl(0 0% 98%)');
       root.style.setProperty('--destructive', 'hsl(0 62.8% 30.6%)');
@@ -76,12 +76,12 @@ export function ThemeProvider({
       root.style.setProperty('--input', 'hsl(0 0% 20%)');
       root.style.setProperty('--ring', 'hsl(142 71% 45%)');
       
-      // Custom dark theme variables
+      // Custom dark theme variables - soft black with dark gray
       root.style.setProperty('--dark-background', '#121212');
       root.style.setProperty('--dark-card', '#1e1e1e');
       root.style.setProperty('--dark-border', '#333333');
-      root.style.setProperty('--dark-surface', '#282828');
-      root.style.setProperty('--dark-muted', '#3a3a3a');
+      root.style.setProperty('--dark-surface', '#242424');
+      root.style.setProperty('--dark-muted', '#2a2a2a');
       
       // Brand color in dark mode
       root.style.setProperty('--brand', 'hsl(142 71% 45%)');
