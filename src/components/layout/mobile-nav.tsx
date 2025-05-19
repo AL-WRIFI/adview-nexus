@@ -35,7 +35,7 @@ export function MobileNav() {
   ];
 
   return (
-    <div className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-white dark:bg-dark-background border-t border-border dark:border-dark-border">
+    <div className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-white dark:bg-dark-card border-t border-border dark:border-dark-border">
       <div className="grid grid-cols-5 h-16">
         {items.map((item) => {
           const Icon = item.icon;
@@ -49,16 +49,16 @@ export function MobileNav() {
               className={cn(
                 "flex flex-col items-center justify-center text-xs font-medium transition-colors",
                 isActive
-                  ? "text-primary dark:text-brand"
+                  ? "text-brand dark:text-brand"
                   : "text-gray-600 dark:text-gray-400",
-                isAddAd && "text-primary dark:text-brand"
+                isAddAd && "text-brand dark:text-brand"
               )}
             >
               <Icon 
                 className={cn(
                   "h-6 w-6 mb-1", 
-                  isAddAd && "text-primary dark:text-brand",
-                  isActive && "text-primary dark:text-brand"
+                  isAddAd && "text-brand dark:text-brand",
+                  isActive && "text-brand dark:text-brand"
                 )} 
               />
               <span>{item.label}</span>

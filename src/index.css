@@ -53,6 +53,11 @@
     --card-border: #e5e7eb;
     --dark-surface: #f9fafb;
     --dark-muted: #f3f4f6;
+    
+    /* Brand colors */
+    --brand: hsl(142 76% 36%);
+    --brand-foreground: hsl(0 0% 100%);
+    --brand-hover: hsl(142 76% 30%);
   }
 
   .dark {
@@ -99,6 +104,12 @@
     --card-border: #333333;
     --dark-surface: #242424;
     --dark-muted: #2a2a2a;
+    --dark-primary: #303030;
+    
+    /* Brand colors in dark mode */
+    --brand: hsl(142 71% 45%);
+    --brand-foreground: hsl(144 70% 10%);
+    --brand-hover: hsl(142 71% 40%);
   }
 }
 

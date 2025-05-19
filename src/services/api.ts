@@ -1,4 +1,3 @@
-
 import { PaginatedResponse, Ad, Comment, User, Category, Brand, Listing, ListingDetails, SearchFilters, ApiResponse } from '@/types';
 
 // Base API URL for the application
@@ -29,12 +28,14 @@ async function fetchAPI<T>(endpoint: string, options?: RequestInit): Promise<T> 
       ...(!isFormData ? { 'Content-Type': 'application/json' } : {}),
     };
 
+    const headers = {
+      ...defaultHeaders,
+      ...(options?.headers || {}),
+    };
+
     const response = await fetch(url, {
       ...options,
-      headers: {
-        ...defaultHeaders,
-        ...(options?.headers || {}),
-      },
+      headers,
     });
 
     if (!response.ok) {
@@ -197,8 +198,12 @@ export const listingsAPI = {
   
   // Update an existing listing
   updateListing: async (id: number, listingData: FormData): Promise<ApiResponse<Listing>> => {
+    console.log("Updating listing with ID:", id);
+    
     // Make sure to add the _method field for Laravel to recognize this as a PUT request
-    listingData.append('_method', 'PUT');
+    if (!listingData.has('_method')) {
+      listingData.append('_method', 'PUT');
+    }
     
     return fetchAPI(`/user/listings/${id}`, {
       method: 'POST', 

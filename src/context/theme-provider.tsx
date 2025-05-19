@@ -82,10 +82,12 @@ export function ThemeProvider({
       root.style.setProperty('--dark-border', '#333333');
       root.style.setProperty('--dark-surface', '#242424');
       root.style.setProperty('--dark-muted', '#2a2a2a');
+      root.style.setProperty('--dark-primary', '#303030');
       
       // Brand color in dark mode
       root.style.setProperty('--brand', 'hsl(142 71% 45%)');
       root.style.setProperty('--brand-foreground', 'hsl(144 70% 10%)');
+      root.style.setProperty('--brand-hover', 'hsl(142 71% 40%)');
     } else {
       // Light mode - reset to default theme
       root.style.removeProperty('--background');
@@ -114,10 +116,12 @@ export function ThemeProvider({
       root.style.removeProperty('--dark-border');
       root.style.removeProperty('--dark-surface');
       root.style.removeProperty('--dark-muted');
+      root.style.removeProperty('--dark-primary');
       
       // Brand color in light mode
       root.style.setProperty('--brand', 'hsl(142 76% 36%)');
       root.style.setProperty('--brand-foreground', 'hsl(0 0% 100%)');
+      root.style.setProperty('--brand-hover', 'hsl(142 76% 30%)');
     }
   };
 

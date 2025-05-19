@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowRight, Image, X, UploadCloud, ChevronDown, Info, Loader2 } from 'lucide-react';
@@ -37,6 +38,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Card, CardContent } from "@/components/ui/card";
+import { Listing } from '@/types';
 
 export default function EditAd() {
   const { listingId } = useParams();
@@ -99,7 +101,7 @@ export default function EditAd() {
       setAdType(listing.listing_type as any || 'sell');
       setCategoryId(listing.category_id || null);
       setSubCategoryId(listing.sub_category_id || null);
-      setChildCategoryId(listing?.child_category_id || null);
+      setChildCategoryId(listing.child_category_id as number | null || null);
       setBrandId(listing.brand_id || null);
       setAdTitle(listing.title || '');
       setAdDescription(listing.description || '');
@@ -108,13 +110,13 @@ export default function EditAd() {
       setStateId(listing.state_id || null);
       setCityId(listing.city_id || null);
       setAddress(listing.address || '');
-      setPhoneHidden(listing?.phone_hidden || false);
+      setPhoneHidden(listing.phone_hidden || false);
       setProductCondition(listing.condition as 'new' | 'used' || 'used');
       
       // Set location data if available
       if (listing.lat && listing.lon) {
-        setLat(parseFloat(listing.lat));
-        setLon(parseFloat(listing.lon));
+        setLat(Number(listing.lat));
+        setLon(Number(listing.lon));
       }
       
       // Set image previews
@@ -232,7 +234,7 @@ export default function EditAd() {
     }
 
     // Validate required fields
-    if (!categoryId || !adTitle || !adDescription || !stateId || !cityId) {
+    if (!categoryId || !adTitle || !adDescription || !stateId || !cityId || !address) {
       toast({
         variant: 'destructive',
         title: 'معلومات غير مكتملة',
@@ -241,39 +243,55 @@ export default function EditAd() {
       return;
     }
     
+    // Validate image
+    if (!mainImagePreview && !mainImage) {
+      toast({
+        variant: 'destructive',
+        title: 'الصورة الرئيسية مطلوبة',
+        description: 'يرجى إضافة صورة رئيسية للإعلان',
+      });
+      return;
+    }
+    
     try {
       setIsSubmitting(true);
       const formData = new FormData();
-      formData.append('_method', 'PUT'); // Laravel convention for PUT/PATCH requests
+      
+      // Add required fields according to server validation
       formData.append('listing_type', adType);
       formData.append('category_id', categoryId.toString());
-      if (subCategoryId) formData.append('sub_category_id', subCategoryId.toString());
-      if (childCategoryId) formData.append('child_category_id', childCategoryId.toString());
-      if (brandId) formData.append('brand_id', brandId.toString());
       formData.append('title', adTitle);
       formData.append('description', adDescription);
       formData.append('price', adPrice || '0');
-      formData.append('is_negotiable', isNegotiable ? '1' : '0');
       formData.append('state_id', stateId.toString());
       formData.append('city_id', cityId.toString());
       formData.append('address', address);
-      formData.append('phone_hidden', phoneHidden ? '1' : '0');
-      formData.append('condition', productCondition);
       
-      // Add main image if changed
+      // Add optional fields
+      if (subCategoryId) formData.append('sub_category_id', subCategoryId.toString());
+      if (childCategoryId) formData.append('child_category_id', childCategoryId.toString());
+      if (brandId) formData.append('brand_id', brandId.toString());
+      formData.append('negotiable', isNegotiable ? '1' : '0');
+      formData.append('phone_hidden', phoneHidden ? '1' : '0');
+      formData.append('product_condition', productCondition);
+      
+      // Handle images
       if (mainImage) {
         formData.append('image', mainImage);
+      } else if (originalMainImage && mainImagePreview) {
+        // If using the original image, send its URL
+        formData.append('original_image', originalMainImage);
       }
       
       // Add gallery images if new ones were added
       galleryImages.forEach((image) => {
-        formData.append('images[]', image);
+        formData.append('gallery_images[]', image);
       });
       
-      // Add original images to keep (if any were removed, they won't be in the list)
+      // Handle kept original gallery images
       if (originalGalleryImages.length > 0) {
         const keptImages = originalGalleryImages.filter(img => galleryImagePreviews.includes(img));
-        formData.append('original_images', JSON.stringify(keptImages));
+        formData.append('original_gallery', JSON.stringify(keptImages));
       }
       
       // Add location if available
@@ -281,6 +299,20 @@ export default function EditAd() {
         formData.append('lat', lat.toString());
         formData.append('lon', lon.toString());
       }
+      
+      // Add method override for PUT request
+      formData.append('_method', 'PUT');
+      
+      console.log('Submitting form data:', {
+        listing_type: adType,
+        category_id: categoryId,
+        title: adTitle,
+        price: adPrice,
+        has_main_image: !!mainImage,
+        has_original_main: !!originalMainImage,
+        gallery_count: galleryImages.length,
+        kept_originals: originalGalleryImages.filter(img => galleryImagePreviews.includes(img)).length
+      });
       
       // Submit the update
       await updateListingMutation.mutateAsync(formData);
@@ -331,7 +363,7 @@ export default function EditAd() {
   if (isLoadingListing) {
     return (
       <div className="min-h-screen flex flex-col">
-        <Header isLoggedIn={isAuthenticated()} />
+        <Header />
         <main className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4 text-brand" />
@@ -345,7 +377,7 @@ export default function EditAd() {
   
   return (
     <div className="min-h-screen flex flex-col bg-background dark:bg-dark-background">
-      <Header isLoggedIn={isAuthenticated()} />
+      <Header />
       
       <main className="flex-1 pb-20 md:pb-0">
         <div className="container px-4 mx-auto py-6">
@@ -429,7 +461,7 @@ export default function EditAd() {
                         </SelectTrigger>
                         <SelectContent className="dark:bg-dark-card dark:border-dark-border">
                           <SelectItem value="0" className="dark:text-gray-200 dark:focus:bg-dark-muted">بدون ماركة</SelectItem>
-                          {brands?.map((brand) => (
+                          {brands && Array.isArray(brands) && brands.map((brand) => (
                             <SelectItem key={brand.id} value={brand.id.toString()} className="dark:text-gray-200 dark:focus:bg-dark-muted">
                               {brand.name}
                             </SelectItem>
@@ -613,7 +645,7 @@ export default function EditAd() {
                   </Button>
                   <Button 
                     onClick={handleNextStep} 
-                    disabled={!adTitle || !adDescription || !stateId || !cityId}
+                    disabled={!adTitle || !adDescription || !stateId || !cityId || !address}
                   >
                     التالي
                   </Button>
@@ -765,10 +797,10 @@ export default function EditAd() {
                         </div>
                       )}
                       
-                      {brandId && brandId > 0 && (
+                      {brandId && brandId > 0 && brands && Array.isArray(brands) && (
                         <div>
                           <h4 className="text-sm text-muted-foreground dark:text-gray-400">الماركة</h4>
-                          <p className="dark:text-gray-200">{brands?.find(b => b.id === brandId)?.name || '-'}</p>
+                          <p className="dark:text-gray-200">{brands.find(b => b.id === brandId)?.name || '-'}</p>
                         </div>
                       )}
                     </div>
