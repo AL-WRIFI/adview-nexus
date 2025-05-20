@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Header } from '@/components/layout/header';
 import { CategoryBar } from '@/components/layout/category/CategoryBar';
@@ -56,8 +55,6 @@ export default function Home() {
     <div className="min-h-screen flex flex-col">
       <Header />
       <CategoryBar />
-      {/* {isMobile ? <CategoryBar /> : <DesktopCategoryBar/>} */}
-      
       
       <main className="flex-1 pb-20 md:pb-0">
         <div className="container px-4 mx-auto py-6">

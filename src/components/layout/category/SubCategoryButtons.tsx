@@ -1,8 +1,14 @@
 
 import React from 'react';
 
+type SubCategory = {
+  id: number;
+  name: string;
+  [key: string]: any;
+};
+
 const SubCategoryButtons = ({ subCategories, activeSubCategory, onSelect }: { 
-  subCategories: any[];
+  subCategories: SubCategory[];
   activeSubCategory: number | null;
   onSelect: (id: number) => void;
 }) => {

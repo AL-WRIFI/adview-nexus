@@ -20,8 +20,32 @@ export function AdCard({ ad, layout = 'list', className, onFavoriteToggle, isFav
     locale: ar
   });
 
-  const hasValidImage = ad.image || (ad.images && ad.images.length > 0);
-  const imageUrl = hasValidImage ? (ad.image || (ad.images && ad.images[0])) : null;
+  // Handle the new image format
+  const getImageUrl = () => {
+    // Check if we have image object with image_url
+    if (ad.image && typeof ad.image === 'object' && ad.image.image_url) {
+      return ad.image.image_url;
+    }
+    
+    // For backwards compatibility, check if image is a string
+    if (typeof ad.image === 'string' && ad.image) {
+      return ad.image;
+    }
+    
+    // If we have images array with url property
+    if (ad.images && Array.isArray(ad.images) && ad.images.length > 0) {
+      if (typeof ad.images[0] === 'object' && 'url' in ad.images[0] && ad.images[0].url) {
+        return ad.images[0].url;
+      } else if (typeof ad.images[0] === 'string') {
+        return ad.images[0];
+      }
+    }
+    
+    return null;
+  };
+
+  const imageUrl = getImageUrl();
+  const hasValidImage = !!imageUrl;
 
   // Grid view renders a vertical card
   if (layout === 'grid') {
@@ -36,7 +60,7 @@ export function AdCard({ ad, layout = 'list', className, onFavoriteToggle, isFav
       >
         {/* Image section */}
         <div className="relative w-full h-40">
-          {imageUrl ? (
+          {hasValidImage ? (
             <img 
               src={imageUrl} 
               alt={ad.title} 
@@ -91,7 +115,7 @@ export function AdCard({ ad, layout = 'list', className, onFavoriteToggle, isFav
           <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2 text-xs text-muted-foreground">
             <div className="flex items-center">
               <MapPin className="h-3 w-3 ml-1" />
-              <span className="truncate max-w-[80px]">{ad.city}</span>
+              <span className="truncate max-w-[80px]">{ad.city || ad.address || 'غير محدد'}</span>
             </div>
             <div className="flex items-center">
               <Clock className="h-3 w-3 ml-1" />
@@ -119,7 +143,7 @@ export function AdCard({ ad, layout = 'list', className, onFavoriteToggle, isFav
     >
       {/* Image section */}
       <div className="w-28 md:w-36 h-28 flex-shrink-0 relative">
-        {imageUrl ? (
+        {hasValidImage ? (
           <img 
             src={imageUrl} 
             alt={ad.title} 
@@ -179,7 +203,7 @@ export function AdCard({ ad, layout = 'list', className, onFavoriteToggle, isFav
         <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2 text-xs text-muted-foreground">
           <div className="flex items-center">
             <MapPin className="h-3 w-3 ml-1" />
-            <span className="truncate max-w-[80px]">{ad.city}</span>
+            <span className="truncate max-w-[80px]">{ad.city || ad.address || 'غير محدد'}</span>
           </div>
           <div className="flex items-center">
             <Clock className="h-3 w-3 ml-1" />
