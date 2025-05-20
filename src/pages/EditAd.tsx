@@ -40,6 +40,21 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { Listing } from '@/types';
 
+// Helper function to fetch image as File from URL
+async function fetchImageAsFile(url: string, fileName: string): Promise<File | null> {
+  try {
+    const response = await fetch(url);
+    if (!response.ok) return null;
+    
+    const blob = await response.blob();
+    // Create a File object from the blob
+    return new File([blob], fileName, { type: blob.type });
+  } catch (error) {
+    console.error("Failed to fetch image:", error);
+    return null;
+  }
+}
+
 export default function EditAd() {
   const { listingId } = useParams();
   const navigate = useNavigate();
@@ -52,7 +67,7 @@ export default function EditAd() {
   
   // Local state for form
   const [currentStep, setCurrentStep] = useState(3); // Start at final step
-  const [adType, setAdType] = useState<'sell' | 'buy' | 'exchange' | 'service'>('sell');
+  const [adType, setAdType] = useState<'sell' | 'buy' | 'exchange' | 'service' | 'rent' | 'job'>('sell');
   const [categoryId, setCategoryId] = useState<number | null>(null);
   const [subCategoryId, setSubCategoryId] = useState<number | null>(null);
   const [childCategoryId, setChildCategoryId] = useState<number | null>(null);
@@ -75,8 +90,11 @@ export default function EditAd() {
   const [lon, setLon] = useState<number | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [originalMainImage, setOriginalMainImage] = useState<string | null>(null);
-  const [originalGalleryImages, setOriginalGalleryImages] = useState<string[]>([]);
+  const [mainImageChanged, setMainImageChanged] = useState(false);
+  const [originalGalleryImages, setOriginalGalleryImages] = useState<{url: string, file: File | null}[]>([]);
+  const [removedOriginalImages, setRemovedOriginalImages] = useState<string[]>([]);
+  const [loadingGalleryImages, setLoadingGalleryImages] = useState(false);
+  const [loadingMainImage, setLoadingMainImage] = useState(false);
   
   // Get filtered cities based on selected state
   const { data: cities } = useCities(stateId || undefined);
@@ -93,15 +111,29 @@ export default function EditAd() {
       navigate('/auth/login', { state: { from: `/edit-ad/${listingId}` } });
     }
   }, []);
+
+  // Helper function to extract filename from URL
+  const getFilenameFromUrl = (url: string): string => {
+    try {
+      const pathname = new URL(url).pathname;
+      const filename = pathname.split('/').pop() || 'image.png';
+      return filename;
+    } catch (error) {
+      console.error("Error parsing URL:", error);
+      return `image-${Date.now()}.png`;
+    }
+  };
   
   // Load listing data when available
   useEffect(() => {
     if (listing) {
+      console.log("Loaded listing data:", listing);
+      
       // Set form data from listing
-      setAdType(listing.listing_type as any || 'sell');
+      setAdType((listing.listing_type as any) || 'sell');
       setCategoryId(listing.category_id || null);
       setSubCategoryId(listing.sub_category_id || null);
-      setChildCategoryId(listing.child_category_id as number | null || null);
+      setChildCategoryId(listing.child_category_id || null);
       setBrandId(listing.brand_id || null);
       setAdTitle(listing.title || '');
       setAdDescription(listing.description || '');
@@ -111,7 +143,7 @@ export default function EditAd() {
       setCityId(listing.city_id || null);
       setAddress(listing.address || '');
       setPhoneHidden(listing.phone_hidden || false);
-      setProductCondition(listing.condition as 'new' | 'used' || 'used');
+      setProductCondition((listing.condition as 'new' | 'used') || 'used');
       
       // Set location data if available
       if (listing.lat && listing.lon) {
@@ -119,15 +151,46 @@ export default function EditAd() {
         setLon(Number(listing.lon));
       }
       
-      // Set image previews
+      // Load main image
       if (listing.image) {
+        setLoadingMainImage(true);
         setMainImagePreview(listing.image);
-        setOriginalMainImage(listing.image);
+        
+        fetchImageAsFile(listing.image, getFilenameFromUrl(listing.image))
+          .then(file => {
+            if (file) {
+              setMainImage(file);
+              console.log("Main image loaded as file:", file);
+            }
+            setLoadingMainImage(false);
+          })
+          .catch(error => {
+            console.error("Failed to load main image:", error);
+            setLoadingMainImage(false);
+          });
       }
       
+      // Load gallery images
       if (listing.images && listing.images.length > 0) {
         setGalleryImagePreviews(listing.images);
-        setOriginalGalleryImages(listing.images);
+        setLoadingGalleryImages(true);
+        
+        const originalImagesPromises = listing.images.map(async (imageUrl) => {
+          const fileName = getFilenameFromUrl(imageUrl);
+          const file = await fetchImageAsFile(imageUrl, fileName);
+          return { url: imageUrl, file };
+        });
+        
+        Promise.all(originalImagesPromises)
+          .then(originalImages => {
+            setOriginalGalleryImages(originalImages);
+            console.log("Gallery images loaded:", originalImages);
+            setLoadingGalleryImages(false);
+          })
+          .catch(error => {
+            console.error("Failed to load gallery images:", error);
+            setLoadingGalleryImages(false);
+          });
       }
     }
   }, [listing]);
@@ -152,6 +215,7 @@ export default function EditAd() {
       const file = e.target.files[0];
       setMainImage(file);
       setMainImagePreview(URL.createObjectURL(file));
+      setMainImageChanged(true);
     }
   };
   
@@ -170,33 +234,39 @@ export default function EditAd() {
   const handleRemoveMainImage = () => {
     setMainImage(null);
     setMainImagePreview(null);
-    if (originalMainImage === mainImagePreview) {
-      setOriginalMainImage(null);
-    } else if (mainImagePreview) {
-      URL.revokeObjectURL(mainImagePreview);
-    }
+    setMainImageChanged(true);
   };
   
   const handleRemoveGalleryImage = (index: number) => {
-    const updatedImages = [...galleryImages];
     const updatedPreviews = [...galleryImagePreviews];
     const removedPreview = galleryImagePreviews[index];
     
     // Check if it's an original image or a new one
-    const isOriginalImage = originalGalleryImages.includes(removedPreview);
+    const isOriginalImage = originalGalleryImages.some(img => img.url === removedPreview);
     
-    if (!isOriginalImage && removedPreview) {
+    if (isOriginalImage) {
+      // Add to removed original images
+      setRemovedOriginalImages([...removedOriginalImages, removedPreview]);
+      
+      // Remove from original images
+      setOriginalGalleryImages(
+        originalGalleryImages.filter(img => img.url !== removedPreview)
+      );
+    } else if (removedPreview) {
+      // If it's a new image, revoke the URL
       URL.revokeObjectURL(removedPreview);
+      
+      // Remove from new gallery images
+      const newImageIndex = galleryImagePreviews.indexOf(removedPreview) - originalGalleryImages.length;
+      if (newImageIndex >= 0) {
+        const updatedGalleryImages = [...galleryImages];
+        updatedGalleryImages.splice(newImageIndex, 1);
+        setGalleryImages(updatedGalleryImages);
+      }
     }
     
+    // Remove from previews
     updatedPreviews.splice(index, 1);
-    
-    // Only splice the galleryImages array if it's a new image
-    if (index < updatedImages.length) {
-      updatedImages.splice(index, 1);
-    }
-    
-    setGalleryImages(updatedImages);
     setGalleryImagePreviews(updatedPreviews);
   };
   
@@ -243,12 +313,22 @@ export default function EditAd() {
       return;
     }
     
-    // Validate image
-    if (!mainImagePreview && !mainImage) {
+    // Validate image - if no main image is selected and original was removed
+    if ((!mainImage && mainImageChanged) || (loadingMainImage && !mainImagePreview)) {
       toast({
         variant: 'destructive',
         title: 'الصورة الرئيسية مطلوبة',
         description: 'يرجى إضافة صورة رئيسية للإعلان',
+      });
+      return;
+    }
+    
+    // Check if images are still loading
+    if (loadingMainImage || loadingGalleryImages) {
+      toast({
+        variant: 'destructive',
+        title: 'جاري تحميل الصور',
+        description: 'يرجى الانتظار حتى يتم تحميل جميع الصور',
       });
       return;
     }
@@ -275,23 +355,9 @@ export default function EditAd() {
       formData.append('phone_hidden', phoneHidden ? '1' : '0');
       formData.append('product_condition', productCondition);
       
-      // Handle images
+      // Handle main image
       if (mainImage) {
         formData.append('image', mainImage);
-      } else if (originalMainImage && mainImagePreview) {
-        // If using the original image, send its URL
-        formData.append('original_image', originalMainImage);
-      }
-      
-      // Add gallery images if new ones were added
-      galleryImages.forEach((image) => {
-        formData.append('gallery_images[]', image);
-      });
-      
-      // Handle kept original gallery images
-      if (originalGalleryImages.length > 0) {
-        const keptImages = originalGalleryImages.filter(img => galleryImagePreviews.includes(img));
-        formData.append('original_gallery', JSON.stringify(keptImages));
       }
       
       // Add location if available
@@ -300,18 +366,30 @@ export default function EditAd() {
         formData.append('lon', lon.toString());
       }
       
+      // Handle new gallery images
+      galleryImages.forEach((image, index) => {
+        formData.append(`gallery_images[${index}]`, image);
+      });
+      
+      // Handle original gallery images that are kept
+      originalGalleryImages.forEach((imgObj, index) => {
+        if (imgObj.file) {
+          formData.append(`original_gallery_files[${index}]`, imgObj.file);
+        }
+      });
+      
       // Add method override for PUT request
       formData.append('_method', 'PUT');
       
+      // Debug what we're sending
       console.log('Submitting form data:', {
         listing_type: adType,
         category_id: categoryId,
         title: adTitle,
         price: adPrice,
-        has_main_image: !!mainImage,
-        has_original_main: !!originalMainImage,
-        gallery_count: galleryImages.length,
-        kept_originals: originalGalleryImages.filter(img => galleryImagePreviews.includes(img)).length
+        main_image: mainImage ? mainImage.name : 'No main image',
+        gallery_images_count: galleryImages.length,
+        original_gallery_kept: originalGalleryImages.length
       });
       
       // Submit the update
@@ -327,7 +405,7 @@ export default function EditAd() {
       toast({
         variant: 'destructive',
         title: 'خطأ في تحديث الإعلان',
-        description: 'حدث خطأ أثناء تحديث الإعلان. يرجى المحاولة مرة أخرى',
+        description: error instanceof Error ? error.message : 'حدث خطأ أثناء تحديث الإعلان. يرجى المحاولة مرة أخرى',
       });
     } finally {
       setIsSubmitting(false);
@@ -415,8 +493,8 @@ export default function EditAd() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {[
                     { id: 'sell', label: 'بيع منتج', desc: 'بيع أي منتج تملكه' },
-                    { id: 'buy', label: 'شراء', desc: 'البحث عن منتج' },
-                    { id: 'exchange', label: 'مقايضة', desc: 'مقايضة منتج بآخر' },
+                    { id: 'rent', label: 'تأجير', desc: 'تأجير عقار أو منتج' },
+                    { id: 'job', label: 'وظيفة', desc: 'الإعلان عن وظيفة شاغرة' },
                     { id: 'service', label: 'خدمة', desc: 'تقديم خدمة احترافية' }
                   ].map((type) => (
                     <button
@@ -452,7 +530,7 @@ export default function EditAd() {
                   </div>
                   
                   {/* Brand selection, only for certain categories */}
-                  {(adType === 'sell' || adType === 'buy' || adType === 'exchange') && categoryId && (
+                  {(adType === 'sell' || adType === 'rent') && categoryId && (
                     <div>
                       <Label className="dark:text-gray-200">اختر الماركة</Label>
                       <Select value={brandId?.toString()} onValueChange={(value) => setBrandId(parseInt(value))}>
@@ -533,7 +611,7 @@ export default function EditAd() {
                   </div>
                 </div>
                 
-                {(adType === 'sell' || adType === 'exchange') && (
+                {(adType === 'sell' || adType === 'rent') && (
                   <div>
                     <Label htmlFor="condition" className="dark:text-gray-200">حالة المنتج</Label>
                     <div className="grid grid-cols-2 gap-4 mt-1">
@@ -660,7 +738,12 @@ export default function EditAd() {
                 <div>
                   <Label className="mb-2 block dark:text-gray-200">الصورة الرئيسية</Label>
                   
-                  {mainImagePreview ? (
+                  {loadingMainImage ? (
+                    <div className="relative h-64 border rounded-lg overflow-hidden mb-4 flex items-center justify-center dark:border-dark-border dark:bg-dark-muted">
+                      <Loader2 className="h-10 w-10 animate-spin text-brand" />
+                      <p className="text-sm text-muted-foreground mt-2">جاري تحميل الصورة...</p>
+                    </div>
+                  ) : mainImagePreview ? (
                     <div className="relative h-64 border rounded-lg overflow-hidden mb-4 dark:border-dark-border dark:bg-dark-muted">
                       <img src={mainImagePreview} alt="الصورة الرئيسية" className="w-full h-full object-contain" />
                       <button
@@ -686,32 +769,39 @@ export default function EditAd() {
                   
                   <Label className="mb-2 block dark:text-gray-200">صور إضافية (اختياري)</Label>
                   
-                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
-                    {galleryImagePreviews.map((image, index) => (
-                      <div key={index} className="relative h-32 border rounded-lg overflow-hidden dark:border-dark-border dark:bg-dark-muted">
-                        <img src={image} alt={`صورة ${index + 1}`} className="w-full h-full object-cover" />
-                        <button
-                          onClick={() => handleRemoveGalleryImage(index)}
-                          className="absolute top-1 left-1 bg-red-500 text-white rounded-full p-1"
-                        >
-                          <X className="h-4 w-4" />
-                        </button>
-                      </div>
-                    ))}
-                    
-                    {galleryImagePreviews.length < 9 && (
-                      <label className="relative h-32 border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 dark:border-dark-border dark:hover:bg-dark-card/80">
-                        <UploadCloud className="h-10 w-10 text-muted-foreground mb-2 dark:text-gray-400" />
-                        <span className="text-sm text-muted-foreground dark:text-gray-400">اضغط لإضافة صورة</span>
-                        <input
-                          type="file"
-                          className="hidden"
-                          accept="image/*"
-                          onChange={handleGalleryImageChange}
-                        />
-                      </label>
-                    )}
-                  </div>
+                  {loadingGalleryImages ? (
+                    <div className="relative h-32 border rounded-lg overflow-hidden mb-4 flex items-center justify-center dark:border-dark-border dark:bg-dark-muted">
+                      <Loader2 className="h-6 w-6 animate-spin text-brand" />
+                      <p className="text-sm text-muted-foreground mt-2 mr-2">جاري تحميل الصور...</p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
+                      {galleryImagePreviews.map((image, index) => (
+                        <div key={index} className="relative h-32 border rounded-lg overflow-hidden dark:border-dark-border dark:bg-dark-muted">
+                          <img src={image} alt={`صورة ${index + 1}`} className="w-full h-full object-cover" />
+                          <button
+                            onClick={() => handleRemoveGalleryImage(index)}
+                            className="absolute top-1 left-1 bg-red-500 text-white rounded-full p-1"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                      ))}
+                      
+                      {galleryImagePreviews.length < 9 && (
+                        <label className="relative h-32 border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 dark:border-dark-border dark:hover:bg-dark-card/80">
+                          <UploadCloud className="h-10 w-10 text-muted-foreground mb-2 dark:text-gray-400" />
+                          <span className="text-sm text-muted-foreground dark:text-gray-400">اضغط لإضافة صورة</span>
+                          <input
+                            type="file"
+                            className="hidden"
+                            accept="image/*"
+                            onChange={handleGalleryImageChange}
+                          />
+                        </label>
+                      )}
+                    </div>
+                  )}
                   
                   <Card className="dark:bg-dark-surface dark:border-dark-border">
                     <CardContent className="p-4 text-blue-700 text-sm dark:text-blue-400">
@@ -735,7 +825,7 @@ export default function EditAd() {
                   <Button variant="outline" onClick={handlePrevStep} className="dark:bg-dark-card dark:border-dark-border dark:text-gray-200 dark:hover:bg-dark-muted">
                     السابق
                   </Button>
-                  <Button onClick={handleNextStep} disabled={!mainImagePreview}>
+                  <Button onClick={handleNextStep}>
                     التالي
                   </Button>
                 </div>
@@ -784,13 +874,13 @@ export default function EditAd() {
                         <h4 className="text-sm text-muted-foreground dark:text-gray-400">نوع الإعلان</h4>
                         <p className="dark:text-gray-200">
                           {adType === 'sell' && 'بيع منتج'}
-                          {adType === 'buy' && 'شراء'}
-                          {adType === 'exchange' && 'مقايضة'}
+                          {adType === 'rent' && 'تأجير'}
+                          {adType === 'job' && 'وظيفة'}
                           {adType === 'service' && 'خدمة'}
                         </p>
                       </div>
                       
-                      {(adType === 'sell' || adType === 'exchange') && (
+                      {(adType === 'sell' || adType === 'rent') && (
                         <div>
                           <h4 className="text-sm text-muted-foreground dark:text-gray-400">حالة المنتج</h4>
                           <p className="dark:text-gray-200">{productCondition === 'new' ? 'جديد' : 'مستعمل'}</p>
@@ -852,7 +942,7 @@ export default function EditAd() {
                       variant="default" 
                       size="lg"
                       onClick={handleUpdate}
-                      disabled={isSubmitting || !agreeTerms}
+                      disabled={isSubmitting || !agreeTerms || loadingMainImage || loadingGalleryImages}
                       className="w-full"
                     >
                       {isSubmitting ? (
