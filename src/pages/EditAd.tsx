@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowRight, Image, X, UploadCloud, ChevronDown, Info, Loader2 } from 'lucide-react';
@@ -77,7 +76,7 @@ export default function EditAd() {
   const [phoneHidden, setPhoneHidden] = useState(false);
   const [productCondition, setProductCondition] = useState<'new' | 'used'>('used');
   
-  // Updated image handling
+  // Image handling
   const [mainImage, setMainImage] = useState<File | null>(null);
   const [galleryImages, setGalleryImages] = useState<File[]>([]); // New uploaded images
   
@@ -111,11 +110,13 @@ export default function EditAd() {
   // Load listing data when available
   useEffect(() => {
     if (listing) {
+      console.log("Listing data:", listing);
+      
       // Set form data from listing
       setAdType(listing.listing_type as any || 'sell');
       setCategoryId(listing.category_id || null);
       setSubCategoryId(listing.sub_category_id || null);
-      setChildCategoryId(listing.child_category_id as number | null || null);
+      setChildCategoryId(listing.child_category_id || null);
       setBrandId(listing.brand_id || null);
       setAdTitle(listing.title || '');
       setAdDescription(listing.description || '');
@@ -133,12 +134,12 @@ export default function EditAd() {
         setLon(Number(listing.lon));
       }
       
-      // Set image data with the new format
-      if (listing.image && typeof listing.image === 'object') {
+      // Set image data
+      if (listing.image) {
         setMainImageData(listing.image as MainImage);
       }
       
-      // Handle gallery images with the new format
+      // Handle gallery images
       if (listing.images && Array.isArray(listing.images)) {
         setGalleryImagesData(listing.images as GalleryImage[]);
       }
@@ -241,16 +242,6 @@ export default function EditAd() {
       return;
     }
     
-    // Validate image - main image can be either a new file or an existing one
-    if (!mainImage && !mainImageData) {
-      toast({
-        variant: 'destructive',
-        title: 'الصورة الرئيسية مطلوبة',
-        description: 'يرجى إضافة صورة رئيسية للإعلان',
-      });
-      return;
-    }
-    
     try {
       setIsSubmitting(true);
       const formData = new FormData();
@@ -273,12 +264,9 @@ export default function EditAd() {
       formData.append('phone_hidden', phoneHidden ? '1' : '0');
       formData.append('product_condition', productCondition);
       
-      // Handle main image
+      // Handle main image as requested - only send if there's a new image
       if (mainImage) {
         formData.append('image', mainImage);
-      } else if (mainImageData) {
-        // If using the existing image, pass its ID
-        formData.append('image_id', mainImageData.image_id);
       }
       
       // Add new gallery images if any
@@ -306,7 +294,6 @@ export default function EditAd() {
         title: adTitle,
         price: adPrice,
         has_main_image: !!mainImage,
-        has_main_image_id: mainImageData ? mainImageData.image_id : null,
         new_gallery_count: galleryImages.length,
         deleted_images: deletedImageIds
       });
