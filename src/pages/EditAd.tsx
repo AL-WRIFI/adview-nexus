@@ -40,6 +40,16 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { Listing } from '@/types';
 
+interface GalleryImage {
+  id: string;
+  url: string;
+}
+
+interface MainImage {
+  image_id: string;
+  image_url: string;
+}
+
 export default function EditAd() {
   const { listingId } = useParams();
   const navigate = useNavigate();
@@ -66,17 +76,21 @@ export default function EditAd() {
   const [address, setAddress] = useState('');
   const [phoneHidden, setPhoneHidden] = useState(false);
   const [productCondition, setProductCondition] = useState<'new' | 'used'>('used');
+  
+  // Updated image handling
   const [mainImage, setMainImage] = useState<File | null>(null);
-  const [galleryImages, setGalleryImages] = useState<File[]>([]);
-  const [mainImagePreview, setMainImagePreview] = useState<string | null>(null);
-  const [galleryImagePreviews, setGalleryImagePreviews] = useState<string[]>([]);
+  const [galleryImages, setGalleryImages] = useState<File[]>([]); // New uploaded images
+  
+  // For current images display
+  const [mainImageData, setMainImageData] = useState<MainImage | null>(null);
+  const [galleryImagesData, setGalleryImagesData] = useState<GalleryImage[]>([]);
+  const [deletedImageIds, setDeletedImageIds] = useState<string[]>([]);
+  
   const [agreeTerms, setAgreeTerms] = useState(true);
   const [lat, setLat] = useState<number | null>(null);
   const [lon, setLon] = useState<number | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [originalMainImage, setOriginalMainImage] = useState<string | null>(null);
-  const [originalGalleryImages, setOriginalGalleryImages] = useState<string[]>([]);
   
   // Get filtered cities based on selected state
   const { data: cities } = useCities(stateId || undefined);
@@ -119,15 +133,14 @@ export default function EditAd() {
         setLon(Number(listing.lon));
       }
       
-      // Set image previews
-      if (listing.image) {
-        setMainImagePreview(listing.image);
-        setOriginalMainImage(listing.image);
+      // Set image data with the new format
+      if (listing.image && typeof listing.image === 'object') {
+        setMainImageData(listing.image as MainImage);
       }
       
-      if (listing.images && listing.images.length > 0) {
-        setGalleryImagePreviews(listing.images);
-        setOriginalGalleryImages(listing.images);
+      // Handle gallery images with the new format
+      if (listing.images && Array.isArray(listing.images)) {
+        setGalleryImagesData(listing.images as GalleryImage[]);
       }
     }
   }, [listing]);
@@ -151,53 +164,38 @@ export default function EditAd() {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       setMainImage(file);
-      setMainImagePreview(URL.createObjectURL(file));
     }
   };
   
   const handleGalleryImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const newFiles = Array.from(e.target.files);
-      
-      // Create preview URLs
-      const newPreviews = newFiles.map((file) => URL.createObjectURL(file));
-      
       setGalleryImages([...galleryImages, ...newFiles]);
-      setGalleryImagePreviews([...galleryImagePreviews, ...newPreviews]);
     }
   };
   
   const handleRemoveMainImage = () => {
     setMainImage(null);
-    setMainImagePreview(null);
-    if (originalMainImage === mainImagePreview) {
-      setOriginalMainImage(null);
-    } else if (mainImagePreview) {
-      URL.revokeObjectURL(mainImagePreview);
-    }
+    setMainImageData(null);
   };
   
-  const handleRemoveGalleryImage = (index: number) => {
-    const updatedImages = [...galleryImages];
-    const updatedPreviews = [...galleryImagePreviews];
-    const removedPreview = galleryImagePreviews[index];
-    
-    // Check if it's an original image or a new one
-    const isOriginalImage = originalGalleryImages.includes(removedPreview);
-    
-    if (!isOriginalImage && removedPreview) {
-      URL.revokeObjectURL(removedPreview);
-    }
-    
-    updatedPreviews.splice(index, 1);
-    
-    // Only splice the galleryImages array if it's a new image
-    if (index < updatedImages.length) {
+  const handleRemoveGalleryImage = (index: number, imageId?: string) => {
+    // Check if this is an existing image (has ID) or a new one
+    if (imageId) {
+      // It's an existing image, mark it for deletion
+      setDeletedImageIds(prev => [...prev, imageId]);
+      // Remove from display
+      setGalleryImagesData(prev => prev.filter(img => img.id !== imageId));
+    } else {
+      // It's a new image, just remove from the array
+      const updatedImages = [...galleryImages];
       updatedImages.splice(index, 1);
+      setGalleryImages(updatedImages);
     }
-    
-    setGalleryImages(updatedImages);
-    setGalleryImagePreviews(updatedPreviews);
+  };
+
+  const isExistingGalleryImage = (url: string): boolean => {
+    return galleryImagesData.some(img => img.url === url);
   };
   
   const getStepTitle = () => {
@@ -243,8 +241,8 @@ export default function EditAd() {
       return;
     }
     
-    // Validate image
-    if (!mainImagePreview && !mainImage) {
+    // Validate image - main image can be either a new file or an existing one
+    if (!mainImage && !mainImageData) {
       toast({
         variant: 'destructive',
         title: 'الصورة الرئيسية مطلوبة',
@@ -275,24 +273,23 @@ export default function EditAd() {
       formData.append('phone_hidden', phoneHidden ? '1' : '0');
       formData.append('product_condition', productCondition);
       
-      // Handle images
+      // Handle main image
       if (mainImage) {
         formData.append('image', mainImage);
-      } else if (originalMainImage && mainImagePreview) {
-        // If using the original image, send its URL
-        formData.append('original_image', originalMainImage);
+      } else if (mainImageData) {
+        // If using the existing image, pass its ID
+        formData.append('image_id', mainImageData.image_id);
       }
       
-      // Add gallery images if new ones were added
+      // Add new gallery images if any
       galleryImages.forEach((image) => {
         formData.append('gallery_images[]', image);
       });
       
-      // Handle kept original gallery images
-      if (originalGalleryImages.length > 0) {
-        const keptImages = originalGalleryImages.filter(img => galleryImagePreviews.includes(img));
-        formData.append('original_gallery', JSON.stringify(keptImages));
-      }
+      // Add deleted image IDs if any
+      deletedImageIds.forEach(id => {
+        formData.append('deleted_images[]', id);
+      });
       
       // Add location if available
       if (lat !== null && lon !== null) {
@@ -309,9 +306,9 @@ export default function EditAd() {
         title: adTitle,
         price: adPrice,
         has_main_image: !!mainImage,
-        has_original_main: !!originalMainImage,
-        gallery_count: galleryImages.length,
-        kept_originals: originalGalleryImages.filter(img => galleryImagePreviews.includes(img)).length
+        has_main_image_id: mainImageData ? mainImageData.image_id : null,
+        new_gallery_count: galleryImages.length,
+        deleted_images: deletedImageIds
       });
       
       // Submit the update
@@ -660,9 +657,19 @@ export default function EditAd() {
                 <div>
                   <Label className="mb-2 block dark:text-gray-200">الصورة الرئيسية</Label>
                   
-                  {mainImagePreview ? (
+                  {mainImage ? (
                     <div className="relative h-64 border rounded-lg overflow-hidden mb-4 dark:border-dark-border dark:bg-dark-muted">
-                      <img src={mainImagePreview} alt="الصورة الرئيسية" className="w-full h-full object-contain" />
+                      <img src={URL.createObjectURL(mainImage)} alt="الصورة الرئيسية" className="w-full h-full object-contain" />
+                      <button
+                        onClick={handleRemoveMainImage}
+                        className="absolute top-2 left-2 bg-red-500 text-white rounded-full p-1"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ) : mainImageData ? (
+                    <div className="relative h-64 border rounded-lg overflow-hidden mb-4 dark:border-dark-border dark:bg-dark-muted">
+                      <img src={mainImageData.image_url} alt="الصورة الرئيسية" className="w-full h-full object-contain" />
                       <button
                         onClick={handleRemoveMainImage}
                         className="absolute top-2 left-2 bg-red-500 text-white rounded-full p-1"
@@ -687,19 +694,40 @@ export default function EditAd() {
                   <Label className="mb-2 block dark:text-gray-200">صور إضافية (اختياري)</Label>
                   
                   <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
-                    {galleryImagePreviews.map((image, index) => (
-                      <div key={index} className="relative h-32 border rounded-lg overflow-hidden dark:border-dark-border dark:bg-dark-muted">
-                        <img src={image} alt={`صورة ${index + 1}`} className="w-full h-full object-cover" />
+                    {/* Display existing gallery images */}
+                    {galleryImagesData.map((image, index) => (
+                      <div key={`existing-${image.id}`} className="relative h-32 border rounded-lg overflow-hidden dark:border-dark-border dark:bg-dark-muted">
+                        <img src={image.url} alt={`صورة ${index + 1}`} className="w-full h-full object-cover" />
+                        <button
+                          onClick={() => handleRemoveGalleryImage(index, image.id)}
+                          className="absolute top-1 left-1 bg-red-500 text-white rounded-full p-1"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                        <div className="absolute bottom-1 left-1 bg-gray-800 text-white text-xs rounded px-1">
+                          موجودة
+                        </div>
+                      </div>
+                    ))}
+                    
+                    {/* Display newly added gallery images */}
+                    {galleryImages.map((image, index) => (
+                      <div key={`new-${index}`} className="relative h-32 border rounded-lg overflow-hidden dark:border-dark-border dark:bg-dark-muted">
+                        <img src={URL.createObjectURL(image)} alt={`صورة جديدة ${index + 1}`} className="w-full h-full object-cover" />
                         <button
                           onClick={() => handleRemoveGalleryImage(index)}
                           className="absolute top-1 left-1 bg-red-500 text-white rounded-full p-1"
                         >
                           <X className="h-4 w-4" />
                         </button>
+                        <div className="absolute bottom-1 left-1 bg-green-600 text-white text-xs rounded px-1">
+                          جديدة
+                        </div>
                       </div>
                     ))}
                     
-                    {galleryImagePreviews.length < 9 && (
+                    {/* Add new gallery image button */}
+                    {galleryImagesData.length + galleryImages.length < 9 && (
                       <label className="relative h-32 border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 dark:border-dark-border dark:hover:bg-dark-card/80">
                         <UploadCloud className="h-10 w-10 text-muted-foreground mb-2 dark:text-gray-400" />
                         <span className="text-sm text-muted-foreground dark:text-gray-400">اضغط لإضافة صورة</span>
@@ -735,7 +763,7 @@ export default function EditAd() {
                   <Button variant="outline" onClick={handlePrevStep} className="dark:bg-dark-card dark:border-dark-border dark:text-gray-200 dark:hover:bg-dark-muted">
                     السابق
                   </Button>
-                  <Button onClick={handleNextStep} disabled={!mainImagePreview}>
+                  <Button onClick={handleNextStep} disabled={!mainImage && !mainImageData}>
                     التالي
                   </Button>
                 </div>
@@ -813,17 +841,36 @@ export default function EditAd() {
                     <div>
                       <h4 className="text-sm text-muted-foreground dark:text-gray-400">الصور</h4>
                       <div className="flex flex-wrap gap-2 mt-1">
-                        {mainImagePreview && (
+                        {/* Main image */}
+                        {mainImage ? (
                           <div className="w-16 h-16 rounded-md overflow-hidden border-2 border-brand">
-                            <img src={mainImagePreview} alt="الصورة الرئيسية" className="w-full h-full object-cover" />
+                            <img src={URL.createObjectURL(mainImage)} alt="الصورة الرئيسية" className="w-full h-full object-cover" />
+                          </div>
+                        ) : mainImageData && (
+                          <div className="w-16 h-16 rounded-md overflow-hidden border-2 border-brand">
+                            <img src={mainImageData.image_url} alt="الصورة الرئيسية" className="w-full h-full object-cover" />
                           </div>
                         )}
-                        {galleryImagePreviews.map((image, index) => (
-                          <div key={index} className="w-16 h-16 rounded-md overflow-hidden dark:border dark:border-dark-border">
-                            <img src={image} alt={`صورة ${index + 1}`} className="w-full h-full object-cover" />
+
+                        {/* Gallery images - both existing and new */}
+                        {galleryImagesData.map((image, index) => (
+                          <div key={`review-existing-${image.id}`} className="w-16 h-16 rounded-md overflow-hidden dark:border dark:border-dark-border">
+                            <img src={image.url} alt={`صورة ${index + 1}`} className="w-full h-full object-cover" />
+                          </div>
+                        ))}
+                        
+                        {galleryImages.map((image, index) => (
+                          <div key={`review-new-${index}`} className="w-16 h-16 rounded-md overflow-hidden dark:border dark:border-dark-border">
+                            <img src={URL.createObjectURL(image)} alt={`صورة جديدة ${index + 1}`} className="w-full h-full object-cover" />
                           </div>
                         ))}
                       </div>
+                      
+                      {deletedImageIds.length > 0 && (
+                        <p className="mt-2 text-xs text-red-500">
+                          سيتم حذف {deletedImageIds.length} من الصور الأصلية
+                        </p>
+                      )}
                     </div>
                     
                     <div>
