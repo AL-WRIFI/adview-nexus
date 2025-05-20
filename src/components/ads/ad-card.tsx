@@ -1,10 +1,14 @@
 
 import { Link } from 'react-router-dom';
-import { Clock, MapPin, Star, Eye, Image as ImageIcon } from 'lucide-react';
+import { Clock, MapPin, Star, Eye, Image as ImageIcon, Heart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Ad, Listing } from '@/types';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
+import { useState } from 'react';
+import { useAddToFavorites, useRemoveFromFavorites } from '@/hooks/use-api';
+import { toast } from '@/hooks/use-toast';
+import { useAuth } from '@/context/auth-context';
 
 interface AdCardProps {
   ad: Listing | Ad;
@@ -12,13 +16,55 @@ interface AdCardProps {
   className?: string;
   onFavoriteToggle?: (adId: string | number) => void;
   isFavorite?: boolean;
+  distance?: number;
 }
 
-export function AdCard({ ad, layout = 'list', className, onFavoriteToggle, isFavorite }: AdCardProps) {
+export function AdCard({ 
+  ad, 
+  layout = 'list', 
+  className, 
+  onFavoriteToggle, 
+  isFavorite: externalIsFavorite,
+  distance
+}: AdCardProps) {
+  const [localIsFavorite, setLocalIsFavorite] = useState(false);
+  const { isAuthenticated } = useAuth();
+  const addToFavorites = useAddToFavorites();
+  const removeFromFavorites = useRemoveFromFavorites();
+  
   const timeAgo = formatDistanceToNow(new Date(ad.created_at), { 
     addSuffix: true,
     locale: ar
   });
+
+  const isFavorite = externalIsFavorite !== undefined ? externalIsFavorite : localIsFavorite;
+
+  // Handle favorite toggle independently if no external handler is provided
+  const handleFavoriteToggle = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (!isAuthenticated) {
+      toast({
+        title: "تسجيل الدخول مطلوب",
+        description: "يجب عليك تسجيل الدخول لإضافة للمفضلة",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (onFavoriteToggle) {
+      onFavoriteToggle(ad.id);
+    } else {
+      // Handle internally if no external handler
+      setLocalIsFavorite(!localIsFavorite);
+      if (localIsFavorite) {
+        removeFromFavorites.mutate(ad.id);
+      } else {
+        addToFavorites.mutate(ad.id);
+      }
+    }
+  };
 
   // Handle the new image format
   const getImageUrl = () => {
@@ -53,18 +99,29 @@ export function AdCard({ ad, layout = 'list', className, onFavoriteToggle, isFav
       <Link
         to={`/ad/${ad.id}`}
         className={cn(
-          "ad-card block border border-border hover:shadow-md transition-shadow bg-white",
+          "ad-card block border border-border hover:shadow-md transition-shadow bg-white relative h-80",
           ad.featured && "featured-ad border-t-2 border-t-brand",
           className
         )}
       >
-        {/* Image section */}
+        {/* Favorite button */}
+        <button 
+          className="absolute top-2 right-2 z-10 w-8 h-8 rounded-full bg-white/80 flex items-center justify-center shadow-sm"
+          onClick={handleFavoriteToggle}
+        >
+          <Heart 
+            className={`h-5 w-5 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-muted-foreground'}`}
+          />
+        </button>
+
+        {/* Image section with fixed height */}
         <div className="relative w-full h-40">
           {hasValidImage ? (
             <img 
               src={imageUrl} 
               alt={ad.title} 
               className="w-full h-full object-cover"
+              loading="lazy"
               onError={(e) => {
                 (e.target as HTMLImageElement).style.display = 'none';
                 const parent = e.currentTarget.parentElement;
@@ -87,22 +144,10 @@ export function AdCard({ ad, layout = 'list', className, onFavoriteToggle, isFav
               <Star className="h-5 w-5 fill-yellow-400 text-yellow-400 drop-shadow-md" />
             </div>
           )}
-          {onFavoriteToggle && (
-            <div 
-              className="absolute top-2 right-2 rtl:left-2 rtl:right-auto cursor-pointer"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                onFavoriteToggle(ad.id);
-              }}
-            >
-              <Star className={`h-5 w-5 ${isFavorite ? 'fill-brand text-brand' : 'text-muted-foreground'}`} />
-            </div>
-          )}
         </div>
         
         {/* Content section */}
-        <div className="p-3">
+        <div className="p-3 flex flex-col h-40">
           <div className="flex justify-between items-start">
             <h3 className="font-bold text-sm truncate max-w-[180px]" title={ad.title}>{ad.title}</h3>
             {ad.price > 0 && (
@@ -112,7 +157,11 @@ export function AdCard({ ad, layout = 'list', className, onFavoriteToggle, isFav
             )}
           </div>
           
-          <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2 text-xs text-muted-foreground">
+          <p className="text-muted-foreground text-xs line-clamp-2 mt-1">
+            {ad.description}
+          </p>
+          
+          <div className="mt-auto flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
             <div className="flex items-center">
               <MapPin className="h-3 w-3 ml-1" />
               <span className="truncate max-w-[80px]">{ad.city || ad.address || 'غير محدد'}</span>
@@ -125,6 +174,13 @@ export function AdCard({ ad, layout = 'list', className, onFavoriteToggle, isFav
               <Eye className="h-3 w-3 ml-1" />
               <span>{ad.views_count || ad.viewCount || 0}</span>
             </div>
+            
+            {distance !== undefined && (
+              <div className="flex items-center ml-auto text-xs bg-brand/10 text-brand px-2 py-0.5 rounded-full">
+                <MapPin className="h-3 w-3 ml-1" />
+                <span>{distance < 1 ? `${Math.round(distance * 1000)} متر` : `${distance.toFixed(1)} كم`}</span>
+              </div>
+            )}
           </div>
         </div>
       </Link>
@@ -136,11 +192,21 @@ export function AdCard({ ad, layout = 'list', className, onFavoriteToggle, isFav
     <Link 
       to={`/ad/${ad.id}`}
       className={cn(
-        "ad-card flex border border-border hover:shadow-md transition-shadow bg-white",
+        "ad-card flex border border-border hover:shadow-md transition-shadow bg-white relative",
         ad.featured && "featured-ad border-r-2 border-r-brand",
         className
       )}
     >
+      {/* Favorite button */}
+      <button 
+        className="absolute top-2 right-2 z-10 w-7 h-7 rounded-full bg-white/80 flex items-center justify-center shadow-sm"
+        onClick={handleFavoriteToggle}
+      >
+        <Heart 
+          className={`h-4 w-4 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-muted-foreground'}`}
+        />
+      </button>
+
       {/* Image section */}
       <div className="w-28 md:w-36 h-28 flex-shrink-0 relative">
         {hasValidImage ? (
@@ -148,6 +214,7 @@ export function AdCard({ ad, layout = 'list', className, onFavoriteToggle, isFav
             src={imageUrl} 
             alt={ad.title} 
             className="w-full h-full object-cover"
+            loading="lazy"
             onError={(e) => {
               (e.target as HTMLImageElement).style.display = 'none';
               const parent = e.currentTarget.parentElement;
@@ -167,18 +234,6 @@ export function AdCard({ ad, layout = 'list', className, onFavoriteToggle, isFav
         {ad.featured && (
           <div className="absolute top-2 left-2 rtl:right-2 rtl:left-auto">
             <Star className="h-4 w-4 fill-yellow-400 text-yellow-400 drop-shadow-md" />
-          </div>
-        )}
-        {onFavoriteToggle && (
-          <div 
-            className="absolute top-2 right-2 rtl:left-2 rtl:right-auto cursor-pointer"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              onFavoriteToggle(ad.id);
-            }}
-          >
-            <Star className={`h-4 w-4 ${isFavorite ? 'fill-brand text-brand' : 'text-muted-foreground'}`} />
           </div>
         )}
       </div>
@@ -213,6 +268,13 @@ export function AdCard({ ad, layout = 'list', className, onFavoriteToggle, isFav
             <Eye className="h-3 w-3 ml-1" />
             <span>{ad.views_count || ad.viewCount || 0}</span>
           </div>
+          
+          {distance !== undefined && (
+            <div className="flex items-center ml-auto text-xs bg-brand/10 text-brand px-2 py-0.5 rounded-full">
+              <MapPin className="h-3 w-3 ml-1" />
+              <span>{distance < 1 ? `${Math.round(distance * 1000)} متر` : `${distance.toFixed(1)} كم`}</span>
+            </div>
+          )}
         </div>
       </div>
     </Link>
