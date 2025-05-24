@@ -15,11 +15,11 @@ export const hasAuthToken = (): boolean => {
 /**
  * Redirects to login page with return URL
  */
-export const redirectToLogin = (from: string, formData?: any): void => {
-  const state = { from };
+export const redirectToLogin = (from: string, additionalData?: any): void => {
+  const state: { from: string; [key: string]: any } = { from };
   
-  if (formData) {
-    state.formData = formData;
+  if (additionalData) {
+    Object.assign(state, additionalData);
   }
   
   window.location.href = `/auth/login?redirect=${encodeURIComponent(from)}`;

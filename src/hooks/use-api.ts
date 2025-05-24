@@ -170,6 +170,18 @@ export function useBrand(id: number | undefined) {
   });
 }
 
+// States Hook
+export function useStates() {
+  return useQuery({
+    queryKey: ['states'],
+    queryFn: async () => {
+      const response = await API.locationAPI.getStates();
+      return response.data;
+    },
+    staleTime: 24 * 60 * 60 * 1000, // 24 hours - states don't change often
+  });
+}
+
 // Listings Hooks
 export function useListings(filters?: SearchFilters) {
   return useQuery({
@@ -329,22 +341,23 @@ export function useDeleteComment(listingId: number) {
     }
   });
 }
-export function useDeleteReply(listingId: number, comment: number) {
+
+export function useDeleteReply(listingId: number, commentId: number) {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: (commentId: number) => API.listingsAPI.deleteReply(listingId, commentId),
+    mutationFn: (replyId: number) => API.listingsAPI.deleteReply(listingId, replyId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['listing', listingId] });
       toast({
-        title: "تم حذف التعليق بنجاح",
+        title: "تم حذف الرد بنجاح",
       });
     },
     meta: {
       onError: (error: Error) => {
         toast({
           variant: "destructive",
-          title: "خطأ في حذف التعليق",
+          title: "خطأ في حذف الرد",
           description: error instanceof Error ? error.message : "خطأ غير معروف",
         });
       }
@@ -406,14 +419,14 @@ export function useEditReply(listingId: number, commentId: number) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['listing', listingId] });
       toast({
-        title: "تم إضافة الرد بنجاح",
+        title: "تم تحديث الرد بنجاح",
       });
     },
     meta: {
       onError: (error: Error) => {
         toast({
           variant: "destructive",
-          title: "خطأ في إضافة الرد",
+          title: "خطأ في تحديث الرد",
           description: error instanceof Error ? error.message : "خطأ غير معروف",
         });
       }
@@ -492,17 +505,6 @@ export function useIsFavorite(listingId: number | undefined) {
 }
 
 // Location Hooks
-export function useStates() {
-  return useQuery({
-    queryKey: ['states'],
-    queryFn: async () => {
-      const response = await API.locationAPI.getStates();
-      return response.data;
-    },
-    staleTime: 24 * 60 * 60 * 1000, // 24 hours - states don't change often
-  });
-}
-
 export function useCities(stateId: number | undefined) {
   return useQuery({
     queryKey: ['cities', stateId],
