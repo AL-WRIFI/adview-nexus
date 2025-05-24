@@ -4,7 +4,7 @@ import { Header } from '@/components/layout/header';
 import { CategoryBar } from '@/components/layout/category/CategoryBar';
 import { DesktopCategoryBar } from '@/components/layout/category/DesktopCategoryBar';
 import { AdCard } from '@/components/ads/ad-card';
-import { AdFilters } from '@/components/filters-old/ad-filters';
+import { AdFilters } from '@/components/filters/ad-filters';
 import { Footer } from '@/components/layout/footer';
 import { MobileNav } from '@/components/layout/mobile-nav';
 import { Button } from '@/components/ui/button';

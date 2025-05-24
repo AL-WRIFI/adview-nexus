@@ -41,16 +41,39 @@ export function AdCard({ ad, layout = 'list', showDistance = true, userLocation 
   const removeFromFavoritesMutation = useRemoveFromFavorites();
 
   // Handle image safely
+  // const getImageUrl = () => {
+  //   if (ad.image && typeof ad.image === 'object' && 'url' in ad.image) {
+  //     return ad.image.url;
+  //   }
+  //   if (ad.images && Array.isArray(ad.images) && ad.images.length > 0) {
+  //     const firstImage = ad.images[0];
+  //     if (typeof firstImage === 'object' && 'url' in firstImage) {
+  //       return firstImage.url;
+  //     }
+  //   }
+  //   return '/placeholder.svg';
+  // };
+
   const getImageUrl = () => {
-    if (ad.image && typeof ad.image === 'object' && 'url' in ad.image) {
-      return ad.image.url;
+    // Check if we have image object with image_url
+    if (ad.image && typeof ad.image === 'object' && ad.image.image_url) {
+      return ad.image.image_url;
     }
+    
+    // For backwards compatibility, check if image is a string
+    if (typeof ad.image === 'string' && ad.image) {
+      return ad.image;
+    }
+    
+    // If we have images array with url property
     if (ad.images && Array.isArray(ad.images) && ad.images.length > 0) {
-      const firstImage = ad.images[0];
-      if (typeof firstImage === 'object' && 'url' in firstImage) {
-        return firstImage.url;
+      if (typeof ad.images[0] === 'object' && 'url' in ad.images[0] && ad.images[0].url) {
+        return ad.images[0].url;
+      } else if (typeof ad.images[0] === 'string') {
+        return ad.images[0];
       }
     }
+    
     return '/placeholder.svg';
   };
 

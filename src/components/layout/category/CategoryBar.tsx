@@ -400,11 +400,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { CategoryGrid } from './CategoryGrid';
-import { SubCategoryButtons } from './SubCategoryButtons';
+import  SubCategoryButtons  from './SubCategoryButtons';
 import { useCategories } from '@/hooks/use-api';
 import { Category } from '@/types';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { MobileFilterDrawer } from '@/components/filters-old/MobileFilterDrawer';
+import { MobileFilterDrawer } from '@/components/filters/MobileFilterDrawer';
 import { WithSkeleton } from '@/components/ui/loading-skeleton';
 import { MobilePagination } from './MobilePagination';
 import { Link } from 'react-router-dom';
