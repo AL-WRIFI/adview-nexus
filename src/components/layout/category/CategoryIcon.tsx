@@ -75,28 +75,27 @@ export function CategoryIcon({ category, isSelected, onClick, size = 'md' }: Cat
   };
   
   const currentSize = sizes[size];
+  // const currentSize = sizes[size];
   
   return (
     <div
-      className={`category-icon dark:border-dark-border bg-white dark:bg-dark-card min-h-[80px] flex flex-col items-center justify-center ${currentSize.container} cursor-pointer transition-all`}
+      className={`category-icon dark:border-dark-border bg-white dark:bg-dark-background min-h-[80px] flex flex-col items-center justify-center ${currentSize.container} cursor-pointer transition-all`}
       onClick={onClick}
     >
-      <div className={`p-3 rounded-full mx-auto mb-2 transition-colors ${
-        isSelected 
-          ? 'bg-brand text-white' 
-          : 'bg-brand-light dark:bg-dark-surface dark:text-brand'
-      }`} style={{ width: '45px', height: '45px' }}>
-        <Icon className={`h-full w-full ${
-          isSelected 
-            ? 'text-white' 
-            : 'text-brand'
-        }`} />
+      {/* <div className={`${currentSize.icon} flex items-center justify-center rounded-full mx-auto mb-1
+          ${isSelected 
+            ? 'bg-brand shadow-md' 
+            : 'bg-gray-100 dark:bg-dark-card'}`
+        }
+      >
+        <Icon className={`${currentSize.iconSize} ${isSelected ? 'text-white' : 'text-brand dark:text-brand'}`} />
+      </div> */}
+      <div className={`p-3 rounded-full mx-auto mb-2 transition-colors ${isSelected ? 'bg-brand text-white' : 'bg-brand-light'}`} style={{ width: '45px', height: '45px' }}>
+          <Icon className={`h-full w-full ${isSelected ? 'text-white' : 'text-brand'}`} />
       </div>
       <span 
         className={`${currentSize.text} truncate block text-center w-full
-          ${isSelected 
-            ? 'text-brand font-bold' 
-            : 'text-gray-700 dark:text-gray-300'}`}
+          ${isSelected ? 'text-brand font-bold' : 'text-gray-700 dark:text-gray-300'}`}
       >
         {category.name}
       </span>

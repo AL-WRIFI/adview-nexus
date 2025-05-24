@@ -404,7 +404,7 @@ import { SubCategoryButtons } from './SubCategoryButtons';
 import { useCategories } from '@/hooks/use-api';
 import { Category } from '@/types';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { MobileFilterDrawer } from '@/components/filters/MobileFilterDrawer';
+import { MobileFilterDrawer } from '@/components/filters-old/MobileFilterDrawer';
 import { WithSkeleton } from '@/components/ui/loading-skeleton';
 import { MobilePagination } from './MobilePagination';
 import { Link } from 'react-router-dom';

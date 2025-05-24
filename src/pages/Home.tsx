@@ -1,9 +1,10 @@
+
 import { useState, useEffect } from 'react';
 import { Header } from '@/components/layout/header';
 import { CategoryBar } from '@/components/layout/category/CategoryBar';
 import { DesktopCategoryBar } from '@/components/layout/category/DesktopCategoryBar';
 import { AdCard } from '@/components/ads/ad-card';
-import { AdFilters } from '@/components/filters/ad-filters';
+import { AdFilters } from '@/components/filters-old/ad-filters';
 import { Footer } from '@/components/layout/footer';
 import { MobileNav } from '@/components/layout/mobile-nav';
 import { Button } from '@/components/ui/button';
@@ -44,8 +45,8 @@ export default function Home() {
   // Extract data - ensure we have access to the right structure
   const adData = adsResponse?.data || [];
   // Use fallback for pagination
-  const totalPages = adsResponse?.meta?.last_page || 
-                     (adsResponse?.pagination?.total_pages) || 1;
+  const totalPages = adsResponse?.last_page || 
+                     (adsResponse?.total) || 1;
   
   // Split into featured and regular ads
   const featuredAds = Array.isArray(adData) ? adData.filter((ad: Listing) => ad.featured) : [];
@@ -55,6 +56,8 @@ export default function Home() {
     <div className="min-h-screen flex flex-col">
       <Header />
       <CategoryBar />
+      {/* {isMobile ? <CategoryBar /> : <DesktopCategoryBar/>} */}
+      
       
       <main className="flex-1 pb-20 md:pb-0">
         <div className="container px-4 mx-auto py-6">

@@ -55,7 +55,7 @@ export function ThemeProvider({
     const root = window.document.documentElement;
     
     if (isDark) {
-      // Enhanced dark mode colors - soft black and dark gray theme
+      // Enhanced dark mode colors
       root.style.setProperty('--background', 'hsl(0 0% 7%)');
       root.style.setProperty('--foreground', 'hsl(0 0% 98%)');
       root.style.setProperty('--card', 'hsl(0 0% 10%)');
@@ -67,7 +67,7 @@ export function ThemeProvider({
       root.style.setProperty('--secondary', 'hsl(0 0% 15%)');
       root.style.setProperty('--secondary-foreground', 'hsl(0 0% 98%)');
       root.style.setProperty('--muted', 'hsl(0 0% 15%)');
-      root.style.setProperty('--muted-foreground', 'hsl(0 5% 65%)');
+      root.style.setProperty('--muted-foreground', 'hsl(240 5% 64.9%)');
       root.style.setProperty('--accent', 'hsl(0 0% 15%)');
       root.style.setProperty('--accent-foreground', 'hsl(0 0% 98%)');
       root.style.setProperty('--destructive', 'hsl(0 62.8% 30.6%)');
@@ -76,18 +76,16 @@ export function ThemeProvider({
       root.style.setProperty('--input', 'hsl(0 0% 20%)');
       root.style.setProperty('--ring', 'hsl(142 71% 45%)');
       
-      // Custom dark theme variables - soft black with dark gray
+      // Custom dark theme variables
       root.style.setProperty('--dark-background', '#121212');
       root.style.setProperty('--dark-card', '#1e1e1e');
       root.style.setProperty('--dark-border', '#333333');
-      root.style.setProperty('--dark-surface', '#242424');
-      root.style.setProperty('--dark-muted', '#2a2a2a');
-      root.style.setProperty('--dark-primary', '#303030');
+      root.style.setProperty('--dark-surface', '#282828');
+      root.style.setProperty('--dark-muted', '#3a3a3a');
       
       // Brand color in dark mode
       root.style.setProperty('--brand', 'hsl(142 71% 45%)');
       root.style.setProperty('--brand-foreground', 'hsl(144 70% 10%)');
-      root.style.setProperty('--brand-hover', 'hsl(142 71% 40%)');
     } else {
       // Light mode - reset to default theme
       root.style.removeProperty('--background');
@@ -116,12 +114,10 @@ export function ThemeProvider({
       root.style.removeProperty('--dark-border');
       root.style.removeProperty('--dark-surface');
       root.style.removeProperty('--dark-muted');
-      root.style.removeProperty('--dark-primary');
       
       // Brand color in light mode
       root.style.setProperty('--brand', 'hsl(142 76% 36%)');
       root.style.setProperty('--brand-foreground', 'hsl(0 0% 100%)');
-      root.style.setProperty('--brand-hover', 'hsl(142 76% 30%)');
     }
   };
 

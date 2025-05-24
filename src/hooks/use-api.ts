@@ -329,12 +329,80 @@ export function useDeleteComment(listingId: number) {
     }
   });
 }
+export function useDeleteReply(listingId: number, comment: number) {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (commentId: number) => API.listingsAPI.deleteReply(listingId, commentId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['listing', listingId] });
+      toast({
+        title: "تم حذف التعليق بنجاح",
+      });
+    },
+    meta: {
+      onError: (error: Error) => {
+        toast({
+          variant: "destructive",
+          title: "خطأ في حذف التعليق",
+          description: error instanceof Error ? error.message : "خطأ غير معروف",
+        });
+      }
+    }
+  });
+}
+
+export function useEditComment(listingId: number, commentId: number) {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (content: string) => API.listingsAPI.editComment(listingId, commentId, content),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['listing', listingId] });
+      toast({
+        title: "تم تحديث التعليق بنجاح",
+      });
+    },
+    meta: {
+      onError: (error: Error) => {
+        toast({
+          variant: "destructive",
+          title: "خطأ في تحديث التعليق",
+          description: error instanceof Error ? error.message : "خطأ غير معروف",
+        });
+      }
+    }
+  });
+}
 
 export function useAddReply(listingId: number, commentId: number) {
   const queryClient = useQueryClient();
   
   return useMutation({
     mutationFn: (content: string) => API.listingsAPI.addReply(listingId, commentId, content),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['listing', listingId] });
+      toast({
+        title: "تم إضافة الرد بنجاح",
+      });
+    },
+    meta: {
+      onError: (error: Error) => {
+        toast({
+          variant: "destructive",
+          title: "خطأ في إضافة الرد",
+          description: error instanceof Error ? error.message : "خطأ غير معروف",
+        });
+      }
+    }
+  });
+}
+
+export function useEditReply(listingId: number, commentId: number) {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (content: string) => API.listingsAPI.editReply(listingId, commentId, content),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['listing', listingId] });
       toast({

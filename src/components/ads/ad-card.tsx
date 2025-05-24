@@ -139,11 +139,12 @@ export function AdCard({
               <span className="text-xs mt-1">لا توجد صورة</span>
             </div>
           )}
-          {ad.featured && (
+
+          {ad.featured ? (
             <div className="absolute top-2 left-2 rtl:right-2 rtl:left-auto">
               <Star className="h-5 w-5 fill-yellow-400 text-yellow-400 drop-shadow-md" />
             </div>
-          )}
+          ) : null}
         </div>
         
         {/* Content section */}
@@ -197,7 +198,7 @@ export function AdCard({
         className
       )}
     >
-      {/* Favorite button */}
+      {/* Favorite  */}
       <button 
         className="absolute top-2 right-2 z-10 w-7 h-7 rounded-full bg-white/80 flex items-center justify-center shadow-sm"
         onClick={handleFavoriteToggle}
@@ -207,7 +208,6 @@ export function AdCard({
         />
       </button>
 
-      {/* Image section */}
       <div className="w-28 md:w-36 h-28 flex-shrink-0 relative">
         {hasValidImage ? (
           <img 
