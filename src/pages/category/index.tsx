@@ -69,7 +69,7 @@ export default function CategoryPage() {
   
   // Get the listings from the response, ensure it's an array even if undefined
   const listings = listingsResponse?.data || [];
-  const totalPages = listingsResponse?.last_page || 1;
+  const totalPages = listingsResponse?.meta?.last_page || 1;
   
   return (
     <div className="min-h-screen flex flex-col">

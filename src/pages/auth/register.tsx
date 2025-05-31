@@ -104,223 +104,235 @@ export default function RegisterPage() {
     }
   };
   
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <div className="w-full max-w-md">
-        <Card>
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl">إنشاء حساب جديد</CardTitle>
-            <CardDescription>
-              أدخل بياناتك لإنشاء حساب جديد
-            </CardDescription>
-          </CardHeader>
-          <form onSubmit={handleSubmit}>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="firstName">الاسم الأول</Label>
-                  <Input
-                    id="firstName"
-                    placeholder="الاسم الأول"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="lastName">الاسم الأخير</Label>
-                  <Input
-                    id="lastName"
-                    placeholder="الاسم الأخير"
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                  />
-                </div>
-              </div>
-              
+ return (
+  <div className="min-h-screen flex items-center justify-center bg-[#121212] p-4">
+    <div className="w-full max-w-md">
+      <Card className="bg-[#1E1E1E] shadow-lg">
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl text-white">إنشاء حساب جديد</CardTitle>
+          <CardDescription className="text-gray-400">
+            أدخل بياناتك لإنشاء حساب جديد
+          </CardDescription>
+        </CardHeader>
+        <form onSubmit={handleSubmit}>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="email">البريد الإلكتروني</Label>
+                <Label htmlFor="firstName" className="text-white">الاسم الأول</Label>
                 <Input
-                  id="email"
-                  type="email"
-                  placeholder="أدخل البريد الإلكتروني"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  id="firstName"
+                  placeholder="الاسم الأول"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  className="bg-[#2A2A2A] text-white placeholder-gray-500 border border-gray-700 focus:border-blue-500"
                 />
               </div>
-              
               <div className="space-y-2">
-                <Label htmlFor="phone">رقم الهاتف</Label>
+                <Label htmlFor="lastName" className="text-white">الاسم الأخير</Label>
                 <Input
-                  id="phone"
-                  placeholder="أدخل رقم الهاتف"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  id="lastName"
+                  placeholder="الاسم الأخير"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  className="bg-[#2A2A2A] text-white placeholder-gray-500 border border-gray-700 focus:border-blue-500"
                 />
               </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="state">المنطقة / المحافظة</Label>
-                <Select 
-                  value={stateId?.toString()} 
-                  onValueChange={(value) => {
-                    setStateId(parseInt(value, 10));
-                    setCityId(null); // Reset city when state changes
-                  }}
-                >
-                  <SelectTrigger id="state">
-                    <SelectValue placeholder="اختر المنطقة / المحافظة" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {loadingStates ? (
-                      <div className="p-2 text-center text-sm text-muted-foreground">
-                        جاري التحميل...
-                      </div>
-                    ) : (
-                      states?.map((state) => (
-                        <SelectItem key={state.id} value={state.id.toString()}>
-                          {state.name}
-                        </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="city">المدينة</Label>
-                <Select 
-                  value={cityId?.toString()} 
-                  onValueChange={(value) => setCityId(parseInt(value, 10))}
-                  disabled={!stateId}
-                >
-                  <SelectTrigger id="city">
-                    <SelectValue placeholder={stateId ? "اختر المدينة" : "اختر المنطقة أولاً"} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {!stateId ? (
-                      <div className="p-2 text-center text-sm text-muted-foreground">
-                        الرجاء اختيار المنطقة أولاً
-                      </div>
-                    ) : loadingCities ? (
-                      <div className="p-2 text-center text-sm text-muted-foreground">
-                        جاري التحميل...
-                      </div>
-                    ) : filteredCities?.length === 0 ? (
-                      <div className="p-2 text-center text-sm text-muted-foreground">
-                        لا توجد مدن متوفرة
-                      </div>
-                    ) : (
-                      filteredCities?.map((city) => (
-                        <SelectItem key={city.id} value={city.id.toString()}>
-                          {city.name}
-                        </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="password">كلمة المرور</Label>
-                <div className="relative">
-                  <Input
-                    id="password"
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="أدخل كلمة المرور (8 أحرف على الأقل)"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="absolute left-0 top-0 h-full"
-                    onClick={() => setShowPassword(!showPassword)}
-                  >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </Button>
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">تأكيد كلمة المرور</Label>
-                <div className="relative">
-                  <Input
-                    id="confirmPassword"
-                    type={showConfirmPassword ? 'text' : 'password'}
-                    placeholder="أعد إدخال كلمة المرور"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="absolute left-0 top-0 h-full"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  >
-                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </Button>
-                </div>
-              </div>
-              
-              <div className="flex items-center space-x-2 space-x-reverse">
-                <input
-                  type="checkbox"
-                  id="terms"
-                  className="rounded border-gray-300"
-                  checked={agreeTerms}
-                  onChange={() => setAgreeTerms(!agreeTerms)}
-                />
-                <Label htmlFor="terms" className="text-sm">
-                  أوافق على{' '}
-                  <Link to="/terms" className="text-brand hover:underline">
-                    شروط الاستخدام
-                  </Link>{' '}
-                  و{' '}
-                  <Link to="/privacy" className="text-brand hover:underline">
-                    سياسة الخصوصية
-                  </Link>
-                </Label>
-              </div>
-            </CardContent>
-            <CardFooter className="flex flex-col space-y-4">
-              <Button 
-                type="submit" 
-                className="w-full" 
-                disabled={registerMutation.isPending}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-white">البريد الإلكتروني</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="أدخل البريد الإلكتروني"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="bg-[#2A2A2A] text-white placeholder-gray-500 border border-gray-700 focus:border-blue-500"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="phone" className="text-white">رقم الهاتف</Label>
+              <Input
+                id="phone"
+                placeholder="أدخل رقم الهاتف"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                className="bg-[#2A2A2A] text-white placeholder-gray-500 border border-gray-700 focus:border-blue-500"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="state" className="text-white">المنطقة / المحافظة</Label>
+              <Select 
+                value={stateId?.toString()} 
+                onValueChange={(value) => {
+                  setStateId(parseInt(value, 10));
+                  setCityId(null);
+                }}
               >
-                {registerMutation.isPending ? (
-                  <>
-                    <Loader2 className="ml-2 h-4 w-4 animate-spin" />
-                    جاري إنشاء الحساب...
-                  </>
-                ) : (
-                  'إنشاء حساب'
-                )}
-              </Button>
-              
-              <div className="text-center text-sm">
-                لديك حساب بالفعل؟{' '}
-                <Link to="/auth/login" className="text-brand hover:underline">
-                  تسجيل الدخول
-                </Link>
-              </div>
-              
-              <div className="text-center">
-                <Button 
-                  variant="link" 
-                  className="p-0 h-auto text-sm text-muted-foreground"
-                  onClick={() => navigate('/')}
+                <SelectTrigger 
+                  id="state" 
+                  className="bg-[#2A2A2A] text-white border border-gray-700 focus:border-blue-500"
                 >
-                  العودة إلى الصفحة الرئيسية
+                  <SelectValue placeholder="اختر المنطقة / المحافظة" />
+                </SelectTrigger>
+                <SelectContent className="bg-[#2A2A2A] text-white">
+                  {loadingStates ? (
+                    <div className="p-2 text-center text-sm text-gray-400">
+                      جاري التحميل...
+                    </div>
+                  ) : (
+                    states?.map((state) => (
+                      <SelectItem key={state.id} value={state.id.toString()}>
+                        {state.name}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="city" className="text-white">المدينة</Label>
+              <Select 
+                value={cityId?.toString()} 
+                onValueChange={(value) => setCityId(parseInt(value, 10))}
+                disabled={!stateId}
+              >
+                <SelectTrigger 
+                  id="city" 
+                  className="bg-[#2A2A2A] text-white border border-gray-700 focus:border-blue-500"
+                >
+                  <SelectValue placeholder={stateId ? "اختر المدينة" : "اختر المنطقة أولاً"} />
+                </SelectTrigger>
+                <SelectContent className="bg-[#2A2A2A] text-white">
+                  {!stateId ? (
+                    <div className="p-2 text-center text-sm text-gray-400">
+                      الرجاء اختيار المنطقة أولاً
+                    </div>
+                  ) : loadingCities ? (
+                    <div className="p-2 text-center text-sm text-gray-400">
+                      جاري التحميل...
+                    </div>
+                  ) : filteredCities?.length === 0 ? (
+                    <div className="p-2 text-center text-sm text-gray-400">
+                      لا توجد مدن متوفرة
+                    </div>
+                  ) : (
+                    filteredCities?.map((city) => (
+                      <SelectItem key={city.id} value={city.id.toString()}>
+                        {city.name}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="password" className="text-white">كلمة المرور</Label>
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="أدخل كلمة المرور (8 أحرف على الأقل)"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="bg-[#2A2A2A] text-white placeholder-gray-500 border border-gray-700 focus:border-blue-500"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute left-0 top-0 h-full text-gray-400 hover:text-white"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </Button>
               </div>
-            </CardFooter>
-          </form>
-        </Card>
-      </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword" className="text-white">تأكيد كلمة المرور</Label>
+              <div className="relative">
+                <Input
+                  id="confirmPassword"
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  placeholder="أعد إدخال كلمة المرور"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="bg-[#2A2A2A] text-white placeholder-gray-500 border border-gray-700 focus:border-blue-500"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute left-0 top-0 h-full text-gray-400 hover:text-white"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                >
+                  {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-2 space-x-reverse">
+              <input
+                type="checkbox"
+                id="terms"
+                className="rounded border-gray-600 bg-[#2A2A2A]"
+                checked={agreeTerms}
+                onChange={() => setAgreeTerms(!agreeTerms)}
+              />
+              <Label htmlFor="terms" className="text-sm text-white">
+                أوافق على{' '}
+                <Link to="/terms" className="text-blue-500 hover:underline">
+                  شروط الاستخدام
+                </Link>{' '}
+                و{' '}
+                <Link to="/privacy" className="text-blue-500 hover:underline">
+                  سياسة الخصوصية
+                </Link>
+              </Label>
+            </div>
+          </CardContent>
+          <CardFooter className="flex flex-col space-y-4">
+            <Button 
+              type="submit" 
+              className="w-full"
+              disabled={registerMutation.isPending}
+            >
+              {registerMutation.isPending ? (
+                <>
+                  <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+                  جاري إنشاء الحساب...
+                </>
+              ) : (
+                'إنشاء حساب'
+              )}
+            </Button>
+
+            <div className="text-center text-sm text-gray-400">
+              لديك حساب بالفعل؟{' '}
+              <Link to="/auth/login" className="text-blue-500 hover:underline">
+                تسجيل الدخول
+              </Link>
+            </div>
+
+            <div className="text-center">
+              <Button 
+                variant="link" 
+                className="p-0 h-auto text-sm text-gray-400 hover:text-white"
+                onClick={() => navigate('/')}
+              >
+                العودة إلى الصفحة الرئيسية
+              </Button>
+            </div>
+          </CardFooter>
+        </form>
+      </Card>
     </div>
-  );
+  </div>
+);
+
 }

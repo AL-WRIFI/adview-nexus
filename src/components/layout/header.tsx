@@ -76,7 +76,7 @@ export function Header() {
   return (
     <header
       className={`sticky top-0 z-50 bg-white dark:bg-dark-background transition-shadow duration-300 ${
-        isScrolled ? "shadow-md dark:shadow-black/20" : ""
+        isScrolled ? "shadow-md dark:bg-neutral-900 border-t border-border dark:border-neutral-900" : ""
       }`}
     >
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
@@ -460,7 +460,7 @@ export function Header() {
                       <ChevronDown className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuContent align="end" className="w-56 dark:bg-neutral-800  border-t border-border dark:border-neutral-700">
                     <DropdownMenuLabel className="font-normal">
                       <div className="flex flex-col space-y-1">
                         <p className="text-sm font-medium leading-none">{`${user.first_name} ${user.last_name}`}</p>
@@ -499,7 +499,7 @@ export function Header() {
                 </div>
                 
               )}
-              <Button asChild>
+              <Button asChild className="dark:bg-neutral-700 border-t border-border dark:border-neutral-900">
                   <Link to="/add-ad">إضافة إعلان</Link>
               </Button>
             </div>

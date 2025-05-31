@@ -398,10 +398,10 @@ export default function EditAd() {
               <div className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {[
-                    { id: 'sell', label: 'بيع منتج', desc: 'بيع أي منتج تملكه' },
-                    { id: 'buy', label: 'شراء', desc: 'البحث عن منتج' },
-                    { id: 'exchange', label: 'مقايضة', desc: 'مقايضة منتج بآخر' },
-                    { id: 'service', label: 'خدمة', desc: 'تقديم خدمة احترافية' }
+                    { id: 'sell', label: 'بيع منتج'},
+                    { id: 'buy', label: 'شراء' },
+                    { id: 'exchange', label: 'مقايضة'},
+                    { id: 'service', label: 'خدمة',}
                   ].map((type) => (
                     <button
                       key={type.id}
@@ -413,7 +413,7 @@ export default function EditAd() {
                       onClick={() => setAdType(type.id as any)}
                     >
                       <div className="text-lg font-bold dark:text-gray-100">{type.label}</div>
-                      <div className="text-sm text-muted-foreground dark:text-gray-400 mt-1">{type.desc}</div>
+                      {/* <div className="text-sm text-muted-foreground dark:text-gray-400 mt-1">{type.desc}</div> */}
                     </button>
                   ))}
                 </div>

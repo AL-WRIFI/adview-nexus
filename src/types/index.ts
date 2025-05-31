@@ -86,9 +86,6 @@ export interface Listing {
   state_name?: string;
   district_id?: number;
   district_name?: string;
-  lat?: number;
-  lon?: number;
-  phone_hidden?: boolean;
   image: string;
   images?: string[];
   featured?: boolean;

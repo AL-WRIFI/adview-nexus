@@ -86,108 +86,119 @@ export default function LoginPage() {
     }
   };
   
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <div className="w-full max-w-md">
-        <Card>
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl">تسجيل الدخول</CardTitle>
-            <CardDescription>
-              أدخل بيانات حسابك للوصول إلى لوحة التحكم
-            </CardDescription>
-          </CardHeader>
-          <form onSubmit={handleSubmit}>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="identifier">البريد الإلكتروني أو رقم الهاتف أو اسم المستخدم</Label>
-                <Input
-                  id="identifier"
-                  type="text"
-                  placeholder="أدخل البريد الإلكتروني أو رقم الهاتف أو اسم المستخدم"
-                  value={identifier}
-                  onChange={(e) => setIdentifier(e.target.value)}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="password">كلمة المرور</Label>
-                  <Button
-                    variant="link"
-                    className="p-0 h-auto text-xs"
-                    type="button"
-                    onClick={() => navigate('/auth/forgot-password')}
-                  >
-                    نسيت كلمة المرور؟
-                  </Button>
-                </div>
-                <div className="relative">
-                  <Input
-                    id="password"
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="أدخل كلمة المرور"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="absolute left-0 top-0 h-full"
-                    onClick={() => setShowPassword(!showPassword)}
-                  >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </Button>
-                </div>
-              </div>
-              
-              <div className="flex items-center space-x-2 space-x-reverse">
-                <input
-                  type="checkbox"
-                  id="remember"
-                  className="rounded border-gray-300"
-                  checked={rememberMe}
-                  onChange={() => setRememberMe(!rememberMe)}
-                />
-                <Label htmlFor="remember" className="text-sm">تذكرني</Label>
-              </div>
-            </CardContent>
-            <CardFooter className="flex flex-col space-y-4">
-              <Button 
-                type="submit" 
-                className="w-full" 
-                disabled={isPending}
-              >
-                {isPending ? (
-                  <>
-                    <Loader2 className="ml-2 h-4 w-4 animate-spin" />
-                    جاري تسجيل الدخول...
-                  </>
-                ) : (
-                  'تسجيل الدخول'
-                )}
-              </Button>
-              
-              <div className="text-center text-sm">
-                ليس لديك حساب؟{' '}
-                <Link to="/auth/register" className="text-brand hover:underline">
-                  إنشاء حساب جديد
-                </Link>
-              </div>
-              
-              <div className="text-center">
-                <Button 
-                  variant="link" 
-                  className="p-0 h-auto text-sm text-muted-foreground"
-                  onClick={() => navigate('/')}
+ return (
+  <div className="min-h-screen flex items-center justify-center bg-[#121212] p-4">
+    <div className="w-full max-w-md">
+      <Card className="bg-[#1E1E1E] shadow-lg">
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl text-white">
+            تسجيل الدخول
+          </CardTitle>
+          <CardDescription className="text-gray-300">
+            أدخل بيانات حسابك للوصول إلى لوحة التحكم
+          </CardDescription>
+        </CardHeader>
+        <form onSubmit={handleSubmit}>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="identifier" className="text-white">
+                البريد الإلكتروني أو رقم الهاتف أو اسم المستخدم
+              </Label>
+              <Input
+                id="identifier"
+                type="text"
+                placeholder="أدخل البريد الإلكتروني أو رقم الهاتف أو اسم المستخدم"
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
+                className="bg-[#2A2A2A] text-white placeholder-gray-500 border border-gray-700 focus:border-blue-500"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password" className="text-white">
+                  كلمة المرور
+                </Label>
+                <Button
+                  variant="link"
+                  className="p-0 h-auto text-xs text-blue-500"
+                  type="button"
+                  onClick={() => navigate('/auth/forgot-password')}
                 >
-                  العودة إلى الصفحة الرئيسية
+                  نسيت كلمة المرور؟
                 </Button>
               </div>
-            </CardFooter>
-          </form>
-        </Card>
-      </div>
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="أدخل كلمة المرور"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="bg-[#2A2A2A] text-white placeholder-gray-500 border border-gray-700 focus:border-blue-500"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute left-0 top-0 h-full text-gray-400 hover:text-white"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-2 space-x-reverse">
+              <input
+                type="checkbox"
+                id="remember"
+                className="rounded border-gray-600 bg-[#2A2A2A]"
+                checked={rememberMe}
+                onChange={() => setRememberMe(!rememberMe)}
+              />
+              <Label htmlFor="remember" className="text-white text-sm">
+                تذكرني
+              </Label>
+            </div>
+          </CardContent>
+          <CardFooter className="flex flex-col space-y-4">
+            <Button
+              type="submit"
+              className="w-full border-gray-600 bg-[#2A2A2A]"
+              disabled={isPending}
+            >
+              {isPending ? (
+                <>
+                  <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+                  جاري تسجيل الدخول...
+                </>
+              ) : (
+                'تسجيل الدخول'
+              )}
+            </Button>
+
+            <div className="text-center text-sm text-gray-300">
+              ليس لديك حساب؟{' '}
+              <Link to="/auth/register" className="text-blue-500 hover:underline">
+                إنشاء حساب جديد
+              </Link>
+            </div>
+
+            <div className="text-center">
+              <Button
+                variant="link"
+                className="p-0 h-auto text-sm text-gray-400 hover:text-white"
+                onClick={() => navigate('/')}
+              >
+                العودة إلى الصفحة الرئيسية
+              </Button>
+            </div>
+          </CardFooter>
+        </form>
+      </Card>
     </div>
-  );
+  </div>
+);
+
 }

@@ -314,10 +314,10 @@ export default function AddAd() {
               <div className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {[
-                    { id: 'sell', label: 'بيع منتج', desc: 'بيع أي منتج تملكه' },
-                    { id: 'rent', label: 'تأجير', desc: 'عقار، سيارة، معدات' },
-                    { id: 'job', label: 'وظيفة', desc: 'إعلان توظيف' },
-                    { id: 'service', label: 'خدمة', desc: 'تقديم خدمة احترافية' }
+                    { id: 'sell', label: 'بيع منتج'},
+                    { id: 'rent', label: 'تأجير'},
+                    { id: 'job', label: 'وظيفة'},
+                    { id: 'service', label: 'خدمة' }
                   ].map((type) => (
                     <button
                       key={type.id}
@@ -325,7 +325,7 @@ export default function AddAd() {
                       onClick={() => setAdType(type.id as any)}
                     >
                       <div className="text-lg font-bold">{type.label}</div>
-                      <div className="text-sm text-muted-foreground mt-1">{type.desc}</div>
+                      {/* <div className="text-sm text-muted-foreground mt-1">{type.desc}</div> */}
                     </button>
                   ))}
                 </div>

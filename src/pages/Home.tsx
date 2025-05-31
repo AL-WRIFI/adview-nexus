@@ -42,11 +42,11 @@ export default function Home() {
     setPage(1); // Reset to first page when filters change
   };
   
-  // Extract data safely - handle different response structures
-  const adData = adsResponse?.data?.data || adsResponse?.data || [];
-  const totalPages = adsResponse?.data?.last_page || 
-                     adsResponse?.last_page || 
-                     Math.ceil((adsResponse?.data?.total || adData.length) / itemsPerPage) || 1;
+  // Extract data - ensure we have access to the right structure
+  const adData = adsResponse?.data || [];
+  // Use fallback for pagination
+  const totalPages = adsResponse?.last_page || 
+                     (adsResponse?.total) || 1;
   
   // Split into featured and regular ads
   const featuredAds = Array.isArray(adData) ? adData.filter((ad: Listing) => ad.featured) : [];
@@ -56,6 +56,8 @@ export default function Home() {
     <div className="min-h-screen flex flex-col">
       <Header />
       <CategoryBar />
+      {/* {isMobile ? <CategoryBar /> : <DesktopCategoryBar/>} */}
+      
       
       <main className="flex-1 pb-20 md:pb-0">
         <div className="container px-4 mx-auto py-6">
@@ -196,7 +198,6 @@ export default function Home() {
                             key={ad.id} 
                             ad={ad} 
                             layout={adLayout}
-                            userLocation={locationData}
                           />
                         ))}
                       </div>
@@ -229,8 +230,7 @@ export default function Home() {
                           <AdCard 
                             key={ad.id} 
                             ad={ad} 
-                            layout={adLayout}
-                            userLocation={locationData}
+                            layout={adLayout} 
                           />
                         ))}
                       </div>

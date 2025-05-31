@@ -580,7 +580,7 @@ export function AdFilters({
             className="flex items-center justify-between cursor-pointer py-2"
             onClick={() => setCategoryOpen(!categoryOpen)}
           >
-            <h3 className="text-lg font-bold">التصنيفات</h3>
+            <h3 className="text-lg font-bold"></h3>
             <div className="flex items-center gap-2">
               {isSidebar && (
                 <div className="flex border rounded overflow-hidden">
@@ -656,7 +656,7 @@ export function AdFilters({
             className="flex items-center justify-between cursor-pointer py-2"
             onClick={() => setBrandOpen(!brandOpen)}
           >
-            <h3 className="text-lg font-bold">الماركات</h3>
+            <h3 className="text-lg font-bold"></h3>
             <ChevronDown className={`w-5 h-5 transition-transform ${brandOpen ? 'rotate-180' : ''}`} />
           </div>
           
@@ -673,7 +673,7 @@ export function AdFilters({
             className="flex items-center justify-between cursor-pointer py-2"
             onClick={() => setPriceOpen(!priceOpen)}
           >
-            <h3 className="text-lg font-bold">نطاق السعر</h3>
+            <h3 className="text-lg font-bold"></h3>
             <ChevronDown className={`w-5 h-5 transition-transform ${priceOpen ? 'rotate-180' : ''}`} />
           </div>
           
@@ -718,7 +718,7 @@ export function AdFilters({
             className="flex items-center justify-between cursor-pointer py-2"
             onClick={() => setLocationOpen(!locationOpen)}
           >
-            <h3 className="text-lg font-bold">الموقع</h3>
+            <h3 className="text-lg font-bold"></h3>
             <ChevronDown className={`w-5 h-5 transition-transform ${locationOpen ? 'rotate-180' : ''}`} />
           </div>
           
@@ -868,7 +868,7 @@ export function AdFilters({
           </div>
         </div>
         
-        {/* Layout toggle */}
+        {/* Layout toggle
         {onLayoutChange && isSidebar && (
           <div className="p-3 bg-gray-50 rounded-md">
             <h3 className="font-medium mb-3">طريقة عرض الإعلانات</h3>
@@ -893,10 +893,10 @@ export function AdFilters({
               </Button>
             </div>
           </div>
-        )}
+        )} */}
         
         {/* Apply filters button */}
-        <div className="flex justify-end mt-4">
+        <div className="flex justify-end mt-4 gap-2">
           {isSidebar && activeFilters.length > 0 && (
             <Button 
               variant="outline" 

@@ -82,7 +82,7 @@ export function AdsTab({ setSelectedAd, setDeleteConfirmOpen, setPromoteDialogOp
   }
   
   return (
-    <Card className="dark:bg-gray-900 dark:border-gray-800">
+    <Card className="dark:bg-neutral-900 border-t border-border dark:border-neutral-700">
       <CardHeader>
         <CardTitle>إعلاناتي</CardTitle>
         <CardDescription>إدارة الإعلانات التي قمت بنشرها</CardDescription>
@@ -110,7 +110,7 @@ export function AdsTab({ setSelectedAd, setDeleteConfirmOpen, setPromoteDialogOp
                           <div className="w-12 h-12 rounded overflow-hidden ml-3 bg-gray-100 dark:bg-gray-800 flex-shrink-0">
                             {ad.image ? (
                               <img 
-                                src={ad.image} 
+                                src={ad.image?.image_url} 
                                 alt={ad.title} 
                                 className="w-full h-full object-cover"
                               />
