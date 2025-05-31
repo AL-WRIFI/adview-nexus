@@ -5,17 +5,30 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { SubCategory } from '@/types';
 
 interface SubCategoryButtonsProps {
-  subCategories: SubCategory[];
+  subCategories?: SubCategory[];
+  items?: SubCategory[];
   selectedSubCategory?: number;
-  onSubCategorySelect: (subCategoryId: number | undefined) => void;
+  selectedId?: number;
+  onSubCategorySelect?: (subCategoryId: number | undefined) => void;
+  onSelect?: (subCategoryId: number | undefined) => void;
+  level?: string;
 }
 
 export function SubCategoryButtons({
   subCategories,
+  items,
   selectedSubCategory,
-  onSubCategorySelect
+  selectedId,
+  onSubCategorySelect,
+  onSelect,
+  level
 }: SubCategoryButtonsProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  // Use items or subCategories
+  const categories = items || subCategories || [];
+  const selected = selectedId || selectedSubCategory;
+  const onSelectHandler = onSelect || onSubCategorySelect;
 
   const scrollLeft = () => {
     if (scrollContainerRef.current) {
@@ -34,13 +47,13 @@ export function SubCategoryButtons({
     if (container) {
       // Apply webkit scrolling for iOS devices safely
       const style = container.style as any;
-      if ('WebkitOverflowScrolling' in style) {
+      if (style && typeof style.WebkitOverflowScrolling !== 'undefined') {
         style.WebkitOverflowScrolling = 'touch';
       }
     }
   }, []);
 
-  if (!subCategories?.length) return null;
+  if (!categories?.length) return null;
 
   return (
     <div className="relative">
@@ -61,22 +74,22 @@ export function SubCategoryButtons({
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       >
         <Button
-          variant={selectedSubCategory === undefined ? "default" : "outline"}
+          variant={selected === undefined ? "default" : "outline"}
           size="sm"
-          onClick={() => onSubCategorySelect(undefined)}
+          onClick={() => onSelectHandler?.(undefined)}
           className="whitespace-nowrap"
         >
           الكل
         </Button>
-        {subCategories.map((subCategory) => (
+        {categories.map((category) => (
           <Button
-            key={subCategory.id}
-            variant={selectedSubCategory === subCategory.id ? "default" : "outline"}
+            key={category.id}
+            variant={selected === category.id ? "default" : "outline"}
             size="sm"
-            onClick={() => onSubCategorySelect(subCategory.id)}
+            onClick={() => onSelectHandler?.(category.id)}
             className="whitespace-nowrap"
           >
-            {subCategory.name}
+            {category.name}
           </Button>
         ))}
       </div>

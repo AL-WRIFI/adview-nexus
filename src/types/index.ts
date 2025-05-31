@@ -28,12 +28,15 @@ export interface SubCategory {
   category_id: number;
   icon?: string;
   subcategories?: SubCategory[];
+  children?: SubCategory[];
 }
 
 export interface Brand {
   id: number;
-  name: string;
+  name?: string;
+  title?: string;
   category_id?: number;
+  logo?: string;
 }
 
 export interface State {
@@ -186,4 +189,23 @@ export interface Favorite {
   listing_id: number;
   created_at: string;
   listing: Listing;
+}
+
+export interface Promotion {
+  id: number;
+  type: 'featured' | 'highlight' | 'urgent' | 'top';
+  duration: number;
+  price: number;
+  features: string[];
+}
+
+export interface UserPromotion {
+  id: number;
+  user_id: number;
+  listing_id: number;
+  promotion_type: string;
+  start_date: string;
+  end_date: string;
+  is_active: boolean;
+  created_at: string;
 }

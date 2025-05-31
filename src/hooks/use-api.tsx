@@ -184,6 +184,7 @@ export function useAddToFavorites() {
     mutationFn: (listingId: number) => listingsAPI.addToFavorites(listingId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['favorites'] });
+      queryClient.invalidateQueries({ queryKey: ['listings'] });
     },
   });
 }
@@ -195,6 +196,7 @@ export function useRemoveFromFavorites() {
     mutationFn: (listingId: number) => listingsAPI.removeFromFavorites(listingId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['favorites'] });
+      queryClient.invalidateQueries({ queryKey: ['listings'] });
     },
   });
 }
