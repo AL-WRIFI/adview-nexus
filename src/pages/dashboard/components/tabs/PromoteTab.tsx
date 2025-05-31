@@ -7,6 +7,7 @@ import { usePromotionPackages } from '@/hooks/use-promotions';
 import { useUserListings } from '@/hooks/use-api';
 import { PromoteListingDialog } from '@/components/promotions/PromoteListingDialog';
 import { UserPromotionsTab } from '@/components/promotions/UserPromotionsTab';
+import { ActivePromotionsDisplay } from '@/components/promotions/ActivePromotionsDisplay';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Listing } from '@/types';
@@ -25,11 +26,14 @@ export function PromoteTab() {
 
   return (
     <div className="space-y-6">
+      {/* Active Promotions Section */}
+      <ActivePromotionsDisplay />
+
       <Tabs defaultValue="packages" className="w-full">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="packages">باقات الترقية</TabsTrigger>
           <TabsTrigger value="my-listings">إعلاناتي</TabsTrigger>
-          <TabsTrigger value="my-promotions">ترقياتي</TabsTrigger>
+          <TabsTrigger value="my-promotions">تاريخ الترقيات</TabsTrigger>
         </TabsList>
 
         <TabsContent value="packages" className="space-y-6">
@@ -73,7 +77,7 @@ export function PromoteTab() {
                 </div>
               )}
               
-              <div className="mt-6 bg-gray-50 p-4 rounded-lg">
+              <div className="mt-6 bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
                 <h3 className="font-bold mb-2">مميزات الإعلانات المدفوعة</h3>
                 <ul className="list-disc pr-5 space-y-1">
                   <li>ظهور في الصفحة الرئيسية</li>

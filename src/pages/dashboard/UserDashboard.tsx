@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { UserCircle, LogOut, PlusCircle, Menu, X } from 'lucide-react';
@@ -21,31 +22,31 @@ export default function UserDashboard() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col dark:bg-neutral-900 border-t border-border dark:border-neutral-900">
+    <div className="min-h-screen flex flex-col bg-white dark:bg-neutral-900">
       <Header />
       
-      <main className="flex-1 pb-20 md:pb-0 ">
-        <div className="bg-gray-50 border-b border-border dark:bg-neutral-900 border-t border-border dark:border-neutral-900">
+      <main className="flex-1 pb-20 md:pb-0">
+        <div className="bg-gray-50 dark:bg-neutral-800 border-b border-gray-200 dark:border-neutral-700">
           <div className="container px-4 mx-auto py-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center">
-                <div className="w-16 h-16 bg-gray-200 rounded-full overflow-hidden ml-4 dark:bg-gray-900">
-                  <UserCircle className="w-full h-full text-gray-400 dark:text-gray-300" />
+                <div className="w-16 h-16 bg-gray-200 dark:bg-neutral-700 rounded-full overflow-hidden ml-4">
+                  <UserCircle className="w-full h-full text-gray-400 dark:text-neutral-400" />
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold dark:text-gray-100">
+                  <h1 className="text-xl font-bold text-gray-900 dark:text-white">
                     أهلاً، {user?.first_name} {user?.last_name}
                   </h1>
-                  <p className="text-muted-foreground dark:text-gray-300">مرحباً بك في لوحة التحكم</p>
+                  <p className="text-gray-600 dark:text-gray-300">مرحباً بك في لوحة التحكم</p>
                 </div>
               </div>
               
               <div className="hidden md:block">
-                <Button variant="outline" className="ml-2 dark:border-gray-600 dark:text-gray-100" onClick={handleLogout}>
+                <Button variant="outline" className="ml-2 border-gray-300 dark:border-neutral-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-neutral-700" onClick={handleLogout}>
                   <LogOut className="ml-2 h-4 w-4" />
                   تسجيل الخروج
                 </Button>
-                <Button asChild className="dark:bg-gray-700 dark:hover:bg-gray-600">
+                <Button asChild className="bg-brand hover:bg-brand/90 text-white">
                   <Link to="/add-ad">
                     <PlusCircle className="ml-2 h-4 w-4" />
                     إضافة إعلان جديد
@@ -56,7 +57,7 @@ export default function UserDashboard() {
               <Button 
                 variant="outline" 
                 size="icon" 
-                className="md:hidden dark:border-gray-600 dark:text-gray-100"
+                className="md:hidden border-gray-300 dark:border-neutral-600 text-gray-700 dark:text-gray-200"
                 onClick={() => setSidebarOpen(!sidebarOpen)}
               >
                 {sidebarOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
@@ -72,7 +73,7 @@ export default function UserDashboard() {
               <DashboardSidebar 
                 activePage={activePage} 
                 setActivePage={setActivePage} 
-                className="dark:bg-gray-800 dark:border-gray-700"
+                className="bg-white dark:bg-neutral-800 border-gray-200 dark:border-neutral-700"
               />
             </div>
             
@@ -80,11 +81,11 @@ export default function UserDashboard() {
             {sidebarOpen && (
               <div className="fixed inset-0 z-40 md:hidden">
                 <div className="fixed inset-0 bg-black/50" onClick={() => setSidebarOpen(false)} />
-                <div className="fixed inset-y-0 right-0 max-w-[16rem] w-full bg-white shadow-lg dark:bg-gray-800 dark:border-gray-700">
-                  <div className="p-4 border-b dark:border-gray-700">
+                <div className="fixed inset-y-0 right-0 max-w-[16rem] w-full bg-white dark:bg-neutral-800 shadow-lg border-l border-gray-200 dark:border-neutral-700">
+                  <div className="p-4 border-b border-gray-200 dark:border-neutral-700">
                     <div className="flex items-center justify-between">
-                      <h2 className="font-bold dark:text-gray-100">القائمة</h2>
-                      <Button variant="ghost" size="icon" className="dark:text-gray-100" onClick={() => setSidebarOpen(false)}>
+                      <h2 className="font-bold text-gray-900 dark:text-white">القائمة</h2>
+                      <Button variant="ghost" size="icon" className="text-gray-700 dark:text-gray-200" onClick={() => setSidebarOpen(false)}>
                         <X className="h-5 w-5" />
                       </Button>
                     </div>
@@ -97,7 +98,7 @@ export default function UserDashboard() {
                       setSidebarOpen(false);
                     }}
                     isMobile={true}
-                    className="dark:bg-gray-800"
+                    className="bg-white dark:bg-neutral-800"
                   />
                 </div>
               </div>
@@ -113,7 +114,7 @@ export default function UserDashboard() {
                 setPromoteDialogOpen={setPromoteDialogOpen}
                 deleteConfirmOpen={deleteConfirmOpen}
                 setDeleteConfirmOpen={setDeleteConfirmOpen}
-                className="dark:bg-neutral-900 border-t border-border dark:border-neutral-900"
+                className="bg-white dark:bg-neutral-900"
               />
             </div>
           </div>
