@@ -17,7 +17,7 @@ export interface User {
 export interface Category {
   id: number;
   name: string;
-  icon: string;
+  icon?: string;
   subcategories?: SubCategory[];
   color?: string;
 }
@@ -114,6 +114,17 @@ export interface Listing {
   neighborhood?: string;
   favorites_count?: number;
   is_favorited?: boolean;
+  listing_type?: string;
+  category_id?: number;
+  sub_category_id?: number;
+  child_category_id?: number;
+  brand_id?: number;
+  is_negotiable?: boolean;
+  state_id?: number;
+  city_id?: number;
+  phone_hidden?: boolean;
+  lat?: number;
+  lon?: number;
 }
 
 export interface Comment {
@@ -141,6 +152,7 @@ export interface SearchFilters {
   category_id?: number;
   subcategory?: string;
   sub_category_id?: number;
+  child_category_id?: number;
   brand_id?: number;
   state_id?: number;
   city_id?: number;
@@ -155,6 +167,7 @@ export interface SearchFilters {
   sort?: string;
   page?: number;
   limit?: number;
+  per_page?: number;
   search?: string;
   query?: string;
   lat?: number;
@@ -181,6 +194,12 @@ export interface PaginatedResponse<T> {
   prev_page_url?: string;
   from?: number;
   to?: number;
+  meta?: {
+    current_page: number;
+    per_page: number;
+    total: number;
+    last_page: number;
+  };
 }
 
 export interface Favorite {

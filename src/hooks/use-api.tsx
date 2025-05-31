@@ -6,9 +6,12 @@ import {
   listingsAPI, 
   locationAPI, 
   userAPI, 
-  searchAPI 
+  searchAPI,
+  authAPI,
+  api
 } from '@/services/api';
 import { SearchFilters } from '@/types';
+import { toast } from '@/hooks/use-toast';
 
 // Category hooks
 export function useCategories() {
@@ -71,6 +74,9 @@ export function useListings(filters?: SearchFilters) {
   });
 }
 
+// Alias for backward compatibility
+export const useAds = useListings;
+
 export function useListing(id: number) {
   return useQuery({
     queryKey: ['listings', id],
@@ -103,31 +109,62 @@ export function useCreateListing() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['listings'] });
       queryClient.invalidateQueries({ queryKey: ['user-listings'] });
+      toast({
+        title: "تم إنشاء الإعلان بنجاح",
+        description: "سيتم مراجعة إعلانك وعرضه قريباً",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        variant: "destructive",
+        title: "خطأ في إنشاء الإعلان",
+        description: error.message,
+      });
     },
   });
 }
 
-export function useUpdateListing(id: number) {
+export function useUpdateListing() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: FormData) => listingsAPI.updateListing(id, data),
+    mutationFn: ({ id, data }: { id: number; data: FormData }) => 
+      listingsAPI.updateListing(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['listings', id] });
       queryClient.invalidateQueries({ queryKey: ['listings'] });
       queryClient.invalidateQueries({ queryKey: ['user-listings'] });
+      toast({
+        title: "تم تحديث الإعلان بنجاح",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        variant: "destructive",
+        title: "خطأ في تحديث الإعلان",
+        description: error.message,
+      });
     },
   });
 }
 
-export function useDeleteListing(id: number) {
+export function useDeleteListing() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: () => listingsAPI.deleteListing(id),
+    mutationFn: (id: number) => listingsAPI.deleteListing(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['listings'] });
       queryClient.invalidateQueries({ queryKey: ['user-listings'] });
+      toast({
+        title: "تم حذف الإعلان بنجاح",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        variant: "destructive",
+        title: "خطأ في حذف الإعلان",
+        description: error.message,
+      });
     },
   });
 }
@@ -139,6 +176,16 @@ export function useAddComment(listingId: number) {
     mutationFn: (content: string) => listingsAPI.addComment(listingId, content),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['listings', listingId, 'comments'] });
+      toast({
+        title: "تم إضافة التعليق بنجاح",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        variant: "destructive",
+        title: "خطأ في إضافة التعليق",
+        description: error.message,
+      });
     },
   });
 }
@@ -150,6 +197,16 @@ export function useAddReply(listingId: number, commentId: number) {
     mutationFn: (content: string) => listingsAPI.addReply(listingId, commentId, content),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['listings', listingId, 'comments'] });
+      toast({
+        title: "تم إضافة الرد بنجاح",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        variant: "destructive",
+        title: "خطأ في إضافة الرد",
+        description: error.message,
+      });
     },
   });
 }
@@ -161,6 +218,16 @@ export function useDeleteComment(listingId: number, commentId: number) {
     mutationFn: () => listingsAPI.deleteComment(listingId, commentId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['listings', listingId, 'comments'] });
+      toast({
+        title: "تم حذف التعليق بنجاح",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        variant: "destructive",
+        title: "خطأ في حذف التعليق",
+        description: error.message,
+      });
     },
   });
 }
@@ -186,6 +253,13 @@ export function useAddToFavorites() {
       queryClient.invalidateQueries({ queryKey: ['favorites'] });
       queryClient.invalidateQueries({ queryKey: ['listings'] });
     },
+    onError: (error: Error) => {
+      toast({
+        variant: "destructive",
+        title: "خطأ في إدارة المفضلة",
+        description: error.message,
+      });
+    },
   });
 }
 
@@ -197,6 +271,13 @@ export function useRemoveFromFavorites() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['favorites'] });
       queryClient.invalidateQueries({ queryKey: ['listings'] });
+    },
+    onError: (error: Error) => {
+      toast({
+        variant: "destructive",
+        title: "خطأ في إدارة المفضلة",
+        description: error.message,
+      });
     },
   });
 }
@@ -232,6 +313,13 @@ export function useToggleFavorite() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['favorites'] });
       queryClient.invalidateQueries({ queryKey: ['listings'] });
+    },
+    onError: (error: Error) => {
+      toast({
+        variant: "destructive",
+        title: "خطأ في إدارة المفضلة",
+        description: error.message,
+      });
     },
   });
 }
@@ -354,6 +442,16 @@ export function useEditComment(listingId: number) {
       listingsAPI.editComment(listingId, commentId, content),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['listings', listingId, 'comments'] });
+      toast({
+        title: "تم تعديل التعليق بنجاح",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        variant: "destructive",
+        title: "خطأ في تعديل التعليق",
+        description: error.message,
+      });
     },
   });
 }
@@ -366,6 +464,16 @@ export function useDeleteReply(listingId: number) {
       listingsAPI.deleteReply(listingId, commentId, replyId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['listings', listingId, 'comments'] });
+      toast({
+        title: "تم حذف الرد بنجاح",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        variant: "destructive",
+        title: "خطأ في حذف الرد",
+        description: error.message,
+      });
     },
   });
 }
@@ -378,6 +486,54 @@ export function useEditReply(listingId: number) {
       listingsAPI.editReply(listingId, commentId, replyId, content),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['listings', listingId, 'comments'] });
+      toast({
+        title: "تم تعديل الرد بنجاح",
+      });
     },
+    onError: (error: Error) => {
+      toast({
+        variant: "destructive",
+        title: "خطأ في تعديل الرد",
+        description: error.message,
+      });
+    },
+  });
+}
+
+// Auth hooks
+export function useLogin() {
+  return useMutation({
+    mutationFn: (credentials: { email: string; password: string }) => 
+      authAPI.login(credentials),
+  });
+}
+
+export function useRegister() {
+  return useMutation({
+    mutationFn: (userData: any) => authAPI.register(userData),
+  });
+}
+
+export function useLogout() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: () => authAPI.logout(),
+    onSuccess: () => {
+      queryClient.clear();
+    },
+  });
+}
+
+export function useForgotPassword() {
+  return useMutation({
+    mutationFn: (email: string) => authAPI.forgotPassword(email),
+  });
+}
+
+export function useResetPassword() {
+  return useMutation({
+    mutationFn: (data: { token: string; password: string; password_confirmation: string }) => 
+      authAPI.resetPassword(data),
   });
 }
