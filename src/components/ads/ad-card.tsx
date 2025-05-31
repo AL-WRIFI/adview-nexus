@@ -69,7 +69,7 @@ export function AdCard({
   // Handle the new image format
   const getImageUrl = () => {
     // Check if we have image object with image_url
-    if (ad.image && typeof ad.image === 'object' && ad.image.image_url) {
+    if (ad.image && typeof ad.image === 'object' && 'image_url' in ad.image && ad.image.image_url) {
       return ad.image.image_url;
     }
     
@@ -166,7 +166,7 @@ export function AdCard({
           <div className="mt-auto flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
             <div className="flex items-center">
               <MapPin className="h-3 w-3 ml-1" />
-              <span className="truncate max-w-[80px]">{ad.city || ad.address || 'غير محدد'}</span>
+              <span className="truncate max-w-[80px]">{ad.city || (ad as any).address || 'غير محدد'}</span>
             </div>
             <div className="flex items-center">
               <Clock className="h-3 w-3 ml-1" />
@@ -174,7 +174,7 @@ export function AdCard({
             </div>
             <div className="flex items-center">
               <Eye className="h-3 w-3 ml-1" />
-              <span>{ad.views_count || ad.viewCount || 0}</span>
+              <span>{ad.views_count || (ad as any).viewCount || ad.views || 0}</span>
             </div>
             
             {distance !== undefined && (
@@ -265,7 +265,7 @@ export function AdCard({
         <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2 text-xs text-muted-foreground">
           <div className="flex items-center">
             <MapPin className="h-3 w-3 ml-1" />
-            <span className="truncate max-w-[80px]">{ad.city || ad.address || 'غير محدد'}</span>
+            <span className="truncate max-w-[80px]">{ad.city || (ad as any).address || 'غير محدد'}</span>
           </div>
           <div className="flex items-center">
             <Clock className="h-3 w-3 ml-1" />
@@ -273,7 +273,7 @@ export function AdCard({
           </div>
           <div className="flex items-center">
             <Eye className="h-3 w-3 ml-1" />
-            <span>{ad.views_count || ad.viewCount || 0}</span>
+            <span>{ad.views_count || (ad as any).viewCount || ad.views || 0}</span>
           </div>
           
           {distance !== undefined && (

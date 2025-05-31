@@ -26,6 +26,8 @@ export interface SubCategory {
   id: number;
   name: string;
   category_id: number;
+  icon?: string;
+  subcategories?: SubCategory[];
 }
 
 export interface Brand {
@@ -54,8 +56,8 @@ export interface Ad {
   category: string;
   subcategory?: string;
   condition?: string;
-  image?: string | null;
-  images?: string[];
+  image?: string | null | { image_url: string };
+  images?: string[] | { url: string }[];
   user_id: number;
   user?: User;
   created_at: string;
@@ -64,12 +66,15 @@ export interface Ad {
   featured?: boolean;
   promoted_until?: string;
   views?: number;
+  views_count?: number;
+  viewCount?: number;
   phone?: string;
   whatsapp?: string;
   telegram?: string;
   latitude?: number;
   longitude?: number;
   city?: string;
+  address?: string;
   neighborhood?: string;
   favorites_count?: number;
   is_favorited?: boolean;
@@ -84,8 +89,8 @@ export interface Listing {
   category: string;
   subcategory?: string;
   condition?: string;
-  image?: string | null;
-  images?: string[];
+  image?: string | null | { image_url: string };
+  images?: string[] | { url: string }[];
   user_id: number;
   user?: User;
   created_at: string;
@@ -94,12 +99,15 @@ export interface Listing {
   featured?: boolean;
   promoted_until?: string;
   views?: number;
+  views_count?: number;
+  viewCount?: number;
   phone?: string;
   whatsapp?: string;
   telegram?: string;
   latitude?: number;
   longitude?: number;
   city?: string;
+  address?: string;
   neighborhood?: string;
   favorites_count?: number;
   is_favorited?: boolean;
@@ -115,6 +123,14 @@ export interface Comment {
   listing_id?: number;
   parent_id?: number;
   replies?: Comment[];
+}
+
+export interface Conversation {
+  id: number;
+  user?: User;
+  last_message?: string;
+  created_at: string;
+  updated_at?: string;
 }
 
 export interface SearchFilters {

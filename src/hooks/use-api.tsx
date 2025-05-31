@@ -80,6 +80,9 @@ export function useListing(id: number) {
   });
 }
 
+// Alias for backward compatibility
+export const useAd = useListing;
+
 export function useRelatedListings(listingId: number, limit: number = 4) {
   return useQuery({
     queryKey: ['related', listingId, limit],
@@ -88,6 +91,9 @@ export function useRelatedListings(listingId: number, limit: number = 4) {
     enabled: !!listingId,
   });
 }
+
+// Alias for backward compatibility
+export const useRelatedAds = useRelatedListings;
 
 export function useCreateListing() {
   const queryClient = useQueryClient();
@@ -168,6 +174,9 @@ export function useListingComments(listingId: number) {
   });
 }
 
+// Alias for backward compatibility
+export const useComments = useListingComments;
+
 export function useAddToFavorites() {
   const queryClient = useQueryClient();
 
@@ -204,6 +213,24 @@ export function useIsFavorite(listingId: number) {
     queryFn: () => listingsAPI.isFavorite(listingId),
     select: (data) => data.data,
     enabled: !!listingId,
+  });
+}
+
+export function useToggleFavorite() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ listingId, isFavorited }: { listingId: number; isFavorited: boolean }) => {
+      if (isFavorited) {
+        return listingsAPI.removeFromFavorites(listingId);
+      } else {
+        return listingsAPI.addToFavorites(listingId);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['favorites'] });
+      queryClient.invalidateQueries({ queryKey: ['listings'] });
+    },
   });
 }
 
@@ -295,6 +322,17 @@ export function useUserStatistics() {
   });
 }
 
+export function useCurrentUser() {
+  return useQuery({
+    queryKey: ['currentUser'],
+    queryFn: async () => {
+      const response = await userAPI.getCurrentUser();
+      return response.data;
+    },
+    retry: false,
+  });
+}
+
 // Search hooks
 export function useSearchListings(query: string, filters?: SearchFilters) {
   return useQuery({
@@ -302,5 +340,42 @@ export function useSearchListings(query: string, filters?: SearchFilters) {
     queryFn: () => searchAPI.searchListings(query, filters),
     select: (data) => data.data,
     enabled: !!query,
+  });
+}
+
+// Comment editing hooks
+export function useEditComment(listingId: number) {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ commentId, content }: { commentId: number; content: string }) => 
+      listingsAPI.editComment(listingId, commentId, content),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['listings', listingId, 'comments'] });
+    },
+  });
+}
+
+export function useDeleteReply(listingId: number) {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ commentId, replyId }: { commentId: number; replyId: number }) => 
+      listingsAPI.deleteReply(listingId, commentId, replyId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['listings', listingId, 'comments'] });
+    },
+  });
+}
+
+export function useEditReply(listingId: number) {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ commentId, replyId, content }: { commentId: number; replyId: number; content: string }) => 
+      listingsAPI.editReply(listingId, commentId, replyId, content),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['listings', listingId, 'comments'] });
+    },
   });
 }

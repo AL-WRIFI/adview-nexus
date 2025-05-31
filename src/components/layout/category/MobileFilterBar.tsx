@@ -2,7 +2,7 @@
 import React from 'react';
 import { MapPin, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { MobileFilterDrawer } from '@/components/filters-old/MobileFilterDrawer';
+import { MobileFilterDrawer } from '@/components/filters/MobileFilterDrawer';
 import { SearchFilters } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
 
