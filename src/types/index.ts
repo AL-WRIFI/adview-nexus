@@ -28,6 +28,53 @@ export interface SubCategory {
   category_id: number;
 }
 
+export interface Brand {
+  id: number;
+  name: string;
+  category_id?: number;
+}
+
+export interface State {
+  id: number;
+  name: string;
+}
+
+export interface City {
+  id: number;
+  name: string;
+  state_id: number;
+}
+
+export interface Ad {
+  id: number;
+  title: string;
+  description: string;
+  price: number;
+  location: string;
+  category: string;
+  subcategory?: string;
+  condition?: string;
+  image?: string | null;
+  images?: string[];
+  user_id: number;
+  user?: User;
+  created_at: string;
+  updated_at?: string;
+  status: 'active' | 'inactive' | 'sold';
+  featured?: boolean;
+  promoted_until?: string;
+  views?: number;
+  phone?: string;
+  whatsapp?: string;
+  telegram?: string;
+  latitude?: number;
+  longitude?: number;
+  city?: string;
+  neighborhood?: string;
+  favorites_count?: number;
+  is_favorited?: boolean;
+}
+
 export interface Listing {
   id: number;
   title: string;
@@ -72,15 +119,28 @@ export interface Comment {
 
 export interface SearchFilters {
   category?: string;
+  category_id?: number;
   subcategory?: string;
+  sub_category_id?: number;
+  brand_id?: number;
+  state_id?: number;
+  city_id?: number;
   minPrice?: number;
   maxPrice?: number;
+  price_min?: number;
+  price_max?: number;
   location?: string;
   condition?: string;
+  listing_type?: string;
   sortBy?: 'newest' | 'oldest' | 'price_low' | 'price_high';
+  sort?: string;
   page?: number;
   limit?: number;
   search?: string;
+  query?: string;
+  lat?: number;
+  lon?: number;
+  radius?: number;
 }
 
 export interface ApiResponse<T> {

@@ -233,6 +233,33 @@ export function useAllCities() {
   });
 }
 
+export function useCurrentLocation() {
+  return useQuery({
+    queryKey: ['current-location'],
+    queryFn: async () => {
+      return new Promise((resolve, reject) => {
+        if (!navigator.geolocation) {
+          reject(new Error('Geolocation is not supported'));
+          return;
+        }
+        
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            resolve({
+              lat: position.coords.latitude,
+              lng: position.coords.longitude,
+            });
+          },
+          (error) => {
+            reject(error);
+          }
+        );
+      });
+    },
+    enabled: false,
+  });
+}
+
 // User hooks
 export function useUpdateProfile() {
   const queryClient = useQueryClient();
