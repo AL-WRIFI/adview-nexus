@@ -32,7 +32,7 @@ export default function AddAd() {
   const location = useLocation();
   const { toast } = useToast();
   const { data: categories } = useCategories();
-  // const { data: brands } = useBrands();
+  const { data: brands } = useBrands();
   const { data: states } = useStates();
   const createListingMutation = useCreateListing();
   const { user } = useAuth();
@@ -66,7 +66,7 @@ export default function AddAd() {
   
   // Get filtered cities based on selected state
   const { data: cities } = useCities(stateId || undefined);
-  const { data: brands } = useBrand(categoryId || undefined);
+  const { data: brands } = useBrands();
   
   // If coming back from login with form data, restore it
   useEffect(() => {
@@ -357,7 +357,7 @@ export default function AddAd() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="0">بدون ماركة</SelectItem>
-                          {brands?.map((brand) => (
+                          {brands && Array.isArray(brands) && brands.map((brand) => (
                             <SelectItem key={brand.id} value={brand.id.toString()}>
                               {brand.name}
                             </SelectItem>
@@ -686,7 +686,7 @@ export default function AddAd() {
                       {brandId && brandId > 0 && (
                         <div>
                           <h4 className="text-sm text-muted-foreground">الماركة</h4>
-                          <p>{brands?.find(b => b.id === brandId)?.name || '-'}</p>
+                          <p>{brands && Array.isArray(brands) ? brands.find(b => b.id === brandId)?.name || '-' : '-'}</p>
                         </div>
                       )}
                     </div>

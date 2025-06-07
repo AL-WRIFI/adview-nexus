@@ -287,7 +287,7 @@ export default function AdDetails() {
       <main className="flex-1 pb-20 md:pb-0">
         {/* Ad Images */}
         <div className="container px-4 mx-auto py-6">
-          <AdImageGallery images={adImages} />
+          <AdImageGallery images={adImages} title={ad?.title} />
         </div>
 
         {/* Ad Details */}

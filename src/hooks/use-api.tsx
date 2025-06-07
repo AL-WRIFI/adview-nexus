@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { SearchFilters, Listing, User, Category, Brand, State, City, Comment, Favorite, PaginatedResponse, ApiResponse } from '@/types';
 
@@ -292,14 +291,98 @@ export const useComments = (listingId: number) => {
   });
 };
 
+export const useCreateListing = () => {
+  return useMutation({
+    mutationFn: async (data: FormData) => {
+      return { success: true };
+    },
+  });
+};
+
+export const useUpdateListing = () => {
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: FormData }) => {
+      return { success: true };
+    },
+  });
+};
+
+export const useListing = (id: number) => {
+  return useQuery({
+    queryKey: ['listing', id],
+    queryFn: async (): Promise<Listing | null> => {
+      return null;
+    },
+  });
+};
+
+export const useListings = (filters?: SearchFilters) => {
+  return useQuery({
+    queryKey: ['listings', filters],
+    queryFn: async (): Promise<PaginatedResponse<Listing>> => {
+      return {
+        data: [],
+        current_page: 1,
+        per_page: 12,
+        total: 0,
+        last_page: 1
+      };
+    },
+  });
+};
+
+export const useUserListings = () => {
+  return useQuery({
+    queryKey: ['userListings'],
+    queryFn: async (): Promise<PaginatedResponse<Listing>> => {
+      return {
+        data: [],
+        current_page: 1,
+        per_page: 12,
+        total: 0,
+        last_page: 1
+      };
+    },
+  });
+};
+
+export const useDeleteListing = () => {
+  return useMutation({
+    mutationFn: async (id: number) => {
+      return { success: true };
+    },
+  });
+};
+
+export const useUpdateProfile = () => {
+  return useMutation({
+    mutationFn: async (data: Partial<User>) => {
+      return { success: true };
+    },
+  });
+};
+
+// Fix the comment hooks to accept proper parameters
 export const useAddComment = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ listingId, content }: { listingId: number; content: string }) => {
+    mutationFn: async ({ listingId: id, content }: { listingId: number; content: string }) => {
       return { success: true };
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['comments', variables.listingId] });
+    },
+  });
+};
+
+export const useAddReply = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ commentId, content }: { commentId: number; content: string }) => {
+      return { success: true };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['comments'] });
     },
   });
 };
@@ -328,18 +411,6 @@ export const useDeleteComment = () => {
   });
 };
 
-export const useAddReply = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ commentId, content }: { commentId: number; content: string }) => {
-      return { success: true };
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['comments'] });
-    },
-  });
-};
-
 export const useEditReply = () => {
   const queryClient = useQueryClient();
   return useMutation({
@@ -360,44 +431,6 @@ export const useDeleteReply = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['comments'] });
-    },
-  });
-};
-
-export const useCreateAd = () => {
-  return useMutation({
-    mutationFn: async (data: FormData) => {
-      return { success: true };
-    },
-  });
-};
-
-export const useUpdateAd = () => {
-  return useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: FormData }) => {
-      return { success: true };
-    },
-  });
-};
-
-export const useDeleteAd = () => {
-  return useMutation({
-    mutationFn: async (id: number) => {
-      return { success: true };
-    },
-  });
-};
-
-export const useUserStats = () => {
-  return useQuery({
-    queryKey: ['userStats'],
-    queryFn: async () => {
-      return {
-        total_ads: 0,
-        active_ads: 0,
-        views: 0,
-        favorites: 0
-      };
     },
   });
 };

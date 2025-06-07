@@ -43,18 +43,18 @@ export function CommentsList({
   
   const { isAuthenticated, user } = useAuth();
 
-  // API hooks
-  const addCommentMutation = useAddComment(listingId);
-  const addReplyMutation = useAddReply(listingId);
-  const deleteCommentMutation = useDeleteComment(listingId);
-  const editCommentMutation = useEditComment(listingId);
-  const deleteReplyMutation = useDeleteReply(listingId);
-  const editReplyMutation = useEditReply(listingId);
+  // API hooks - now properly configured
+  const addCommentMutation = useAddComment();
+  const addReplyMutation = useAddReply();
+  const deleteCommentMutation = useDeleteComment();
+  const editCommentMutation = useEditComment();
+  const deleteReplyMutation = useDeleteReply();
+  const editReplyMutation = useEditReply();
 
   const handleSubmitComment = (e: React.FormEvent) => {
     e.preventDefault();
     if (commentText.trim()) {
-      addCommentMutation.mutate(commentText, {
+      addCommentMutation.mutate({ listingId, content: commentText }, {
         onSuccess: () => {
           setCommentText('');
         }

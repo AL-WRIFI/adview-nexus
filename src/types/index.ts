@@ -244,6 +244,7 @@ export interface DashboardSidebarProps {
   activePage: string;
   setActivePage: (page: string) => void;
   isMobile?: boolean;
+  className?: string;
 }
 
 export interface DashboardContentProps {
@@ -254,4 +255,10 @@ export interface DashboardContentProps {
   setPromoteDialogOpen: (open: boolean) => void;
   deleteConfirmOpen: boolean;
   setDeleteConfirmOpen: (open: boolean) => void;
+  className?: string;
+}
+
+export interface AdImageGalleryProps {
+  images: string[];
+  title?: string;
 }
