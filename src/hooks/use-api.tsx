@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
   categoriesAPI, 
@@ -352,28 +351,25 @@ export function useAllCities() {
 
 export function useCurrentLocation() {
   return useQuery({
-    queryKey: ['current-location'],
+    queryKey: ['currentLocation'],
     queryFn: async () => {
-      return new Promise((resolve, reject) => {
-        if (!navigator.geolocation) {
+      return new Promise<{ lat: number; lng: number }>((resolve, reject) => {
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              resolve({
+                lat: position.coords.latitude,
+                lng: position.coords.longitude,
+              });
+            },
+            (error) => reject(error)
+          );
+        } else {
           reject(new Error('Geolocation is not supported'));
-          return;
         }
-        
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            resolve({
-              lat: position.coords.latitude,
-              lng: position.coords.longitude,
-            });
-          },
-          (error) => {
-            reject(error);
-          }
-        );
       });
     },
-    enabled: false,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
 

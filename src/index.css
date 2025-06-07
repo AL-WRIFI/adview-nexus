@@ -44,16 +44,6 @@
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
     
-    --dark-bg-opacity: 0;
-    --dark-color-opacity: 0;
-    
-    /* Custom colors */
-    --background: #ffffff;
-    --card-background: #ffffff;
-    --card-border: #e5e7eb;
-    --dark-surface: #f9fafb;
-    --dark-muted: #f3f4f6;
-    
     /* Brand colors */
     --brand: hsl(142 76% 36%);
     --brand-foreground: hsl(0 0% 100%);
@@ -61,50 +51,42 @@
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    --background: 15 23% 8%;
+    --foreground: 213 31% 91%;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 15 25% 10%;
+    --card-foreground: 213 31% 91%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 15 25% 10%;
+    --popover-foreground: 213 31% 91%;
 
     --primary: 142 71% 45%;
     --primary-foreground: 144 70% 10%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 15 20% 15%;
+    --secondary-foreground: 213 31% 91%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 15 20% 15%;
+    --muted-foreground: 217.9 10.6% 64.9%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 15 20% 15%;
+    --accent-foreground: 213 31% 91%;
 
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
+    --border: 15 20% 18%;
+    --input: 15 20% 18%;
     --ring: 212.7 26.8% 83.9%;
     
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-background: 15 25% 6%;
+    --sidebar-foreground: 213 31% 91%;
+    --sidebar-primary: 142 71% 45%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-accent: 15 20% 12%;
+    --sidebar-accent-foreground: 213 31% 91%;
+    --sidebar-border: 15 20% 18%;
     --sidebar-ring: 217.2 91.2% 59.8%;
-    
-    /* Custom dark mode colors */
-    --background: #121212;
-    --card-background: #1e1e1e;
-    --card-border: #333333;
-    --dark-surface: #242424;
-    --dark-muted: #2a2a2a;
-    --dark-primary: #303030;
     
     /* Brand colors in dark mode */
     --brand: hsl(142 71% 45%);
@@ -125,21 +107,16 @@
   body {
     @apply bg-background text-foreground font-tajawal;
   }
-  
-  .dark body {
-    background-color: var(--background);
-    color: #e0e0e0;
-  }
 }
 
 @layer components {
   
   .category-icon {
-    @apply flex flex-col items-center justify-center p-3 rounded-lg bg-white shadow-sm transition-all hover:shadow-md cursor-pointer border border-ad-border dark:bg-dark-card dark:border-dark-border dark:text-gray-200;
+    @apply flex flex-col items-center justify-center p-3 rounded-lg bg-card shadow-sm transition-all hover:shadow-md cursor-pointer border border-border;
   }
   
   .ad-card {
-    @apply relative border border-ad-border rounded-lg overflow-hidden bg-white transition-all hover:shadow-md dark:bg-dark-card dark:border-dark-border dark:text-gray-200;
+    @apply relative border border-border rounded-lg overflow-hidden bg-card transition-all hover:shadow-md;
   }
   
   .ad-card-horizontal {
@@ -151,15 +128,15 @@
   }
   
   .featured-ad {
-    @apply border-featured-border bg-featured dark:border-dark-border dark:bg-dark-primary;
+    @apply border-brand bg-card/80;
   }
   
   .nav-link {
-    @apply px-3 py-2 text-gray-700 hover:text-primary rounded-md transition-colors dark:text-gray-200 dark:hover:text-primary;
+    @apply px-3 py-2 text-foreground hover:text-brand rounded-md transition-colors;
   }
   
   .mobile-nav-link {
-    @apply flex flex-col items-center justify-center p-2 text-xs text-gray-600 hover:text-primary transition-colors dark:text-gray-300 dark:hover:text-primary;
+    @apply flex flex-col items-center justify-center p-2 text-xs text-muted-foreground hover:text-brand transition-colors;
   }
   
   .scroll-container {
@@ -176,15 +153,15 @@
   }
   
   .category-pill {
-    @apply px-3 py-1.5 rounded-full bg-gray-100 text-sm font-medium text-gray-700 whitespace-nowrap dark:bg-dark-card dark:text-gray-200 dark:border dark:border-dark-border;
+    @apply px-3 py-1.5 rounded-full bg-muted text-sm font-medium text-foreground whitespace-nowrap border border-border;
   }
   
   .category-pill-active {
-    @apply bg-brand text-white dark:bg-brand dark:text-white;
+    @apply bg-brand text-brand-foreground border-brand;
   }
   
   .pagination-dot {
-    @apply w-2 h-2 mx-1 rounded-full bg-gray-300 dark:bg-dark-muted;
+    @apply w-2 h-2 mx-1 rounded-full bg-muted;
   }
   
   .pagination-dot-active {
@@ -192,7 +169,7 @@
   }
   
   .filter-drawer {
-    @apply fixed bottom-0 left-0 right-0 bg-white dark:bg-dark-background rounded-t-xl border-t border-gray-200 dark:border-dark-border;
+    @apply fixed bottom-0 left-0 right-0 bg-background rounded-t-xl border-t border-border;
   }
   
   .no-scrollbar {
@@ -202,58 +179,5 @@
   
   .no-scrollbar::-webkit-scrollbar {
     display: none;
-  }
-  
-  /* Dark mode UI element enhancements */
-  .dark .ad-card,
-  .dark .btn,
-  .dark .dropdown-menu,
-  .dark input,
-  .dark select,
-  .dark textarea {
-    @apply bg-[var(--card-background)] border-[var(--card-border)] text-gray-200;
-  }
-  
-  .dark .modal-content {
-    @apply bg-[var(--background)] border-[var(--card-border)];
-  }
-  
-  /* Enhanced dark mode styles */
-  .dark .drawer-content,
-  .dark .popover-content,
-  .dark .dialog-content {
-    @apply bg-[var(--background)] border-[var(--card-border)];
-  }
-  
-  .dark .button-secondary {
-    @apply bg-[var(--dark-muted)] text-white hover:bg-[var(--dark-surface)];
-  }
-  
-  .dark .input-field {
-    @apply bg-[var(--dark-surface)] border-[var(--card-border)] text-white;
-  }
-  
-  /* Form elements in dark mode */
-  .dark input,
-  .dark select,
-  .dark textarea {
-    @apply bg-dark-surface border-dark-border text-gray-200;
-  }
-  
-  /* Buttons in dark mode */
-  .dark button:not([class*="bg-"]) {
-    @apply dark:hover:bg-dark-surface;
-  }
-  
-  /* Card backgrounds in dark mode */
-  .dark .card,
-  .dark [class*="bg-white"] {
-    @apply bg-dark-card text-gray-200;
-  }
-  
-  /* Surface background elements in dark mode */
-  .dark [class*="bg-gray-50"],
-  .dark [class*="bg-gray-100"] {
-    @apply bg-dark-surface;
   }
 }

@@ -99,17 +99,17 @@ export function ModernCategoryBar() {
         <button
           onClick={() => handleCategorySelect(category)}
           className={cn(
-            "group relative flex flex-col items-center p-3 rounded-2xl transition-all duration-200 min-w-[80px]",
+            "group relative flex flex-col items-center p-3 rounded-2xl transition-all duration-200 min-w-[80px] border",
             isSelected 
-              ? "bg-brand text-white shadow-lg scale-105" 
-              : "bg-background hover:bg-accent hover:shadow-md"
+              ? "bg-brand text-white shadow-lg scale-105 border-brand" 
+              : "bg-background hover:bg-accent hover:shadow-md border-border hover:border-brand/50"
           )}
         >
           <div className={cn(
-            "p-3 rounded-xl mb-2 transition-colors",
+            "p-3 rounded-xl mb-2 transition-colors border",
             isSelected 
-              ? "bg-white/20" 
-              : "bg-brand/10 group-hover:bg-brand/20"
+              ? "bg-white/20 border-white/30" 
+              : "bg-brand/10 group-hover:bg-brand/20 border-brand/20 group-hover:border-brand/40"
           )}>
             <Icon className={cn(
               "h-6 w-6 transition-colors",
@@ -139,12 +139,12 @@ export function ModernCategoryBar() {
     <button
       onClick={onClick}
       className={cn(
-        "px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all duration-200",
+        "px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all duration-200 border",
         isSelected
-          ? "bg-brand text-white shadow-md"
+          ? "bg-brand text-white shadow-md border-brand"
           : level === 'child'
-          ? "bg-accent hover:bg-accent/80 text-accent-foreground"
-          : "bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground"
+          ? "bg-background hover:bg-accent text-foreground border-border hover:border-brand/50"
+          : "bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground border-border hover:border-brand/50"
       )}
     >
       {item.name}
@@ -158,7 +158,7 @@ export function ModernCategoryBar() {
 
   if (loadingCategories) {
     return (
-      <div className="bg-background border-b border-border">
+      <div className="bg-background border-b border-border shadow-sm">
         <div className="container px-4 mx-auto py-4">
           <div className="flex items-center justify-center h-20">
             <div className="text-muted-foreground">جاري تحميل التصنيفات...</div>
@@ -187,14 +187,14 @@ export function ModernCategoryBar() {
               {isMobile && categories && categories.length > 8 && (
                 <Sheet open={showAllCategories} onOpenChange={setShowAllCategories}>
                   <SheetTrigger asChild>
-                    <button className="flex flex-col items-center p-3 rounded-2xl bg-muted hover:bg-accent transition-colors min-w-[80px]">
-                      <div className="p-3 rounded-xl mb-2 bg-accent">
+                    <button className="flex flex-col items-center p-3 rounded-2xl bg-muted hover:bg-accent transition-colors min-w-[80px] border border-border">
+                      <div className="p-3 rounded-xl mb-2 bg-accent border border-border">
                         <Grid3X3 className="h-6 w-6 text-muted-foreground" />
                       </div>
                       <span className="text-xs font-medium text-muted-foreground">المزيد</span>
                     </button>
                   </SheetTrigger>
-                  <SheetContent side="bottom" className="h-[70vh]">
+                  <SheetContent side="bottom" className="h-[70vh] bg-background border-border">
                     <SheetHeader>
                       <SheetTitle>جميع التصنيفات</SheetTitle>
                     </SheetHeader>

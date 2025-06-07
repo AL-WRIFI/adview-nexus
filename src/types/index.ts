@@ -1,4 +1,3 @@
-
 export interface User {
   id: number;
   first_name: string;
@@ -148,31 +147,24 @@ export interface Conversation {
 }
 
 export interface SearchFilters {
-  category?: string;
+  search?: string;
   category_id?: number;
-  subcategory?: string;
   sub_category_id?: number;
   child_category_id?: number;
   brand_id?: number;
   state_id?: number;
   city_id?: number;
-  minPrice?: number;
-  maxPrice?: number;
   price_min?: number;
   price_max?: number;
-  location?: string;
-  condition?: string;
-  listing_type?: string;
-  sortBy?: 'newest' | 'oldest' | 'price_low' | 'price_high';
-  sort?: string;
-  page?: number;
-  limit?: number;
-  per_page?: number;
-  search?: string;
-  query?: string;
+  condition?: 'new' | 'used';
+  listing_type?: 'sale' | 'rent';
+  is_negotiable?: boolean;
+  radius?: number;
   lat?: number;
   lon?: number;
-  radius?: number;
+  featured?: boolean;
+  page?: number;
+  per_page?: number;
 }
 
 export interface ApiResponse<T> {

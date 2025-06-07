@@ -9,11 +9,13 @@ import { ModernAdFilters } from '@/components/filters/ModernAdFilters';
 import { ModernCategoryBar } from '@/components/layout/category/ModernCategoryBar';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { ADS, CATEGORIES, CITIES } from '@/data/mock-data';
 import { Search, X, Grid2X2, List } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { SearchFilters } from '@/types';
+import { SearchFilters, Listing } from '@/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useAds } from '@/hooks/use-api';
+import { WithSkeleton, CardSkeleton } from '@/components/ui/loading-skeleton';
+import { Pagination } from '@/components/custom/pagination';
 
 export default function SearchPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -22,63 +24,39 @@ export default function SearchPage() {
   // Search state
   const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
   const [filters, setFilters] = useState<SearchFilters>({
-    category: searchParams.get('category') || '',
-    city: searchParams.get('city') || '',
-    priceMin: parseInt(searchParams.get('priceMin') || '0'),
-    priceMax: parseInt(searchParams.get('priceMax') || '999999999'),
+    category_id: searchParams.get('category') ? parseInt(searchParams.get('category')!) : undefined,
+    state_id: searchParams.get('state') ? parseInt(searchParams.get('state')!) : undefined,
+    price_min: searchParams.get('priceMin') ? parseInt(searchParams.get('priceMin')!) : undefined,
+    price_max: searchParams.get('priceMax') ? parseInt(searchParams.get('priceMax')!) : undefined,
   });
   const [adLayout, setAdLayout] = useState<'grid' | 'list'>('list');
   const [itemsPerPage, setItemsPerPage] = useState(12);
+  const [page, setPage] = useState(1);
   
-  // Search results
-  const [searchResults, setSearchResults] = useState(ADS);
-  
-  // Perform search when params change
-  useEffect(() => {
-    const query = searchParams.get('q')?.toLowerCase() || '';
-    const categoryFilter = searchParams.get('category') || '';
-    const cityFilter = searchParams.get('city') || '';
-    const minPrice = parseInt(searchParams.get('priceMin') || '0');
-    const maxPrice = parseInt(searchParams.get('priceMax') || '999999999');
-    
-    // Filter ads based on search criteria
-    const results = ADS.filter(ad => {
-      // Filter by search query
-      const matchesQuery = !query || 
-        ad.title.toLowerCase().includes(query) || 
-        ad.description.toLowerCase().includes(query);
-      
-      // Filter by category
-      const matchesCategory = !categoryFilter || ad.category === categoryFilter;
-      
-      // Filter by city
-      const matchesCity = !cityFilter || ad.location === cityFilter;
-      
-      // Filter by price range
-      const matchesPrice = ad.price >= minPrice && 
-        (maxPrice === 999999999 || ad.price <= maxPrice);
-      
-      return matchesQuery && matchesCategory && matchesCity && matchesPrice;
-    });
-    
-    setSearchResults(results);
-  }, [searchParams]);
+  // Fetch search results using the API
+  const { data: adsResponse, isLoading } = useAds({
+    page,
+    per_page: itemsPerPage,
+    search: searchQuery,
+    ...filters,
+  });
   
   // Update URL search params
   const handleSearch = () => {
     const params: Record<string, string> = {};
     
     if (searchQuery) params.q = searchQuery;
-    if (filters.category) params.category = filters.category;
-    if (filters.city) params.city = filters.city;
-    if (filters.priceMin) params.priceMin = filters.priceMin.toString();
-    if (filters.priceMax && filters.priceMax !== 999999999) params.priceMax = filters.priceMax.toString();
+    if (filters.category_id) params.category = filters.category_id.toString();
+    if (filters.state_id) params.state = filters.state_id.toString();
+    if (filters.price_min) params.priceMin = filters.price_min.toString();
+    if (filters.price_max && filters.price_max !== 999999999) params.priceMax = filters.price_max.toString();
     
     setSearchParams(params);
+    setPage(1);
     
     toast({
       title: "جاري البحث...",
-      description: `تم العثور على ${searchResults.length} إعلان`,
+      description: `البحث عن "${searchQuery}"`,
     });
   };
   
@@ -87,19 +65,25 @@ export default function SearchPage() {
     setSearchQuery('');
     setFilters({});
     setSearchParams({});
+    setPage(1);
   };
 
   const handleFilterChange = (newFilters: SearchFilters) => {
     setFilters(newFilters);
+    setPage(1);
     // Update URL params
     const params: Record<string, string> = {};
     if (searchQuery) params.q = searchQuery;
     if (newFilters.category_id) params.category = newFilters.category_id.toString();
-    if (newFilters.city_id) params.city = newFilters.city_id.toString();
+    if (newFilters.state_id) params.state = newFilters.state_id.toString();
     if (newFilters.price_min) params.priceMin = newFilters.price_min.toString();
     if (newFilters.price_max) params.priceMax = newFilters.price_max.toString();
     setSearchParams(params);
   };
+
+  // Get listings and pagination
+  const listings = adsResponse?.data || [];
+  const totalPages = adsResponse?.last_page || 1;
   
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -116,7 +100,7 @@ export default function SearchPage() {
                 placeholder="ابحث عن أي شيء..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 pr-4 bg-background"
+                className="pl-10 pr-4 bg-background border-border"
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') handleSearch();
                 }}
@@ -164,7 +148,8 @@ export default function SearchPage() {
                 <div>
                   <h2 className="text-2xl font-bold">نتائج البحث</h2>
                   <p className="text-muted-foreground">
-                    {searchResults.length} نتيجة {searchQuery && `لـ "${searchQuery}"`}
+                    {!isLoading && listings.length > 0 ? `${listings.length} نتيجة` : '0 نتيجة'} 
+                    {searchQuery && ` لـ "${searchQuery}"`}
                   </p>
                 </div>
                 
@@ -182,7 +167,10 @@ export default function SearchPage() {
                     <span className="text-sm mr-2 text-muted-foreground hidden sm:block">عرض</span>
                     <Select
                       value={itemsPerPage.toString()}
-                      onValueChange={(value) => setItemsPerPage(parseInt(value, 10))}
+                      onValueChange={(value) => {
+                        setItemsPerPage(parseInt(value, 10));
+                        setPage(1);
+                      }}
                     >
                       <SelectTrigger className="w-16 h-8">
                         <SelectValue />
@@ -202,6 +190,8 @@ export default function SearchPage() {
                       size="icon"
                       onClick={() => setAdLayout('grid')}
                       className="h-8 w-8 rounded-none"
+                      aria-label="Grid view"
+                      title="عرض شبكي"
                     >
                       <Grid2X2 className="h-4 w-4" />
                     </Button>
@@ -210,6 +200,8 @@ export default function SearchPage() {
                       size="icon" 
                       onClick={() => setAdLayout('list')}
                       className="h-8 w-8 rounded-none"
+                      aria-label="List view"
+                      title="عرض قائمة"
                     >
                       <List className="h-4 w-4" />
                     </Button>
@@ -218,27 +210,45 @@ export default function SearchPage() {
               </div>
               
               {/* Results Grid */}
-              {searchResults.length > 0 ? (
-                <div className={`grid gap-4 ${
-                  adLayout === 'grid' 
-                    ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' 
-                    : 'grid-cols-1'
-                }`}>
-                  {searchResults.slice(0, itemsPerPage).map((ad) => (
-                    <AdCard key={ad.id} ad={ad} layout={adLayout} />
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-16 bg-accent/30 rounded-2xl">
-                  <Search className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-                  <h3 className="text-xl font-semibold mb-2">لم يتم العثور على نتائج</h3>
-                  <p className="text-muted-foreground mb-6">
-                    جرب تعديل معايير البحث أو استخدم كلمات مفتاحية مختلفة
-                  </p>
-                  <Button onClick={resetFilters} variant="outline">
-                    إعادة ضبط الفلاتر
-                  </Button>
-                </div>
+              <WithSkeleton
+                isLoading={isLoading}
+                data={listings}
+                SkeletonComponent={CardSkeleton}
+                skeletonCount={itemsPerPage}
+              >
+                {(searchResults) => (
+                  searchResults.length > 0 ? (
+                    <div className={`grid gap-4 ${
+                      adLayout === 'grid' 
+                        ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' 
+                        : 'grid-cols-1'
+                    }`}>
+                      {searchResults.map((ad: Listing) => (
+                        <AdCard key={ad.id} ad={ad} layout={adLayout} />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-16 bg-accent/30 rounded-2xl">
+                      <Search className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+                      <h3 className="text-xl font-semibold mb-2">لم يتم العثور على نتائج</h3>
+                      <p className="text-muted-foreground mb-6">
+                        جرب تعديل معايير البحث أو استخدم كلمات مفتاحية مختلفة
+                      </p>
+                      <Button onClick={resetFilters} variant="outline">
+                        إعادة ضبط الفلاتر
+                      </Button>
+                    </div>
+                  )
+                )}
+              </WithSkeleton>
+              
+              {/* Pagination */}
+              {!isLoading && listings.length > 0 && (
+                <Pagination 
+                  currentPage={page} 
+                  totalPages={totalPages}
+                  onPageChange={setPage}
+                />
               )}
             </div>
           </div>

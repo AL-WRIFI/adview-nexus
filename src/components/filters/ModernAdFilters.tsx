@@ -24,7 +24,10 @@ export function ModernAdFilters({ onFilterChange, currentFilters = {} }: ModernA
   const isMobile = useIsMobile();
   const [isOpen, setIsOpen] = useState(false);
   const [localFilters, setLocalFilters] = useState<SearchFilters>(currentFilters);
-  const [priceRange, setPriceRange] = useState([0, 100000]);
+  const [priceRange, setPriceRange] = useState([
+    currentFilters.price_min || 0, 
+    currentFilters.price_max || 100000
+  ]);
   
   const { data: categories } = useCategories();
   const { data: brands } = useBrands();
@@ -62,6 +65,7 @@ export function ModernAdFilters({ onFilterChange, currentFilters = {} }: ModernA
     if (localFilters.city_id) count++;
     if (localFilters.condition) count++;
     if (localFilters.listing_type) count++;
+    if (localFilters.is_negotiable) count++;
     if (priceRange[0] > 0 || priceRange[1] < 100000) count++;
     return count;
   };
@@ -75,7 +79,7 @@ export function ModernAdFilters({ onFilterChange, currentFilters = {} }: ModernA
           placeholder="البحث في الإعلانات..."
           value={localFilters.search || ''}
           onChange={(e) => handleFilterChange('search', e.target.value)}
-          className="pr-10 bg-background/50 border-border/50 focus:bg-background focus:border-brand"
+          className="pr-10 bg-background border-border focus:bg-background focus:border-brand"
         />
       </div>
 
@@ -86,7 +90,8 @@ export function ModernAdFilters({ onFilterChange, currentFilters = {} }: ModernA
           <Button
             variant={localFilters.listing_type === 'sale' ? 'default' : 'outline'}
             size="sm"
-            onClick={() => handleFilterChange('listing_type', 'sale')}
+            onClick={() => handleFilterChange('listing_type', 
+              localFilters.listing_type === 'sale' ? undefined : 'sale')}
             className="text-xs"
           >
             للبيع
@@ -94,7 +99,8 @@ export function ModernAdFilters({ onFilterChange, currentFilters = {} }: ModernA
           <Button
             variant={localFilters.listing_type === 'rent' ? 'default' : 'outline'}
             size="sm"
-            onClick={() => handleFilterChange('listing_type', 'rent')}
+            onClick={() => handleFilterChange('listing_type', 
+              localFilters.listing_type === 'rent' ? undefined : 'rent')}
             className="text-xs"
           >
             للإيجار
@@ -102,7 +108,8 @@ export function ModernAdFilters({ onFilterChange, currentFilters = {} }: ModernA
           <Button
             variant={localFilters.condition === 'new' ? 'default' : 'outline'}
             size="sm"
-            onClick={() => handleFilterChange('condition', 'new')}
+            onClick={() => handleFilterChange('condition', 
+              localFilters.condition === 'new' ? undefined : 'new')}
             className="text-xs"
           >
             جديد
@@ -110,7 +117,8 @@ export function ModernAdFilters({ onFilterChange, currentFilters = {} }: ModernA
           <Button
             variant={localFilters.condition === 'used' ? 'default' : 'outline'}
             size="sm"
-            onClick={() => handleFilterChange('condition', 'used')}
+            onClick={() => handleFilterChange('condition', 
+              localFilters.condition === 'used' ? undefined : 'used')}
             className="text-xs"
           >
             مستعمل
@@ -123,11 +131,14 @@ export function ModernAdFilters({ onFilterChange, currentFilters = {} }: ModernA
       {/* Category Filter */}
       <div className="space-y-3">
         <Label className="text-sm font-semibold text-foreground">التصنيف</Label>
-        <Select value={localFilters.category_id?.toString() || ''} onValueChange={(value) => handleFilterChange('category_id', parseInt(value))}>
-          <SelectTrigger className="bg-background/50 border-border/50 focus:border-brand">
+        <Select 
+          value={localFilters.category_id?.toString() || ''} 
+          onValueChange={(value) => handleFilterChange('category_id', value ? parseInt(value) : undefined)}
+        >
+          <SelectTrigger className="bg-background border-border focus:border-brand">
             <SelectValue placeholder="اختر التصنيف" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="bg-background border-border">
             {categories?.map((category) => (
               <SelectItem key={category.id} value={category.id.toString()}>
                 {category.name}
@@ -140,11 +151,14 @@ export function ModernAdFilters({ onFilterChange, currentFilters = {} }: ModernA
       {/* Brand Filter */}
       <div className="space-y-3">
         <Label className="text-sm font-semibold text-foreground">الماركة</Label>
-        <Select value={localFilters.brand_id?.toString() || ''} onValueChange={(value) => handleFilterChange('brand_id', parseInt(value))}>
-          <SelectTrigger className="bg-background/50 border-border/50 focus:border-brand">
+        <Select 
+          value={localFilters.brand_id?.toString() || ''} 
+          onValueChange={(value) => handleFilterChange('brand_id', value ? parseInt(value) : undefined)}
+        >
+          <SelectTrigger className="bg-background border-border focus:border-brand">
             <SelectValue placeholder="اختر الماركة" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="bg-background border-border">
             {brands?.map((brand) => (
               <SelectItem key={brand.id} value={brand.id.toString()}>
                 {brand.name || brand.title}
@@ -163,11 +177,14 @@ export function ModernAdFilters({ onFilterChange, currentFilters = {} }: ModernA
           الموقع
         </Label>
         <div className="grid grid-cols-1 gap-3">
-          <Select value={localFilters.state_id?.toString() || ''} onValueChange={(value) => handleFilterChange('state_id', parseInt(value))}>
-            <SelectTrigger className="bg-background/50 border-border/50 focus:border-brand">
+          <Select 
+            value={localFilters.state_id?.toString() || ''} 
+            onValueChange={(value) => handleFilterChange('state_id', value ? parseInt(value) : undefined)}
+          >
+            <SelectTrigger className="bg-background border-border focus:border-brand">
               <SelectValue placeholder="اختر المنطقة" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-background border-border">
               {states?.map((state) => (
                 <SelectItem key={state.id} value={state.id.toString()}>
                   {state.name}
@@ -176,11 +193,14 @@ export function ModernAdFilters({ onFilterChange, currentFilters = {} }: ModernA
             </SelectContent>
           </Select>
           
-          <Select value={localFilters.city_id?.toString() || ''} onValueChange={(value) => handleFilterChange('city_id', parseInt(value))}>
-            <SelectTrigger className="bg-background/50 border-border/50 focus:border-brand">
+          <Select 
+            value={localFilters.city_id?.toString() || ''} 
+            onValueChange={(value) => handleFilterChange('city_id', value ? parseInt(value) : undefined)}
+          >
+            <SelectTrigger className="bg-background border-border focus:border-brand">
               <SelectValue placeholder="اختر المدينة" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-background border-border">
               {cities?.map((city) => (
                 <SelectItem key={city.id} value={city.id.toString()}>
                   {city.name}
@@ -256,7 +276,7 @@ export function ModernAdFilters({ onFilterChange, currentFilters = {} }: ModernA
     return (
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
         <SheetTrigger asChild>
-          <Button variant="outline" className="relative">
+          <Button variant="outline" className="relative bg-background border-border">
             <SlidersHorizontal className="h-4 w-4 ml-2" />
             فلترة
             {getActiveFiltersCount() > 0 && (
@@ -269,7 +289,7 @@ export function ModernAdFilters({ onFilterChange, currentFilters = {} }: ModernA
             )}
           </Button>
         </SheetTrigger>
-        <SheetContent side="bottom" className="h-[85vh] overflow-y-auto">
+        <SheetContent side="bottom" className="h-[85vh] overflow-y-auto bg-background border-border">
           <SheetHeader className="text-right">
             <SheetTitle className="flex items-center justify-between">
               <span>فلترة النتائج</span>
@@ -287,7 +307,7 @@ export function ModernAdFilters({ onFilterChange, currentFilters = {} }: ModernA
   }
 
   return (
-    <Card className="sticky top-4">
+    <Card className="sticky top-4 bg-background border-border">
       <CardHeader className="pb-4">
         <CardTitle className="flex items-center justify-between text-lg">
           <span className="flex items-center gap-2">
