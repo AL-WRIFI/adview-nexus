@@ -1,765 +1,505 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowRight, Image, X, UploadCloud, ChevronDown, Info, Loader2 } from 'lucide-react';
-import { Header } from '@/components/layout/header';
-import { Footer } from '@/components/layout/footer';
-import { MobileNav } from '@/components/layout/mobile-nav';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/context/auth-context';
-import { isAuthenticated } from '@/services/api';
-import { useCreateListing, useCategories, useBrands, useStates, useCities ,useBrand} from '@/hooks/use-api';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useCategories, useBrands, useStates, useCities, useCreateListing } from '@/hooks/use-api';
+import { ImageIcon, MapPin } from 'lucide-react';
+import { toast } from 'sonner';
+
+const formSchema = z.object({
+  title: z.string().min(3, {
+    message: 'العنوان يجب أن يكون على الأقل 3 حروف.',
+  }),
+  description: z.string().min(10, {
+    message: 'الوصف يجب أن يكون على الأقل 10 حروف.',
+  }),
+  price: z.number().min(1, {
+    message: 'السعر يجب أن يكون على الأقل 1.',
+  }),
+  condition: z.enum(['new', 'used'], {
+    required_error: 'الرجاء تحديد حالة المنتج.',
+  }),
+  listing_type: z.enum(['sale', 'rent'], {
+    required_error: 'الرجاء تحديد نوع الإعلان.',
+  }),
+  category_id: z.number({
+    required_error: 'الرجاء تحديد التصنيف.',
+  }),
+  brand_id: z.number({
+    required_error: 'الرجاء تحديد الماركة.',
+  }),
+  state_id: z.number({
+    required_error: 'الرجاء تحديد المنطقة.',
+  }),
+  city_id: z.number({
+    required_error: 'الرجاء تحديد المدينة.',
+  }),
+  is_negotiable: z.boolean().default(false),
+  phone_hidden: z.boolean().default(false),
+  images: z.array(z.any()).optional(),
+  phone: z.string().optional(),
+  address: z.string().optional(),
+  lat: z.number().optional(),
+  lon: z.number().optional(),
+});
 
 export default function AddAd() {
   const navigate = useNavigate();
-  const location = useLocation();
-  const { toast } = useToast();
-  const { data: categories } = useCategories();
-  const { data: brands } = useBrands();
-  const { data: states } = useStates();
+  const [selectedStateId, setSelectedStateId] = useState<number | undefined>(undefined);
+  const [images, setImages] = useState<File[]>([]);
+  const [previewImages, setPreviewImages] = useState<string[]>([]);
   const createListingMutation = useCreateListing();
-  const { user } = useAuth();
-  
-  // Check if we're coming back from login with form data to submit
-  const autoSubmit = location.state?.autoSubmit;
-  const savedFormData = location.state?.formData;
 
-  const [currentStep, setCurrentStep] = useState(1);
-  const [adType, setAdType] = useState<'sell' | 'rent' | 'job' | 'service'>('sell');
-  const [categoryId, setCategoryId] = useState<number | null>(null);
-  const [subCategoryId, setSubCategoryId] = useState<number | null>(null);
-  const [childCategoryId, setChildCategoryId] = useState<number | null>(null);
-  const [brandId, setBrandId] = useState<number | null>(null);
-  const [adTitle, setAdTitle] = useState('');
-  const [adDescription, setAdDescription] = useState('');
-  const [adPrice, setAdPrice] = useState('');
-  const [isNegotiable, setIsNegotiable] = useState(false);
-  const [stateId, setStateId] = useState<number | null>(null);
-  const [cityId, setCityId] = useState<number | null>(null);
-  const [address, setAddress] = useState('');
-  const [phoneHidden, setPhoneHidden] = useState(false);
-  const [productCondition, setProductCondition] = useState<'new' | 'used'>('used');
-  const [mainImage, setMainImage] = useState<File | null>(null);
-  const [galleryImages, setGalleryImages] = useState<File[]>([]);
-  const [mainImagePreview, setMainImagePreview] = useState<string | null>(null);
-  const [galleryImagePreviews, setGalleryImagePreviews] = useState<string[]>([]);
-  const [agreeTerms, setAgreeTerms] = useState(false);
-  const [lat, setLat] = useState<number | null>(null);
-  const [lon, setLon] = useState<number | null>(null);
-  
-  // Get filtered cities based on selected state
-  const { data: cities } = useCities(stateId || undefined);
-  const { data: brands } = useBrands();
-  
-  // If coming back from login with form data, restore it
-  useEffect(() => {
-    if (savedFormData) {
-      setAdType(savedFormData.adType);
-      setCategoryId(savedFormData.categoryId);
-      setSubCategoryId(savedFormData.subCategoryId);
-      setChildCategoryId(savedFormData.childCategoryId);
-      setBrandId(savedFormData.brandId);
-      setAdTitle(savedFormData.adTitle);
-      setAdDescription(savedFormData.adDescription);
-      setAdPrice(savedFormData.adPrice);
-      setIsNegotiable(savedFormData.isNegotiable);
-      setStateId(savedFormData.stateId);
-      setCityId(savedFormData.cityId);
-      setAddress(savedFormData.address);
-      setPhoneHidden(savedFormData.phoneHidden);
-      setProductCondition(savedFormData.productCondition);
-      setMainImagePreview(savedFormData.mainImagePreview);
-      setGalleryImagePreviews(savedFormData.galleryImagePreviews);
-      // We can't restore File objects from navigation state,
-      // but we'll keep the previews so the user can see what they uploaded
-      setCurrentStep(4); // Move directly to the review step
-      setAgreeTerms(true);
-    }
-  }, [savedFormData]);
-  
-  // Auto submit form after coming back from login
-  useEffect(() => {
-    if (autoSubmit && isAuthenticated() && savedFormData) {
-      handlePublish();
-    }
-  }, [autoSubmit, savedFormData]);
-  
-  // Try to get user's location
-  useEffect(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setLat(position.coords.latitude);
-          setLon(position.coords.longitude);
-        },
-        (error) => {
-          console.error("Error getting geolocation:", error);
-        }
-      );
-    }
-  }, []);
-  
-  const handleMainImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setMainImage(file);
-      setMainImagePreview(URL.createObjectURL(file));
-    }
-  };
-  
-  const handleGalleryImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const newFiles = Array.from(e.target.files);
-      
-      // Create preview URLs
-      const newPreviews = newFiles.map((file) => URL.createObjectURL(file));
-      
-      setGalleryImages([...galleryImages, ...newFiles]);
-      setGalleryImagePreviews([...galleryImagePreviews, ...newPreviews]);
-    }
-  };
-  
-  const handleRemoveMainImage = () => {
-    setMainImage(null);
-    if (mainImagePreview) {
-      URL.revokeObjectURL(mainImagePreview);
-      setMainImagePreview(null);
-    }
-  };
-  
-  const handleRemoveGalleryImage = (index: number) => {
-    const updatedImages = [...galleryImages];
-    const updatedPreviews = [...galleryImagePreviews];
-    
-    // Clean up URL object to prevent memory leaks
-    if (galleryImagePreviews[index]) {
-      URL.revokeObjectURL(galleryImagePreviews[index]);
-    }
-    
-    updatedImages.splice(index, 1);
-    updatedPreviews.splice(index, 1);
-    
-    setGalleryImages(updatedImages);
-    setGalleryImagePreviews(updatedPreviews);
-  };
-  
-  const getStepTitle = () => {
-    switch (currentStep) {
-      case 1:
-        return 'اختر نوع الإعلان';
-      case 2:
-        return 'أضف معلومات الإعلان';
-      case 3:
-        return 'أضف الصور';
-      case 4:
-        return 'مراجعة نهائية';
-      default:
-        return '';
-    }
-  };
-  
-  const handleNextStep = () => {
-    setCurrentStep(currentStep + 1);
-  };
-  
-  const handlePrevStep = () => {
-    setCurrentStep(currentStep - 1);
-  };
-  
-  const handlePublish = async () => {
-    if (!agreeTerms) {
-      toast({
-        variant: 'destructive',
-        title: 'الموافقة على الشروط',
-        description: 'يجب الموافقة على شروط الاستخدام وسياسة الخصوصية',
-      });
-      return;
-    }
+  const { data: categoriesData } = useCategories();
+  const { data: brandsData } = useBrands();
+  const { data: statesData } = useStates();
+  const { data: citiesData } = useCities(selectedStateId);
 
-    // Check user authentication
-    if (!isAuthenticated()) {
-      // Save form data to state before redirecting
-      const formData = {
-        adType,
-        categoryId,
-        subCategoryId,
-        childCategoryId,
-        brandId,
-        adTitle,
-        adDescription,
-        adPrice,
-        isNegotiable,
-        stateId,
-        cityId,
-        address,
-        phoneHidden,
-        productCondition,
-        mainImagePreview,
-        galleryImagePreviews,
-      };
-      
-      // Redirect to login with form data
-      navigate('/auth/login', { state: { from: '/add-ad', formData } });
-      return;
-    }
-    
-    // Validate required fields
-    if (!categoryId || !adTitle || !adDescription || !stateId || !cityId || !mainImage) {
-      toast({
-        variant: 'destructive',
-        title: 'معلومات غير مكتملة',
-        description: 'يرجى التأكد من إدخال جميع الحقول المطلوبة',
+  const categories = Array.isArray(categoriesData) ? categoriesData : [];
+  const brands = Array.isArray(brandsData) ? brandsData : [];
+  const states = Array.isArray(statesData) ? statesData : [];
+  const cities = Array.isArray(citiesData) ? citiesData : [];
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      title: '',
+      description: '',
+      price: 0,
+      condition: 'new',
+      listing_type: 'sale',
+      category_id: categories[0]?.id,
+      brand_id: brands[0]?.id,
+      state_id: states[0]?.id,
+      city_id: cities[0]?.id,
+      is_negotiable: false,
+      phone_hidden: false,
+      images: [],
+      phone: '',
+      address: '',
+      lat: 0,
+      lon: 0,
+    },
+  });
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files && files.length > 0) {
+      setImages(files);
+      const previewURLs: string[] = [];
+      files.forEach(file => {
+        previewURLs.push(URL.createObjectURL(file));
       });
-      return;
+      setPreviewImages(previewURLs);
     }
-    
+  };
+
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
       const formData = new FormData();
-      formData.append('listing_type', adType);
-      formData.append('category_id', categoryId.toString());
-      if (subCategoryId) formData.append('sub_category_id', subCategoryId.toString());
-      if (childCategoryId) formData.append('child_category_id', childCategoryId.toString());
-      if (brandId) formData.append('brand_id', brandId.toString());
-      formData.append('title', adTitle);
-      formData.append('description', adDescription);
-      formData.append('price', adPrice || '0');
-      formData.append('negotiable', isNegotiable ? '1' : '0');
-      formData.append('state_id', stateId.toString());
-      formData.append('city_id', cityId.toString());
-      formData.append('address', address);
-      formData.append('phone_hidden', phoneHidden ? '1' : '0');
-      formData.append('product_condition', productCondition);
-      
-      // Add main image
-      if (mainImage) {
-        formData.append('image', mainImage);
-      }
-      
-      // Add gallery images
-      galleryImages.forEach((image) => {
-        formData.append('gallery_images[]', image);
+      Object.entries(values).forEach(([key, value]) => {
+        if (typeof value === 'boolean') {
+          formData.append(key, value ? '1' : '0');
+        } else if (key === 'images' && images) {
+          images.forEach((image) => {
+            formData.append('images[]', image);
+          });
+        } else {
+          formData.append(key, String(value));
+        }
       });
-      
-      // Add location if available
-      if (lat !== null && lon !== null) {
-        formData.append('lat', lat.toString());
-        formData.append('lon', lon.toString());
-      }
-      
+
       await createListingMutation.mutateAsync(formData);
-      
-      // Clear form and navigate to dashboard on success
-      navigate('/dashboard', {
-        state: { successMessage: 'تم نشر الإعلان بنجاح' }
-      });
-      
+      toast.success('تم إنشاء الإعلان بنجاح!');
+      navigate('/dashboard');
     } catch (error) {
-      // Error is handled in the mutation
+      toast.error('حدث خطأ أثناء إنشاء الإعلان.');
     }
   };
-  
+
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header isLoggedIn={isAuthenticated()} />
-      
-      <main className="flex-1 pb-20 md:pb-0">
-        <div className="container px-4 mx-auto py-6">
-          <div className="max-w-3xl mx-auto">
-            {/* Progress */}
-            <div className="mb-6">
-              <h1 className="text-2xl font-bold mb-6 text-center">{getStepTitle()}</h1>
-              
-              <div className="relative">
-                <div className="flex justify-between mb-2">
-                  {[1, 2, 3, 4].map((step) => (
-                    <div 
-                      key={step}
-                      className={`text-sm font-medium ${
-                        step <= currentStep ? 'text-brand' : 'text-muted-foreground'
-                      }`}
-                    >
-                      الخطوة {step}
-                    </div>
-                  ))}
-                </div>
-                
-                <div className="overflow-hidden h-2 rounded-full bg-gray-200">
-                  <div 
-                    className="h-full bg-brand transition-all duration-300"
-                    style={{ width: `${(currentStep / 4) * 100}%` }}
-                  />
-                </div>
+    <div className="container py-12">
+      <Card>
+        <CardHeader>
+          <CardTitle>إضافة إعلان جديد</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="title"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>العنوان</FormLabel>
+                      <FormControl>
+                        <Input placeholder="عنوان الإعلان" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="price"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>السعر</FormLabel>
+                      <FormControl>
+                        <Input type="number" placeholder="السعر" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
-            </div>
-            
-            {/* Step 1: Choose ad type */}
-            {currentStep === 1 && (
-              <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {[
-                    { id: 'sell', label: 'بيع منتج'},
-                    { id: 'rent', label: 'تأجير'},
-                    { id: 'job', label: 'وظيفة'},
-                    { id: 'service', label: 'خدمة' }
-                  ].map((type) => (
-                    <button
-                      key={type.id}
-                      className={`p-6 border rounded-lg text-center hover:border-brand transition-colors ${adType === type.id ? 'border-brand bg-brand/5' : ''}`}
-                      onClick={() => setAdType(type.id as any)}
-                    >
-                      <div className="text-lg font-bold">{type.label}</div>
-                      {/* <div className="text-sm text-muted-foreground mt-1">{type.desc}</div> */}
-                    </button>
-                  ))}
-                </div>
-                
-                <div className="space-y-4">
-                  <div>
-                    <Label>اختر تصنيف الإعلان</Label>
-                    <Select value={categoryId?.toString()} onValueChange={(value) => setCategoryId(parseInt(value))}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="اختر التصنيف" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {categories?.map((category) => (
-                          <SelectItem key={category.id} value={category.id.toString()}>
-                            {category.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  {/* Brand selection, only for certain categories */}
-                  {(adType === 'sell' || adType === 'rent') && categoryId && (
-                    <div>
-                      <Label>اختر الماركة</Label>
-                      <Select value={brandId?.toString()} onValueChange={(value) => setBrandId(parseInt(value))}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="اختر الماركة" />
-                        </SelectTrigger>
+
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>الوصف</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="وصف الإعلان"
+                        className="resize-none"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="condition"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>الحالة</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="اختر الحالة" />
+                          </SelectTrigger>
+                        </FormControl>
                         <SelectContent>
-                          <SelectItem value="0">بدون ماركة</SelectItem>
-                          {brands && Array.isArray(brands) && brands.map((brand) => (
-                            <SelectItem key={brand.id} value={brand.id.toString()}>
-                              {brand.name}
+                          <SelectItem value="new">جديد</SelectItem>
+                          <SelectItem value="used">مستعمل</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="listing_type"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>نوع الإعلان</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="اختر نوع الإعلان" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="sale">للبيع</SelectItem>
+                          <SelectItem value="rent">للإيجار</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="category_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>التصنيف</FormLabel>
+                      <Select onValueChange={(value) => field.onChange(Number(value))} defaultValue={String(field.value)}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="اختر التصنيف" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {categories.map((category) => (
+                            <SelectItem key={category.id} value={String(category.id)}>
+                              {category.name}
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
-                    </div>
+                      <FormMessage />
+                    </FormItem>
                   )}
-                </div>
-                
-                <div className="flex justify-end pt-4">
-                  <Button onClick={handleNextStep} disabled={!categoryId}>
-                    التالي
-                  </Button>
-                </div>
+                />
+
+                <FormField
+                  control={form.control}
+                  name="brand_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>الماركة</FormLabel>
+                      <Select onValueChange={(value) => field.onChange(Number(value))} defaultValue={String(field.value)}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="اختر الماركة" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {brands.map((brand) => (
+                            <SelectItem key={brand.id} value={String(brand.id)}>
+                              {brand.name || brand.title}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
-            )}
-            
-            {/* Step 2: Ad details */}
-            {currentStep === 2 && (
-              <div className="space-y-6">
-                <div>
-                  <Label htmlFor="title">عنوان الإعلان</Label>
-                  <Input
-                    id="title"
-                    value={adTitle}
-                    onChange={(e) => setAdTitle(e.target.value)}
-                    placeholder="اكتب عنواناً واضحاً ومختصراً"
-                    className="mt-1"
-                  />
-                </div>
-                
-                <div>
-                  <Label htmlFor="description">وصف الإعلان</Label>
-                  <Textarea
-                    id="description"
-                    value={adDescription}
-                    onChange={(e) => setAdDescription(e.target.value)}
-                    placeholder="اكتب وصفاً مفصلاً"
-                    rows={5}
-                    className="mt-1 resize-none"
-                  />
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="price">السعر (ريال)</Label>
-                    <Input
-                      id="price"
-                      type="number"
-                      value={adPrice}
-                      onChange={(e) => setAdPrice(e.target.value)}
-                      placeholder="أدخل السعر"
-                      className="mt-1"
-                      disabled={adType === 'job'}
-                    />
-                  </div>
-                  
-                  <div>
-                    <div className="h-8" />
-                    <div className="flex items-center space-x-2 space-x-reverse mt-1">
-                      <Switch 
-                        id="negotiable" 
-                        checked={isNegotiable}
-                        onCheckedChange={setIsNegotiable}
-                        disabled={adType === 'job'}
-                      />
-                      <Label htmlFor="negotiable">السعر قابل للتفاوض</Label>
-                    </div>
-                  </div>
-                </div>
-                
-                {(adType === 'sell' || adType === 'rent') && (
-                  <div>
-                    <Label htmlFor="condition">حالة المنتج</Label>
-                    <div className="grid grid-cols-2 gap-4 mt-1">
-                      <button
-                        type="button"
-                        className={`p-3 border rounded-lg text-center ${productCondition === 'new' ? 'border-brand bg-brand/5' : ''}`}
-                        onClick={() => setProductCondition('new')}
-                      >
-                        جديد
-                      </button>
-                      <button
-                        type="button"
-                        className={`p-3 border rounded-lg text-center ${productCondition === 'used' ? 'border-brand bg-brand/5' : ''}`}
-                        onClick={() => setProductCondition('used')}
-                      >
-                        مستعمل
-                      </button>
-                    </div>
-                  </div>
-                )}
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="state">المنطقة / المحافظة</Label>
-                    <Select value={stateId?.toString()} onValueChange={(value) => {
-                      setStateId(parseInt(value));
-                      setCityId(null); // Reset city when changing state
-                    }}>
-                      <SelectTrigger id="state" className="mt-1">
-                        <SelectValue placeholder="اختر المنطقة" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {states?.map((state) => (
-                          <SelectItem key={state.id} value={state.id.toString()}>
-                            {state.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="city">المدينة</Label>
-                    <Select value={cityId?.toString()} onValueChange={(value) => setCityId(parseInt(value))} disabled={!stateId}>
-                      <SelectTrigger id="city" className="mt-1">
-                        <SelectValue placeholder={stateId ? "اختر المدينة" : "اختر المنطقة أولاً"} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {cities?.map((city) => (
-                          <SelectItem key={city.id} value={city.id.toString()}>
-                            {city.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                
-                <div>
-                  <Label htmlFor="address">العنوان التفصيلي</Label>
-                  <Input
-                    id="address"
-                    value={address}
-                    onChange={(e) => setAddress(e.target.value)}
-                    placeholder="أدخل العنوان التفصيلي"
-                    className="mt-1"
-                  />
-                </div>
-                
-                <div className="pt-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="contact-settings">معلومات الاتصال</Label>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <Info className="h-4 w-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>يمكنك التحكم في كيفية ظهور معلومات الاتصال الخاصة بك</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2 space-x-reverse mt-1">
-                    <Switch 
-                      id="phone-hidden" 
-                      checked={phoneHidden}
-                      onCheckedChange={setPhoneHidden}
-                    />
-                    <Label htmlFor="phone-hidden">إخفاء رقم الهاتف (التواصل عبر الرسائل فقط)</Label>
-                  </div>
-                </div>
-                
-                <div className="flex justify-between pt-4">
-                  <Button variant="outline" onClick={handlePrevStep}>
-                    السابق
-                  </Button>
-                  <Button 
-                    onClick={handleNextStep} 
-                    disabled={!adTitle || !adDescription || (adType !== 'job' && !adPrice) || !stateId || !cityId}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="state_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>المنطقة</FormLabel>
+                      <Select onValueChange={(value) => {
+                        field.onChange(Number(value));
+                        setSelectedStateId(Number(value));
+                      }} defaultValue={String(field.value)}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="اختر المنطقة" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {states.map((state) => (
+                            <SelectItem key={state.id} value={String(state.id)}>
+                              {state.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="city_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>المدينة</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={String(field.value)}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="اختر المدينة" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {cities.map((city) => (
+                            <SelectItem key={city.id} value={String(city.id)}>
+                              {city.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <FormField
+                  control={form.control}
+                  name="is_negotiable"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center space-x-2 space-x-reverse rounded-md border p-4">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <FormLabel>قابل للتفاوض</FormLabel>
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="phone_hidden"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center space-x-2 space-x-reverse rounded-md border p-4">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <FormLabel>إخفاء رقم الهاتف</FormLabel>
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div>
+                <Label>الصور</Label>
+                <Input
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  id="image-upload"
+                  className="hidden"
+                />
+                <div className="flex items-center justify-center w-full">
+                  <label
+                    htmlFor="image-upload"
+                    className="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 dark:hover:bg-bray-800 dark:bg-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:hover:border-gray-500 dark:hover:bg-gray-600"
                   >
-                    التالي
-                  </Button>
-                </div>
-              </div>
-            )}
-            
-            {/* Step 3: Images */}
-            {currentStep === 3 && (
-              <div className="space-y-6">
-                {/* Main image */}
-                <div>
-                  <Label className="mb-2 block">الصورة الرئيسية</Label>
-                  
-                  {mainImagePreview ? (
-                    <div className="relative h-64 border rounded-lg overflow-hidden mb-4">
-                      <img src={mainImagePreview} alt="الصورة الرئيسية" className="w-full h-full object-contain" />
-                      <button
-                        onClick={handleRemoveMainImage}
-                        className="absolute top-2 left-2 bg-red-500 text-white rounded-full p-1"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
+                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                      <ImageIcon className="w-8 h-8 mb-4 text-gray-500 dark:text-gray-400" />
+                      <p className="mb-2 text-sm text-gray-500 dark:text-gray-400">
+                        <span className="font-semibold">اضغط للرفع</span> أو اسحب وأفلت
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        SVG, PNG, JPG أو GIF (MAX. 800x400px)
+                      </p>
                     </div>
-                  ) : (
-                    <label className="relative h-64 border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 mb-4">
-                      <UploadCloud className="h-16 w-16 text-muted-foreground mb-2" />
-                      <span className="text-muted-foreground mb-1">اضغط لإضافة الصورة الرئيسية</span>
-                      <span className="text-xs text-muted-foreground">(مطلوب)</span>
-                      <input
-                        type="file"
-                        className="hidden"
-                        accept="image/*"
-                        onChange={handleMainImageChange}
-                      />
-                    </label>
-                  )}
-                  
-                  <Label className="mb-2 block">صور إضافية (اختياري)</Label>
-                  
-                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
-                    {galleryImagePreviews.map((image, index) => (
-                      <div key={index} className="relative h-32 border rounded-lg overflow-hidden">
-                        <img src={image} alt={`صورة ${index + 1}`} className="w-full h-full object-cover" />
+                  </label>
+                </div>
+
+                {previewImages.length > 0 && (
+                  <div className="flex mt-4 space-x-4">
+                    {previewImages.map((url, index) => (
+                      <div key={index} className="relative w-32 h-32">
+                        <img
+                          src={url}
+                          alt={`preview-${index}`}
+                          className="w-full h-full object-cover rounded-md"
+                        />
                         <button
-                          onClick={() => handleRemoveGalleryImage(index)}
-                          className="absolute top-1 left-1 bg-red-500 text-white rounded-full p-1"
+                          type="button"
+                          className="absolute top-0 right-0 p-1 bg-gray-200 rounded-full hover:bg-gray-300"
+                          onClick={() => {
+                            const newImages = [...images];
+                            newImages.splice(index, 1);
+                            setImages(newImages);
+
+                            const newPreviewImages = [...previewImages];
+                            newPreviewImages.splice(index, 1);
+                            setPreviewImages(newPreviewImages);
+                          }}
                         >
-                          <X className="h-4 w-4" />
+                          <X />
                         </button>
                       </div>
                     ))}
-                    
-                    {galleryImagePreviews.length < 9 && (
-                      <label className="relative h-32 border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50">
-                        <UploadCloud className="h-10 w-10 text-muted-foreground mb-2" />
-                        <span className="text-sm text-muted-foreground">اضغط لإضافة صورة</span>
-                        <input
-                          type="file"
-                          className="hidden"
-                          accept="image/*"
-                          onChange={handleGalleryImageChange}
-                        />
-                      </label>
-                    )}
                   </div>
-                  
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-blue-700 text-sm">
-                    <div className="flex items-start">
-                      <Info className="h-5 w-5 ml-2 flex-shrink-0 mt-0.5" />
-                      <div>
-                        <p className="font-bold mb-1">نصائح لصور أفضل:</p>
-                        <ul className="list-disc pr-5">
-                          <li>استخدم صوراً واضحة وبجودة عالية</li>
-                          <li>أضف صوراً من زوايا مختلفة</li>
-                          <li>تأكد من إضاءة جيدة للصور</li>
-                          <li>تجنب استخدام شعارات أو نصوص على الصور</li>
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="flex justify-between pt-4">
-                  <Button variant="outline" onClick={handlePrevStep}>
-                    السابق
-                  </Button>
-                  <Button onClick={handleNextStep} disabled={!mainImagePreview}>
-                    التالي
-                  </Button>
-                </div>
+                )}
               </div>
-            )}
-            
-            {/* Step 4: Review */}
-            {currentStep === 4 && (
-              <div className="space-y-6">
-                <div className="border rounded-lg overflow-hidden">
-                  <div className="bg-gray-50 border-b p-3">
-                    <h3 className="font-bold">مراجعة معلومات الإعلان</h3>
-                  </div>
-                  
-                  <div className="p-4 space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <h4 className="text-sm text-muted-foreground">عنوان الإعلان</h4>
-                        <p>{adTitle}</p>
-                      </div>
-                      
-                      <div>
-                        <h4 className="text-sm text-muted-foreground">التصنيف</h4>
-                        <p>{categories?.find(c => c.id === categoryId)?.name || '-'}</p>
-                      </div>
-                      
-                      <div>
-                        <h4 className="text-sm text-muted-foreground">المنطقة</h4>
-                        <p>{states?.find(s => s.id === stateId)?.name || '-'}</p>
-                      </div>
-                      
-                      <div>
-                        <h4 className="text-sm text-muted-foreground">المدينة</h4>
-                        <p>{cities?.find(c => c.id === cityId)?.name || '-'}</p>
-                      </div>
-                      
-                      <div>
-                        <h4 className="text-sm text-muted-foreground">السعر</h4>
-                        <p>
-                          {adPrice ? `${adPrice} ريال` : '-'}
-                          {isNegotiable && adPrice && ' (قابل للتفاوض)'}
-                        </p>
-                      </div>
-                      
-                      <div>
-                        <h4 className="text-sm text-muted-foreground">نوع الإعلان</h4>
-                        <p>
-                          {adType === 'sell' && 'بيع منتج'}
-                          {adType === 'rent' && 'تأجير'}
-                          {adType === 'job' && 'وظيفة'}
-                          {adType === 'service' && 'خدمة'}
-                        </p>
-                      </div>
-                      
-                      {(adType === 'sell' || adType === 'rent') && (
-                        <div>
-                          <h4 className="text-sm text-muted-foreground">حالة المنتج</h4>
-                          <p>{productCondition === 'new' ? 'جديد' : 'مستعمل'}</p>
-                        </div>
-                      )}
-                      
-                      {brandId && brandId > 0 && (
-                        <div>
-                          <h4 className="text-sm text-muted-foreground">الماركة</h4>
-                          <p>{brands && Array.isArray(brands) ? brands.find(b => b.id === brandId)?.name || '-' : '-'}</p>
-                        </div>
-                      )}
-                    </div>
-                    
-                    <div>
-                      <h4 className="text-sm text-muted-foreground">الوصف</h4>
-                      <p className="whitespace-pre-line">{adDescription}</p>
-                    </div>
-                    
-                    <div>
-                      <h4 className="text-sm text-muted-foreground">الصور</h4>
-                      <div className="flex flex-wrap gap-2 mt-1">
-                        {mainImagePreview && (
-                          <div className="w-16 h-16 rounded-md overflow-hidden border-2 border-brand">
-                            <img src={mainImagePreview} alt="الصورة الرئيسية" className="w-full h-full object-cover" />
-                          </div>
-                        )}
-                        {galleryImagePreviews.map((image, index) => (
-                          <div key={index} className="w-16 h-16 rounded-md overflow-hidden">
-                            <img src={image} alt={`صورة ${index + 1}`} className="w-full h-full object-cover" />
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <h4 className="text-sm text-muted-foreground">معلومات الاتصال</h4>
-                      <p>{phoneHidden ? 'رقم الهاتف مخفي' : 'رقم الهاتف مرئي للجميع'}</p>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="border rounded-lg p-4 bg-gray-50">
-                  <div className="flex items-center space-x-2 space-x-reverse mb-4">
-                    <input 
-                      type="checkbox" 
-                      id="terms" 
-                      className="rounded border-gray-300"
-                      checked={agreeTerms}
-                      onChange={() => setAgreeTerms(!agreeTerms)}
-                    />
-                    <label htmlFor="terms" className="text-sm">
-                      أوافق على <a href="/terms" className="text-brand">شروط الاستخدام</a> و<a href="/privacy" className="text-brand">سياسة الخصوصية</a>
-                    </label>
-                  </div>
-                  
-                  <div className="flex flex-col space-y-2">
-                    <Button 
-                      variant="default" 
-                      size="lg"
-                      onClick={handlePublish}
-                      disabled={createListingMutation.isPending || !agreeTerms}
-                    >
-                      {createListingMutation.isPending ? (
-                        <>
-                          <Loader2 className="ml-2 h-4 w-4 animate-spin" />
-                          جاري نشر الإعلان...
-                        </>
-                      ) : (
-                        'نشر الإعلان'
-                      )}
-                    </Button>
-                    <Button variant="outline" onClick={handlePrevStep}>تعديل الإعلان</Button>
-                  </div>
-                </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>رقم الهاتف</FormLabel>
+                      <FormControl>
+                        <Input placeholder="رقم الهاتف" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="address"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>العنوان</FormLabel>
+                      <FormControl>
+                        <Input placeholder="العنوان" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
-            )}
-          </div>
-        </div>
-      </main>
-      
-      <Footer />
-      <MobileNav />
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="lat"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center">
+                        خط العرض <MapPin className="mr-2 h-4 w-4" />
+                      </FormLabel>
+                      <FormControl>
+                        <Input type="number" placeholder="خط العرض" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="lon"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center">
+                        خط الطول <MapPin className="mr-2 h-4 w-4" />
+                      </FormLabel>
+                      <FormControl>
+                        <Input type="number" placeholder="خط الطول" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <Button type="submit" className="w-full">
+                إضافة الإعلان
+              </Button>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
     </div>
   );
 }
+
+import { X } from 'lucide-react';

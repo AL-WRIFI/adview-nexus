@@ -1,945 +1,480 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowRight, Image, X, UploadCloud, ChevronDown, Info, Loader2 } from 'lucide-react';
-import { Header } from '@/components/layout/header';
-import { Footer } from '@/components/layout/footer';
-import { MobileNav } from '@/components/layout/mobile-nav';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/context/auth-context';
-import { isAuthenticated } from '@/services/api';
-import { useUpdateListing, useListing, useCategories, useBrands, useStates, useCities, useBrand } from '@/hooks/use-api';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Card, CardContent } from "@/components/ui/card";
-import { Listing } from '@/types';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useCategories, useBrands, useStates, useCities, useListing, useUpdateListing } from '@/hooks/use-api';
+import { Ad, Category, Brand, State, City } from '@/types';
+import { ImageIcon, PlusCircle } from 'lucide-react';
+import { Dropzone } from '@/components/dropzone';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useToast } from '@/components/ui/use-toast';
 
-interface GalleryImage {
-  id: string;
-  url: string;
-}
-
-interface MainImage {
-  image_id: string;
-  image_url: string;
-}
+const formSchema = z.object({
+  title: z.string().min(3, {
+    message: "العنوان يجب أن يكون على الأقل 3 حروف.",
+  }),
+  description: z.string().min(10, {
+    message: "الوصف يجب أن يكون على الأقل 10 حروف.",
+  }),
+  price: z.number({
+    invalid_type_error: 'السعر يجب أن يكون رقماً',
+  }).min(1, {
+    message: "السعر يجب أن يكون أكبر من 0.",
+  }),
+  condition: z.enum(['new', 'used'], {
+    required_error: "يجب اختيار حالة المنتج.",
+  }),
+  listing_type: z.enum(['sale', 'rent'], {
+    required_error: "يجب اختيار نوع الإعلان.",
+  }),
+  category_id: z.number({
+    invalid_type_error: 'يجب اختيار تصنيف',
+  }),
+  sub_category_id: z.number().optional(),
+  child_category_id: z.number().optional(),
+  brand_id: z.number().optional(),
+  state_id: z.number({
+    invalid_type_error: 'يجب اختيار المنطقة',
+  }),
+  city_id: z.number({
+    invalid_type_error: 'يجب اختيار المدينة',
+  }),
+  is_negotiable: z.boolean().default(false),
+  phone_hidden: z.boolean().default(false),
+  images: z.any().optional(),
+});
 
 export default function EditAd() {
-  const { listingId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { data: categories } = useCategories();
-  const { data: states } = useStates();
-  const { data: listing, isLoading: isLoadingListing } = useListing(Number(listingId));
-  const updateListingMutation = useUpdateListing(Number(listingId));
-  const { user } = useAuth();
-  
-  // Local state for form
-  const [currentStep, setCurrentStep] = useState(3); // Start at final step
-  const [adType, setAdType] = useState<'sell' | 'buy' | 'exchange' | 'service'>('sell');
-  const [categoryId, setCategoryId] = useState<number | null>(null);
-  const [subCategoryId, setSubCategoryId] = useState<number | null>(null);
-  const [childCategoryId, setChildCategoryId] = useState<number | null>(null);
-  const [brandId, setBrandId] = useState<number | null>(null);
-  const [adTitle, setAdTitle] = useState('');
-  const [adDescription, setAdDescription] = useState('');
-  const [adPrice, setAdPrice] = useState('');
-  const [isNegotiable, setIsNegotiable] = useState(false);
-  const [stateId, setStateId] = useState<number | null>(null);
-  const [cityId, setCityId] = useState<number | null>(null);
-  const [address, setAddress] = useState('');
-  const [phoneHidden, setPhoneHidden] = useState(false);
-  const [productCondition, setProductCondition] = useState<'new' | 'used'>('used');
-  
-  // Image handling
-  const [mainImage, setMainImage] = useState<File | null>(null);
-  const [galleryImages, setGalleryImages] = useState<File[]>([]); // New uploaded images
-  
-  // For current images display
-  const [mainImageData, setMainImageData] = useState<MainImage | null>(null);
-  const [galleryImagesData, setGalleryImagesData] = useState<GalleryImage[]>([]);
-  const [deletedImageIds, setDeletedImageIds] = useState<string[]>([]);
-  
-  const [agreeTerms, setAgreeTerms] = useState(true);
-  const [lat, setLat] = useState<number | null>(null);
-  const [lon, setLon] = useState<number | null>(null);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  // Get filtered cities based on selected state
-  const { data: cities } = useCities(stateId || undefined);
-  const { data: brands } = useBrand(categoryId || undefined);
+  const { id } = useParams();
 
-  // Check if user is authenticated
-  useEffect(() => {
-    if (!isAuthenticated()) {
-      toast({
-        variant: 'destructive',
-        title: 'تسجيل الدخول مطلوب',
-        description: 'يجب تسجيل الدخول لتعديل الإعلان',
-      });
-      navigate('/auth/login', { state: { from: `/edit-ad/${listingId}` } });
-    }
-  }, []);
-  
-  // Load listing data when available
-  useEffect(() => {
-    if (listing) {
-      console.log("Listing data:", listing);
-      
-      // Set form data from listing
-      setAdType(listing.listing_type as any || 'sell');
-      setCategoryId(listing.category_id || null);
-      setSubCategoryId(listing.sub_category_id || null);
-      setChildCategoryId(listing.child_category_id || null);
-      setBrandId(listing.brand_id || null);
-      setAdTitle(listing.title || '');
-      setAdDescription(listing.description || '');
-      setAdPrice(listing.price ? listing.price.toString() : '');
-      setIsNegotiable(listing.is_negotiable || false);
-      setStateId(listing.state_id || null);
-      setCityId(listing.city_id || null);
-      setAddress(listing.address || '');
-      setPhoneHidden(listing.phone_hidden || false);
-      setProductCondition(listing.condition as 'new' | 'used' || 'used');
-      
-      // Set location data if available
-      if (listing.lat && listing.lon) {
-        setLat(Number(listing.lat));
-        setLon(Number(listing.lon));
-      }
-      
-      // Set image data
-      if (listing.image) {
-        setMainImageData(listing.image as MainImage);
-      }
-      
-      // Handle gallery images
-      if (listing.images && Array.isArray(listing.images)) {
-        setGalleryImagesData(listing.images as GalleryImage[]);
-      }
-    }
-  }, [listing]);
-  
-  // Try to get user's location if not already set
-  useEffect(() => {
-    if (!lat && !lon && navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setLat(position.coords.latitude);
-          setLon(position.coords.longitude);
-        },
-        (error) => {
-          console.error("Error getting geolocation:", error);
-        }
-      );
-    }
-  }, []);
-  
-  const handleMainImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setMainImage(file);
-    }
-  };
-  
-  const handleGalleryImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const newFiles = Array.from(e.target.files);
-      setGalleryImages([...galleryImages, ...newFiles]);
-    }
-  };
-  
-  const handleRemoveMainImage = () => {
-    setMainImage(null);
-    setMainImageData(null);
-  };
-  
-  const handleRemoveGalleryImage = (index: number, imageId?: string) => {
-    // Check if this is an existing image (has ID) or a new one
-    if (imageId) {
-      // It's an existing image, mark it for deletion
-      setDeletedImageIds(prev => [...prev, imageId]);
-      // Remove from display
-      setGalleryImagesData(prev => prev.filter(img => img.id !== imageId));
-    } else {
-      // It's a new image, just remove from the array
-      const updatedImages = [...galleryImages];
-      updatedImages.splice(index, 1);
-      setGalleryImages(updatedImages);
-    }
-  };
+  const { data: listingData } = useListing(Number(id));
 
-  const isExistingGalleryImage = (url: string): boolean => {
-    return galleryImagesData.some(img => img.url === url);
-  };
-  
-  const getStepTitle = () => {
-    switch (currentStep) {
-      case 1:
-        return 'تعديل نوع الإعلان';
-      case 2:
-        return 'تعديل معلومات الإعلان';
-      case 3:
-        return 'تعديل الصور';
-      case 4:
-        return 'مراجعة نهائية';
-      default:
-        return '';
-    }
-  };
-  
-  const handleNextStep = () => {
-    setCurrentStep(currentStep + 1);
-  };
-  
-  const handlePrevStep = () => {
-    setCurrentStep(currentStep - 1);
-  };
-  
-  const handleUpdate = async () => {
-    if (!agreeTerms) {
-      toast({
-        variant: 'destructive',
-        title: 'الموافقة على الشروط',
-        description: 'يجب الموافقة على شروط الاستخدام وسياسة الخصوصية',
-      });
-      return;
-    }
+  const { data: categoriesData } = useCategories();
+  const { data: brandsData } = useBrands();
+  const { data: statesData } = useStates();
+  const [selectedStateId, setSelectedStateId] = useState<number | undefined>(listingData?.state_id);
+  const { data: citiesData } = useCities(selectedStateId);
 
-    // Validate required fields
-    if (!categoryId || !adTitle || !adDescription || !stateId || !cityId || !address) {
-      toast({
-        variant: 'destructive',
-        title: 'معلومات غير مكتملة',
-        description: 'يرجى التأكد من إدخال جميع الحقول المطلوبة',
-      });
-      return;
+  const categories = Array.isArray(categoriesData) ? categoriesData : [];
+  const brands = Array.isArray(brandsData) ? brandsData : [];
+  const states = Array.isArray(statesData) ? statesData : [];
+  const cities = Array.isArray(citiesData) ? citiesData : [];
+
+  const [files, setFiles] = useState<File[]>([]);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (listingData) {
+      setSelectedStateId(listingData.state_id);
     }
+  }, [listingData]);
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      title: listingData?.title || "",
+      description: listingData?.description || "",
+      price: listingData?.price || 0,
+      condition: listingData?.condition || "new",
+      listing_type: listingData?.listing_type || "sale",
+      category_id: listingData?.category_id || 0,
+      sub_category_id: listingData?.sub_category_id || undefined,
+      child_category_id: listingData?.child_category_id || undefined,
+      brand_id: listingData?.brand_id || undefined,
+      state_id: listingData?.state_id || 0,
+      city_id: listingData?.city_id || 0,
+      is_negotiable: listingData?.is_negotiable || false,
+      phone_hidden: listingData?.phone_hidden || false,
+    },
+    mode: "onChange",
+  });
+
+  useEffect(() => {
+    if (listingData) {
+      form.reset({
+        title: listingData.title || "",
+        description: listingData.description || "",
+        price: listingData.price || 0,
+        condition: listingData.condition || "new",
+        listing_type: listingData.listing_type || "sale",
+        category_id: listingData.category_id || 0,
+        sub_category_id: listingData.sub_category_id || undefined,
+        child_category_id: listingData.child_category_id || undefined,
+        brand_id: listingData.brand_id || undefined,
+        state_id: listingData.state_id || 0,
+        city_id: listingData.city_id || 0,
+        is_negotiable: listingData.is_negotiable || false,
+        phone_hidden: listingData.phone_hidden || false,
+      });
+      setImageUrl(typeof listingData.image === 'string' ? listingData.image : listingData.image?.image_url || null);
+    }
+  }, [listingData, form]);
+
+  const updateListingMutation = useUpdateListing();
+
+  const handleSubmit = async (data: FormData) => {
+    if (!id) return;
     
-    try {
-      setIsSubmitting(true);
-      const formData = new FormData();
-      
-      // Add required fields according to server validation
-      formData.append('listing_type', adType);
-      formData.append('category_id', categoryId.toString());
-      formData.append('title', adTitle);
-      formData.append('description', adDescription);
-      formData.append('price', adPrice || '0');
-      formData.append('state_id', stateId.toString());
-      formData.append('city_id', cityId.toString());
-      formData.append('address', address);
-      
-      // Add optional fields
-      if (subCategoryId) formData.append('sub_category_id', subCategoryId.toString());
-      if (childCategoryId) formData.append('child_category_id', childCategoryId.toString());
-      if (brandId) formData.append('brand_id', brandId.toString());
-      formData.append('negotiable', isNegotiable ? '1' : '0');
-      formData.append('phone_hidden', phoneHidden ? '1' : '0');
-      formData.append('product_condition', productCondition);
-      
-      // Handle main image as requested - only send if there's a new image
-      if (mainImage) {
-        formData.append('image', mainImage);
+    updateListingMutation.mutate({ 
+      id: Number(id), 
+      data 
+    }, {
+      onSuccess: () => {
+        navigate('/dashboard');
       }
-      
-      // Add new gallery images if any
-      galleryImages.forEach((image) => {
-        formData.append('gallery_images[]', image);
-      });
-      
-      // Add deleted image IDs if any
-      deletedImageIds.forEach(id => {
-        formData.append('deleted_images[]', id);
-      });
-      
-      // Add location if available
-      if (lat !== null && lon !== null) {
-        formData.append('lat', lat.toString());
-        formData.append('lon', lon.toString());
-      }
-      
-      // Add method override for PUT request
-      formData.append('_method', 'PUT');
-      
-      console.log('Submitting form data:', {
-        listing_type: adType,
-        category_id: categoryId,
-        title: adTitle,
-        price: adPrice,
-        has_main_image: !!mainImage,
-        new_gallery_count: galleryImages.length,
-        deleted_images: deletedImageIds
-      });
-      
-      // Submit the update
-      await updateListingMutation.mutateAsync(formData);
-      
-      // Navigate to dashboard on success
-      navigate('/dashboard', {
-        state: { successMessage: 'تم تحديث الإعلان بنجاح' }
-      });
-      
-    } catch (error) {
-      console.error("Error updating listing:", error);
-      toast({
-        variant: 'destructive',
-        title: 'خطأ في تحديث الإعلان',
-        description: 'حدث خطأ أثناء تحديث الإعلان. يرجى المحاولة مرة أخرى',
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
+    });
   };
 
-  const handleDelete = () => {
-    setIsDeleteDialogOpen(true);
+  const handleSaveDraft = async (data: FormData) => {
+    if (!id) return;
+    
+    updateListingMutation.mutate({ 
+      id: Number(id), 
+      data 
+    }, {
+      onSuccess: () => {
+        // Draft saved
+      }
+    });
   };
-  
-  const confirmDelete = async () => {
-    try {
-      // API call to delete listing
-      const deleteFormData = new FormData();
-      deleteFormData.append('_method', 'DELETE');
-      
-      await updateListingMutation.mutateAsync(deleteFormData);
-      
-      setIsDeleteDialogOpen(false);
-      navigate('/dashboard', {
-        state: { successMessage: 'تم حذف الإعلان بنجاح' }
-      });
-    } catch (error) {
-      console.error("Error deleting listing:", error);
-      toast({
-        variant: 'destructive',
-        title: 'خطأ في حذف الإعلان',
-        description: 'حدث خطأ أثناء حذف الإعلان. يرجى المحاولة مرة أخرى',
-      });
-    }
-  };
-  
-  if (isLoadingListing) {
-    return (
-      <div className="min-h-screen flex flex-col">
-        <Header />
-        <main className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4 text-brand" />
-            <h2 className="text-xl font-medium">جاري تحميل بيانات الإعلان...</h2>
-          </div>
-        </main>
-        <MobileNav />
-      </div>
-    );
-  }
-  
+
   return (
-    <div className="min-h-screen flex flex-col bg-background dark:bg-dark-background">
-      <Header />
-      
-      <main className="flex-1 pb-20 md:pb-0">
-        <div className="container px-4 mx-auto py-6">
-          <div className="max-w-3xl mx-auto">
-            {/* Progress */}
-            <div className="mb-6">
-              <h1 className="text-2xl font-bold mb-6 text-center dark:text-gray-100">{getStepTitle()}</h1>
-              
-              <div className="relative">
-                <div className="flex justify-between mb-2">
-                  {[1, 2, 3, 4].map((step) => (
-                    <div 
-                      key={step}
-                      className={`text-sm font-medium ${
-                        step <= currentStep ? 'text-brand dark:text-brand' : 'text-muted-foreground dark:text-gray-400'
-                      }`}
-                    >
-                      الخطوة {step}
-                    </div>
-                  ))}
-                </div>
-                
-                <div className="overflow-hidden h-2 rounded-full bg-gray-200 dark:bg-dark-muted">
-                  <div 
-                    className="h-full bg-brand transition-all duration-300"
-                    style={{ width: `${(currentStep / 4) * 100}%` }}
-                  />
-                </div>
-              </div>
-            </div>
-            
-            {/* Step 1: Choose ad type */}
-            {currentStep === 1 && (
-              <div className="space-y-6">
+    <div className="container py-10">
+      <Card>
+        <CardHeader>
+          <CardTitle>تعديل الإعلان</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {listingData ? (
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-8">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {[
-                    { id: 'sell', label: 'بيع منتج'},
-                    { id: 'buy', label: 'شراء' },
-                    { id: 'exchange', label: 'مقايضة'},
-                    { id: 'service', label: 'خدمة',}
-                  ].map((type) => (
-                    <button
-                      key={type.id}
-                      className={`p-6 border dark:border-dark-border rounded-lg text-center hover:border-brand transition-colors ${
-                        adType === type.id 
-                          ? 'border-brand bg-brand/5 dark:border-brand dark:bg-brand/10' 
-                          : 'dark:border-dark-border dark:bg-dark-card'
-                      }`}
-                      onClick={() => setAdType(type.id as any)}
-                    >
-                      <div className="text-lg font-bold dark:text-gray-100">{type.label}</div>
-                      {/* <div className="text-sm text-muted-foreground dark:text-gray-400 mt-1">{type.desc}</div> */}
-                    </button>
-                  ))}
-                </div>
-                
-                <div className="space-y-4">
-                  <div>
-                    <Label className="dark:text-gray-200">اختر تصنيف الإعلان</Label>
-                    <Select value={categoryId?.toString()} onValueChange={(value) => setCategoryId(parseInt(value))}>
-                      <SelectTrigger className="dark:border-dark-border dark:bg-dark-card dark:text-gray-200">
-                        <SelectValue placeholder="اختر التصنيف" />
-                      </SelectTrigger>
-                      <SelectContent className="dark:bg-dark-card dark:border-dark-border">
-                        {categories?.map((category) => (
-                          <SelectItem key={category.id} value={category.id.toString()} className="dark:text-gray-200 dark:focus:bg-dark-muted">
-                            {category.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  {/* Brand selection, only for certain categories */}
-                  {(adType === 'sell' || adType === 'buy' || adType === 'exchange') && categoryId && (
-                    <div>
-                      <Label className="dark:text-gray-200">اختر الماركة</Label>
-                      <Select value={brandId?.toString()} onValueChange={(value) => setBrandId(parseInt(value))}>
-                        <SelectTrigger className="dark:border-dark-border dark:bg-dark-card dark:text-gray-200">
-                          <SelectValue placeholder="اختر الماركة" />
-                        </SelectTrigger>
-                        <SelectContent className="dark:bg-dark-card dark:border-dark-border">
-                          <SelectItem value="0" className="dark:text-gray-200 dark:focus:bg-dark-muted">بدون ماركة</SelectItem>
-                          {brands && Array.isArray(brands) && brands.map((brand) => (
-                            <SelectItem key={brand.id} value={brand.id.toString()} className="dark:text-gray-200 dark:focus:bg-dark-muted">
-                              {brand.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-                </div>
-                
-                <div className="flex justify-end pt-4">
-                  <Button onClick={handleNextStep} disabled={!categoryId}>
-                    التالي
-                  </Button>
-                </div>
-              </div>
-            )}
-            
-            {/* Step 2: Ad details */}
-            {currentStep === 2 && (
-              <div className="space-y-6">
-                <div>
-                  <Label htmlFor="title" className="dark:text-gray-200">عنوان الإعلان</Label>
-                  <Input
-                    id="title"
-                    value={adTitle}
-                    onChange={(e) => setAdTitle(e.target.value)}
-                    placeholder="اكتب عنواناً واضحاً ومختصراً"
-                    className="mt-1 dark:bg-dark-card dark:border-dark-border dark:text-gray-200"
-                  />
-                </div>
-                
-                <div>
-                  <Label htmlFor="description" className="dark:text-gray-200">وصف الإعلان</Label>
-                  <Textarea
-                    id="description"
-                    value={adDescription}
-                    onChange={(e) => setAdDescription(e.target.value)}
-                    placeholder="اكتب وصفاً مفصلاً"
-                    rows={5}
-                    className="mt-1 resize-none dark:bg-dark-card dark:border-dark-border dark:text-gray-200"
-                  />
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="price" className="dark:text-gray-200">السعر (ريال)</Label>
-                    <Input
-                      id="price"
-                      type="number"
-                      value={adPrice}
-                      onChange={(e) => setAdPrice(e.target.value)}
-                      placeholder="أدخل السعر"
-                      className="mt-1 dark:bg-dark-card dark:border-dark-border dark:text-gray-200"
-                    />
-                  </div>
-                  
-                  <div>
-                    <div className="h-8" />
-                    <div className="flex items-center space-x-2 space-x-reverse mt-1">
-                      <Switch 
-                        id="negotiable" 
-                        checked={isNegotiable}
-                        onCheckedChange={setIsNegotiable}
-                        className="dark:bg-dark-muted"
-                      />
-                      <Label htmlFor="negotiable" className="dark:text-gray-200">السعر قابل للتفاوض</Label>
-                    </div>
-                  </div>
-                </div>
-                
-                {(adType === 'sell' || adType === 'exchange') && (
-                  <div>
-                    <Label htmlFor="condition" className="dark:text-gray-200">حالة المنتج</Label>
-                    <div className="grid grid-cols-2 gap-4 mt-1">
-                      <button
-                        type="button"
-                        className={`p-3 border rounded-lg text-center ${
-                          productCondition === 'new' 
-                            ? 'border-brand bg-brand/5 dark:border-brand dark:bg-brand/10' 
-                            : 'dark:border-dark-border dark:bg-dark-card dark:text-gray-300'
-                        }`}
-                        onClick={() => setProductCondition('new')}
-                      >
-                        جديد
-                      </button>
-                      <button
-                        type="button"
-                        className={`p-3 border rounded-lg text-center ${
-                          productCondition === 'used' 
-                            ? 'border-brand bg-brand/5 dark:border-brand dark:bg-brand/10' 
-                            : 'dark:border-dark-border dark:bg-dark-card dark:text-gray-300'
-                        }`}
-                        onClick={() => setProductCondition('used')}
-                      >
-                        مستعمل
-                      </button>
-                    </div>
-                  </div>
-                )}
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="state" className="dark:text-gray-200">المنطقة / المحافظة</Label>
-                    <Select value={stateId?.toString()} onValueChange={(value) => {
-                      setStateId(parseInt(value));
-                      setCityId(null); // Reset city when changing state
-                    }}>
-                      <SelectTrigger id="state" className="mt-1 dark:bg-dark-card dark:border-dark-border dark:text-gray-200">
-                        <SelectValue placeholder="اختر المنطقة" />
-                      </SelectTrigger>
-                      <SelectContent className="dark:bg-dark-card dark:border-dark-border">
-                        {states?.map((state) => (
-                          <SelectItem key={state.id} value={state.id.toString()} className="dark:text-gray-200 dark:focus:bg-dark-muted">
-                            {state.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="city" className="dark:text-gray-200">المدينة</Label>
-                    <Select value={cityId?.toString()} onValueChange={(value) => setCityId(parseInt(value))} disabled={!stateId}>
-                      <SelectTrigger id="city" className="mt-1 dark:bg-dark-card dark:border-dark-border dark:text-gray-200">
-                        <SelectValue placeholder={stateId ? "اختر المدينة" : "اختر المنطقة أولاً"} />
-                      </SelectTrigger>
-                      <SelectContent className="dark:bg-dark-card dark:border-dark-border">
-                        {cities?.map((city) => (
-                          <SelectItem key={city.id} value={city.id.toString()} className="dark:text-gray-200 dark:focus:bg-dark-muted">
-                            {city.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                
-                <div>
-                  <Label htmlFor="address" className="dark:text-gray-200">العنوان التفصيلي</Label>
-                  <Input
-                    id="address"
-                    value={address}
-                    onChange={(e) => setAddress(e.target.value)}
-                    placeholder="أدخل العنوان التفصيلي"
-                    className="mt-1 dark:bg-dark-card dark:border-dark-border dark:text-gray-200"
-                  />
-                </div>
-                
-                <div className="pt-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="contact-settings" className="dark:text-gray-200">معلومات الاتصال</Label>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button variant="ghost" size="icon" className="dark:text-gray-400">
-                            <Info className="h-4 w-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent className="dark:bg-dark-card dark:border-dark-border dark:text-gray-200">
-                          <p>يمكنك التحكم في كيفية ظهور معلومات الاتصال الخاصة بك</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2 space-x-reverse mt-1">
-                    <Switch 
-                      id="phone-hidden" 
-                      checked={phoneHidden}
-                      onCheckedChange={setPhoneHidden}
-                      className="dark:bg-dark-muted"
-                    />
-                    <Label htmlFor="phone-hidden" className="dark:text-gray-200">إخفاء رقم الهاتف (التواصل عبر الرسائل فقط)</Label>
-                  </div>
-                </div>
-                
-                <div className="flex justify-between pt-4">
-                  <Button variant="outline" onClick={handlePrevStep} className="dark:bg-dark-card dark:border-dark-border dark:text-gray-200 dark:hover:bg-dark-muted">
-                    السابق
-                  </Button>
-                  <Button 
-                    onClick={handleNextStep} 
-                    disabled={!adTitle || !adDescription || !stateId || !cityId || !address}
-                  >
-                    التالي
-                  </Button>
-                </div>
-              </div>
-            )}
-            
-            {/* Step 3: Images */}
-            {currentStep === 3 && (
-              <div className="space-y-6">
-                {/* Main image */}
-                <div>
-                  <Label className="mb-2 block dark:text-gray-200">الصورة الرئيسية</Label>
-                  
-                  {mainImage ? (
-                    <div className="relative h-64 border rounded-lg overflow-hidden mb-4 dark:border-dark-border dark:bg-dark-muted">
-                      <img src={URL.createObjectURL(mainImage)} alt="الصورة الرئيسية" className="w-full h-full object-contain" />
-                      <button
-                        onClick={handleRemoveMainImage}
-                        className="absolute top-2 left-2 bg-red-500 text-white rounded-full p-1"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    </div>
-                  ) : mainImageData ? (
-                    <div className="relative h-64 border rounded-lg overflow-hidden mb-4 dark:border-dark-border dark:bg-dark-muted">
-                      <img src={mainImageData.image_url} alt="الصورة الرئيسية" className="w-full h-full object-contain" />
-                      <button
-                        onClick={handleRemoveMainImage}
-                        className="absolute top-2 left-2 bg-red-500 text-white rounded-full p-1"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    </div>
-                  ) : (
-                    <label className="relative h-64 border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 mb-4 dark:border-dark-border dark:hover:bg-dark-card/80">
-                      <UploadCloud className="h-16 w-16 text-muted-foreground mb-2 dark:text-gray-400" />
-                      <span className="text-muted-foreground mb-1 dark:text-gray-400">اضغط لإضافة الصورة الرئيسية</span>
-                      <span className="text-xs text-muted-foreground dark:text-gray-500">(مطلوب)</span>
-                      <input
-                        type="file"
-                        className="hidden"
-                        accept="image/*"
-                        onChange={handleMainImageChange}
-                      />
-                    </label>
-                  )}
-                  
-                  <Label className="mb-2 block dark:text-gray-200">صور إضافية (اختياري)</Label>
-                  
-                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
-                    {/* Display existing gallery images */}
-                    {galleryImagesData.map((image, index) => (
-                      <div key={`existing-${image.id}`} className="relative h-32 border rounded-lg overflow-hidden dark:border-dark-border dark:bg-dark-muted">
-                        <img src={image.url} alt={`صورة ${index + 1}`} className="w-full h-full object-cover" />
-                        <button
-                          onClick={() => handleRemoveGalleryImage(index, image.id)}
-                          className="absolute top-1 left-1 bg-red-500 text-white rounded-full p-1"
-                        >
-                          <X className="h-4 w-4" />
-                        </button>
-                        <div className="absolute bottom-1 left-1 bg-gray-800 text-white text-xs rounded px-1">
-                          موجودة
-                        </div>
-                      </div>
-                    ))}
-                    
-                    {/* Display newly added gallery images */}
-                    {galleryImages.map((image, index) => (
-                      <div key={`new-${index}`} className="relative h-32 border rounded-lg overflow-hidden dark:border-dark-border dark:bg-dark-muted">
-                        <img src={URL.createObjectURL(image)} alt={`صورة جديدة ${index + 1}`} className="w-full h-full object-cover" />
-                        <button
-                          onClick={() => handleRemoveGalleryImage(index)}
-                          className="absolute top-1 left-1 bg-red-500 text-white rounded-full p-1"
-                        >
-                          <X className="h-4 w-4" />
-                        </button>
-                        <div className="absolute bottom-1 left-1 bg-green-600 text-white text-xs rounded px-1">
-                          جديدة
-                        </div>
-                      </div>
-                    ))}
-                    
-                    {/* Add new gallery image button */}
-                    {galleryImagesData.length + galleryImages.length < 9 && (
-                      <label className="relative h-32 border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 dark:border-dark-border dark:hover:bg-dark-card/80">
-                        <UploadCloud className="h-10 w-10 text-muted-foreground mb-2 dark:text-gray-400" />
-                        <span className="text-sm text-muted-foreground dark:text-gray-400">اضغط لإضافة صورة</span>
-                        <input
-                          type="file"
-                          className="hidden"
-                          accept="image/*"
-                          onChange={handleGalleryImageChange}
-                        />
-                      </label>
+                  <FormField
+                    control={form.control}
+                    name="title"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>عنوان الإعلان</FormLabel>
+                        <FormControl>
+                          <Input placeholder="مثال: سيارة للبيع" {...field} />
+                        </FormControl>
+                        <FormDescription>
+                          أدخل عنواناً واضحاً وموجزاً للإعلان.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
                     )}
-                  </div>
-                  
-                  <Card className="dark:bg-dark-surface dark:border-dark-border">
-                    <CardContent className="p-4 text-blue-700 text-sm dark:text-blue-400">
-                      <div className="flex items-start">
-                        <Info className="h-5 w-5 ml-2 flex-shrink-0 mt-0.5" />
-                        <div>
-                          <p className="font-bold mb-1">نصائح لصور أفضل:</p>
-                          <ul className="list-disc pr-5">
-                            <li>استخدم صوراً واضحة وبجودة عالية</li>
-                            <li>أضف صوراً من زوايا مختلفة</li>
-                            <li>تأكد من إضاءة جيدة للصور</li>
-                            <li>تجنب استخدام شعارات أو نصوص على الصور</li>
-                          </ul>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="description"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>وصف الإعلان</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="مثال: سيارة بحالة ممتازة، موديل 2020،..."
+                            className="resize-none"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          أدخل وصفاً تفصيلياً للإعلان.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
-                
-                <div className="flex justify-between pt-4">
-                  <Button variant="outline" onClick={handlePrevStep} className="dark:bg-dark-card dark:border-dark-border dark:text-gray-200 dark:hover:bg-dark-muted">
-                    السابق
-                  </Button>
-                  <Button onClick={handleNextStep} disabled={!mainImage && !mainImageData}>
-                    التالي
-                  </Button>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="price"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>السعر</FormLabel>
+                        <FormControl>
+                          <Input type="number" placeholder="مثال: 15000" {...field} />
+                        </FormControl>
+                        <FormDescription>
+                          أدخل سعر المنتج أو الخدمة.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="condition"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>حالة المنتج</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="اختر حالة المنتج" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="new">جديد</SelectItem>
+                            <SelectItem value="used">مستعمل</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>
+                          اختر حالة المنتج: جديد أو مستعمل.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="listing_type"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>نوع الإعلان</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="اختر نوع الإعلان" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="sale">للبيع</SelectItem>
+                            <SelectItem value="rent">للإيجار</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>
+                          اختر نوع الإعلان: بيع أو إيجار.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
-              </div>
-            )}
-            
-            {/* Step 4: Review */}
-            {currentStep === 4 && (
-              <div className="space-y-6">
-                <Card className="dark:bg-dark-card dark:border-dark-border">
-                  <div className="bg-gray-50 dark:bg-dark-surface border-b dark:border-dark-border p-3">
-                    <h3 className="font-bold dark:text-gray-200">مراجعة معلومات الإعلان</h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="category_id"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>التصنيف الرئيسي</FormLabel>
+                        <Select onValueChange={value => field.onChange(Number(value))} defaultValue={String(field.value)}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="اختر التصنيف الرئيسي" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {categories.map((category) => (
+                              <SelectItem key={category.id} value={String(category.id)}>
+                                {category.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>
+                          اختر التصنيف الرئيسي للإعلان.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="brand_id"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>الماركة</FormLabel>
+                        <Select onValueChange={value => field.onChange(Number(value))} defaultValue={String(field.value || '')}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="اختر الماركة" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {brands.map((brand) => (
+                              <SelectItem key={brand.id} value={String(brand.id)}>
+                                {brand.name || brand.title}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>
+                          اختر الماركة التجارية للمنتج.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="space-y-2">
+                    <FormLabel>صورة الإعلان</FormLabel>
+                    <FormControl>
+                      <Dropzone 
+                        value={files}
+                        onChange={setFiles}
+                        onImageChange={setImageUrl}
+                        imageUrl={imageUrl}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      قم برفع صورة واضحة للإعلان.
+                    </FormDescription>
+                    <FormMessage />
                   </div>
-                  
-                  <CardContent className="p-4 space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <h4 className="text-sm text-muted-foreground dark:text-gray-400">عنوان الإعلان</h4>
-                        <p className="dark:text-gray-200">{adTitle}</p>
-                      </div>
-                      
-                      <div>
-                        <h4 className="text-sm text-muted-foreground dark:text-gray-400">التصنيف</h4>
-                        <p className="dark:text-gray-200">{categories?.find(c => c.id === categoryId)?.name || '-'}</p>
-                      </div>
-                      
-                      <div>
-                        <h4 className="text-sm text-muted-foreground dark:text-gray-400">المنطقة</h4>
-                        <p className="dark:text-gray-200">{states?.find(s => s.id === stateId)?.name || '-'}</p>
-                      </div>
-                      
-                      <div>
-                        <h4 className="text-sm text-muted-foreground dark:text-gray-400">المدينة</h4>
-                        <p className="dark:text-gray-200">{cities?.find(c => c.id === cityId)?.name || '-'}</p>
-                      </div>
-                      
-                      <div>
-                        <h4 className="text-sm text-muted-foreground dark:text-gray-400">السعر</h4>
-                        <p className="dark:text-gray-200">
-                          {adPrice ? `${adPrice} ريال` : '-'}
-                          {isNegotiable && adPrice && ' (قابل للتفاوض)'}
-                        </p>
-                      </div>
-                      
-                      <div>
-                        <h4 className="text-sm text-muted-foreground dark:text-gray-400">نوع الإعلان</h4>
-                        <p className="dark:text-gray-200">
-                          {adType === 'sell' && 'بيع منتج'}
-                          {adType === 'buy' && 'شراء'}
-                          {adType === 'exchange' && 'مقايضة'}
-                          {adType === 'service' && 'خدمة'}
-                        </p>
-                      </div>
-                      
-                      {(adType === 'sell' || adType === 'exchange') && (
-                        <div>
-                          <h4 className="text-sm text-muted-foreground dark:text-gray-400">حالة المنتج</h4>
-                          <p className="dark:text-gray-200">{productCondition === 'new' ? 'جديد' : 'مستعمل'}</p>
-                        </div>
-                      )}
-                      
-                      {brandId && brandId > 0 && brands && Array.isArray(brands) && (
-                        <div>
-                          <h4 className="text-sm text-muted-foreground dark:text-gray-400">الماركة</h4>
-                          <p className="dark:text-gray-200">{brands.find(b => b.id === brandId)?.name || '-'}</p>
-                        </div>
-                      )}
-                    </div>
-                    
-                    <div>
-                      <h4 className="text-sm text-muted-foreground dark:text-gray-400">الوصف</h4>
-                      <p className="whitespace-pre-line dark:text-gray-200">{adDescription}</p>
-                    </div>
-                    
-                    <div>
-                      <h4 className="text-sm text-muted-foreground dark:text-gray-400">الصور</h4>
-                      <div className="flex flex-wrap gap-2 mt-1">
-                        {/* Main image */}
-                        {mainImage ? (
-                          <div className="w-16 h-16 rounded-md overflow-hidden border-2 border-brand">
-                            <img src={URL.createObjectURL(mainImage)} alt="الصورة الرئيسية" className="w-full h-full object-cover" />
-                          </div>
-                        ) : mainImageData && (
-                          <div className="w-16 h-16 rounded-md overflow-hidden border-2 border-brand">
-                            <img src={mainImageData.image_url} alt="الصورة الرئيسية" className="w-full h-full object-cover" />
-                          </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="state_id"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>المنطقة</FormLabel>
+                        <Select 
+                          onValueChange={(value) => {
+                            field.onChange(Number(value));
+                            setSelectedStateId(Number(value));
+                          }} 
+                          defaultValue={String(field.value)}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="اختر المنطقة" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {states.map((state) => (
+                              <SelectItem key={state.id} value={String(state.id)}>
+                                {state.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>
+                          اختر المنطقة التي يقع بها المنتج.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="city_id"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>المدينة</FormLabel>
+                        <Select onValueChange={value => field.onChange(Number(value))} defaultValue={String(field.value)}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="اختر المدينة" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {cities.map((city) => (
+                              <SelectItem key={city.id} value={String(city.id)}>
+                                {city.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>
+                          اختر المدينة التي يقع بها المنتج.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div>
+                    <FormLabel>خيارات إضافية</FormLabel>
+                    <div className="flex items-center space-x-2 space-x-reverse">
+                      <FormField
+                        control={form.control}
+                        name="is_negotiable"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-center justify-between rounded-md border p-4">
+                            <div className="space-y-0.5">
+                              <FormLabel className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed">
+                                قابل للتفاوض
+                              </FormLabel>
+                              <FormDescription>
+                                تحديد ما إذا كان السعر قابل للتفاوض.
+                              </FormDescription>
+                            </div>
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                          </FormItem>
                         )}
+                      />
+                    </div>
 
-                        {/* Gallery images - both existing and new */}
-                        {galleryImagesData.map((image, index) => (
-                          <div key={`review-existing-${image.id}`} className="w-16 h-16 rounded-md overflow-hidden dark:border dark:border-dark-border">
-                            <img src={image.url} alt={`صورة ${index + 1}`} className="w-full h-full object-cover" />
-                          </div>
-                        ))}
-                        
-                        {galleryImages.map((image, index) => (
-                          <div key={`review-new-${index}`} className="w-16 h-16 rounded-md overflow-hidden dark:border dark:border-dark-border">
-                            <img src={URL.createObjectURL(image)} alt={`صورة جديدة ${index + 1}`} className="w-full h-full object-cover" />
-                          </div>
-                        ))}
-                      </div>
-                      
-                      {deletedImageIds.length > 0 && (
-                        <p className="mt-2 text-xs text-red-500">
-                          سيتم حذف {deletedImageIds.length} من الصور الأصلية
-                        </p>
-                      )}
+                    <div className="flex items-center space-x-2 space-x-reverse">
+                      <FormField
+                        control={form.control}
+                        name="phone_hidden"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-center justify-between rounded-md border p-4">
+                            <div className="space-y-0.5">
+                              <FormLabel className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed">
+                                إخفاء رقم الهاتف
+                              </FormLabel>
+                              <FormDescription>
+                                تحديد ما إذا كان رقم الهاتف مخفياً في الإعلان.
+                              </FormDescription>
+                            </div>
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
                     </div>
-                    
-                    <div>
-                      <h4 className="text-sm text-muted-foreground dark:text-gray-400">معلومات الاتصال</h4>
-                      <p className="dark:text-gray-200">{phoneHidden ? 'رقم الهاتف مخفي' : 'رقم الهاتف مرئي للجميع'}</p>
-                    </div>
-                  </CardContent>
-                </Card>
-                
-                <div className="border dark:border-dark-border rounded-lg p-4 bg-gray-50 dark:bg-dark-surface">
-                  <div className="flex items-center space-x-2 space-x-reverse mb-4">
-                    <input 
-                      type="checkbox" 
-                      id="terms" 
-                      className="rounded border-gray-300 dark:bg-dark-card dark:border-dark-border"
-                      checked={agreeTerms}
-                      onChange={() => setAgreeTerms(!agreeTerms)}
-                    />
-                    <label htmlFor="terms" className="text-sm dark:text-gray-300">
-                      أوافق على <a href="/terms" className="text-brand">شروط الاستخدام</a> و<a href="/privacy" className="text-brand">سياسة الخصوصية</a>
-                    </label>
-                  </div>
-                  
-                  <div className="grid gap-2">
-                    <Button 
-                      variant="default" 
-                      size="lg"
-                      onClick={handleUpdate}
-                      disabled={isSubmitting || !agreeTerms}
-                      className="w-full"
-                    >
-                      {isSubmitting ? (
-                        <>
-                          <Loader2 className="ml-2 h-4 w-4 animate-spin" />
-                          جاري تحديث الإعلان...
-                        </>
-                      ) : (
-                        'تحديث الإعلان'
-                      )}
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      onClick={handlePrevStep}
-                      className="dark:bg-dark-card dark:border-dark-border dark:text-gray-200 dark:hover:bg-dark-muted"
-                    >
-                      تعديل الإعلان
-                    </Button>
-                    <Button 
-                      variant="destructive" 
-                      onClick={handleDelete}
-                      className="mt-2"
-                    >
-                      <X className="h-4 w-4 ml-1" />
-                      حذف الإعلان
-                    </Button>
                   </div>
                 </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </main>
 
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent className="dark:bg-dark-card dark:border-dark-border">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="dark:text-gray-100">تأكيد حذف الإعلان</AlertDialogTitle>
-            <AlertDialogDescription className="dark:text-gray-300">
-              هل أنت متأكد من رغبتك في حذف هذا الإعلان؟ لا يمكن التراجع عن هذا الإجراء.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="dark:bg-dark-muted dark:text-gray-200 dark:border-dark-border">إلغاء</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700">
-              نعم، قم بالحذف
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-      
-      <Footer />
-      <MobileNav />
+                <div className="flex justify-end gap-4">
+                  <Button variant="outline" onClick={form.handleSubmit(handleSaveDraft)}>حفظ كمسودة</Button>
+                  <Button type="submit">تحديث الإعلان</Button>
+                </div>
+              </form>
+            </Form>
+          ) : (
+            <div className="flex flex-col space-y-4">
+              <Skeleton className="h-10 w-[200px]" />
+              <Skeleton className="h-4 w-[400px]" />
+              <Skeleton className="h-4 w-[400px]" />
+              <Skeleton className="h-4 w-[400px]" />
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

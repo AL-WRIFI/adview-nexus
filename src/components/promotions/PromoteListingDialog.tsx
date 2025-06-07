@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -88,9 +87,9 @@ export function PromoteListingDialog({ open, onOpenChange, listing }: PromoteLis
                 <div className="flex items-center gap-3">
                   {listing.image && (
                     <img 
-                      src={listing.image} 
+                      src={typeof listing.image === 'string' ? listing.image : listing.image?.image_url || '/placeholder.svg'} 
                       alt={listing.title}
-                      className="w-16 h-16 object-cover rounded-lg"
+                      className="w-12 h-12 object-cover rounded"
                     />
                   )}
                   <div>

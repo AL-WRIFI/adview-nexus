@@ -1,4 +1,3 @@
-
 import { Link } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,8 +16,9 @@ interface AdsTabProps {
 
 export function AdsTab({ setSelectedAd, setDeleteConfirmOpen, setPromoteDialogOpen }: AdsTabProps) {
   // Fetch user's ads
-  const { data: listings, isLoading, error, refetch } = useUserListings();
-  const userAds = listings || [];
+  const { data: listingsData, isLoading, error, refetch } = useUserListings();
+  const listings = listingsData?.data || [];
+  const adsData = Array.isArray(listingsData?.data) ? listingsData.data : [];
   
   // Delete ad mutation
   const deleteMutation = useDeleteListing();
@@ -88,7 +88,7 @@ export function AdsTab({ setSelectedAd, setDeleteConfirmOpen, setPromoteDialogOp
         <CardDescription>إدارة الإعلانات التي قمت بنشرها</CardDescription>
       </CardHeader>
       <CardContent>
-        {userAds.length > 0 ? (
+        {adsData.length > 0 ? (
           <div className="rounded-md border dark:border-gray-800">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -103,7 +103,7 @@ export function AdsTab({ setSelectedAd, setDeleteConfirmOpen, setPromoteDialogOp
                   </tr>
                 </thead>
                 <tbody>
-                  {userAds.map((ad) => (
+                  {adsData.map((ad) => (
                     <tr key={ad.id} className="border-b dark:border-gray-800">
                       <td className="py-3 px-4">
                         <div className="flex items-center">

@@ -434,3 +434,17 @@ export const useDeleteReply = () => {
     },
   });
 };
+
+export const useUserStats = () => {
+  return useQuery({
+    queryKey: ['userStats'],
+    queryFn: async () => {
+      return {
+        totalListings: 0,
+        activeListings: 0,
+        totalViews: 0,
+        totalFavorites: 0
+      };
+    },
+  });
+};

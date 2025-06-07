@@ -1,9 +1,8 @@
-
+import React from 'react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AdsTab } from './tabs/AdsTab';
 import { PromoteTab } from './tabs/PromoteTab';
-import { PlaceholderTab } from './tabs/PlaceholderTab';
-import { PromoteDialog } from '../dialogs/PromoteDialog';
-import { DeleteConfirmDialog } from '../dialogs/DeleteConfirmDialog';
+import { AnalyticsTab } from './tabs/AnalyticsTab';
 
 interface DashboardContentProps {
   activePage: string;
@@ -13,47 +12,40 @@ interface DashboardContentProps {
   setPromoteDialogOpen: (open: boolean) => void;
   deleteConfirmOpen: boolean;
   setDeleteConfirmOpen: (open: boolean) => void;
+  className?: string;
 }
 
-export default function DashboardContent({
+export function DashboardContent({
   activePage,
   selectedAd,
   setSelectedAd,
   promoteDialogOpen,
   setPromoteDialogOpen,
   deleteConfirmOpen,
-  setDeleteConfirmOpen
+  setDeleteConfirmOpen,
+  className
 }: DashboardContentProps) {
-  
   return (
-    <>
-      {activePage === 'ads' && (
-        <AdsTab 
-          setSelectedAd={setSelectedAd}
-          setDeleteConfirmOpen={setDeleteConfirmOpen}
-          setPromoteDialogOpen={setPromoteDialogOpen}
-        />
-      )}
-      
-      {activePage === 'promote' && (
-        <PromoteTab setPromoteDialogOpen={setPromoteDialogOpen} />
-      )}
-      
-      {(activePage === 'favorites' || activePage === 'messages' || 
-        activePage === 'notifications' || activePage === 'settings') && (
-        <PlaceholderTab tabName={activePage} />
-      )}
-      
-      {/* Dialogs */}
-      <PromoteDialog 
-        open={promoteDialogOpen} 
-        setOpen={setPromoteDialogOpen} 
-      />
-      
-      <DeleteConfirmDialog 
-        open={deleteConfirmOpen} 
-        setOpen={setDeleteConfirmOpen} 
-      />
-    </>
+    <div className={className}>
+      <Tabs defaultValue={activePage} className="w-full">
+        <TabsList>
+          <TabsTrigger value="ads">إعلاناتي</TabsTrigger>
+          <TabsTrigger value="promote">الترويج</TabsTrigger>
+          <TabsTrigger value="analytics">إحصائيات</TabsTrigger>
+        </TabsList>
+        <TabsContent value="ads" className="space-y-4">
+          <AdsTab 
+            setSelectedAd={(id: string | null) => setSelectedAd(id)}
+            setPromoteDialogOpen={setPromoteDialogOpen}
+          />
+        </TabsContent>
+        <TabsContent value="promote" className="space-y-4">
+          <PromoteTab setPromoteDialogOpen={setPromoteDialogOpen} />
+        </TabsContent>
+        <TabsContent value="analytics" className="space-y-4">
+          <AnalyticsTab />
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 }

@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { 
   Dialog,
@@ -26,6 +25,8 @@ export function PromoteDialog({ open, setOpen }: PromoteDialogProps) {
   const { data: userListings } = useUserListings();
   const { data: packages } = usePromotionPackages();
 
+  const userListingsData = Array.isArray(userListings?.data) ? userListings.data : [];
+
   const handleSelectListing = (listing: Listing) => {
     setSelectedListing(listing);
     setOpen(false);
@@ -49,18 +50,24 @@ export function PromoteDialog({ open, setOpen }: PromoteDialogProps) {
                 <h3 className="font-medium">اختر الإعلان المراد ترقيته</h3>
               </div>
               <div className="p-3 max-h-60 overflow-y-auto">
-                {userListings && userListings.length > 0 ? (
+                {userListingsData && userListingsData.length > 0 ? (
                   <div className="space-y-2">
-                    {userListings.map((listing: Listing) => (
+                    {userListingsData.map((listing) => (
                       <div 
                         key={listing.id} 
                         className="flex items-center justify-between p-3 border rounded-md hover:bg-gray-50 cursor-pointer"
                         onClick={() => handleSelectListing(listing)}
                       >
                         <div className="flex items-center gap-3">
-                          {listing.image && (
+                          {typeof listing.image === 'string' ? (
                             <img 
                               src={listing.image} 
+                              alt={listing.title}
+                              className="w-12 h-12 object-cover rounded"
+                            />
+                          ) : (
+                            <img 
+                              src={listing.image?.image_url || '/placeholder.svg'} 
                               alt={listing.title}
                               className="w-12 h-12 object-cover rounded"
                             />

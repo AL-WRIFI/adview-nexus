@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,7 +16,9 @@ export function PromoteTab() {
   const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
 
   const { data: packages, isLoading: packagesLoading } = usePromotionPackages();
-  const { data: userListings, isLoading: listingsLoading } = useUserListings();
+  const { data: listings, isLoading: listingsLoading } = useUserListings();
+
+  const listingsData = Array.isArray(listings?.data) ? listings.data : [];
 
   const handlePromoteListing = (listing: Listing) => {
     setSelectedListing(listing);
@@ -103,18 +104,18 @@ export function PromoteTab() {
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
                   <p className="mt-2 text-muted-foreground">جاري تحميل الإعلانات...</p>
                 </div>
-              ) : userListings && userListings.length > 0 ? (
+              ) : listingsData && listingsData.length > 0 ? (
                 <div className="grid gap-4">
-                  {userListings.map((listing: Listing) => (
+                  {listingsData.map((listing) => (
                     <Card key={listing.id} className="hover:shadow-md transition-shadow">
                       <CardContent className="p-4">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
                             {listing.image && (
                               <img 
-                                src={listing.image} 
+                                src={typeof listing.image === 'string' ? listing.image : listing.image?.image_url || '/placeholder.svg'} 
                                 alt={listing.title}
-                                className="w-16 h-16 object-cover rounded-lg"
+                                className="w-16 h-16 object-cover rounded"
                               />
                             )}
                             <div>

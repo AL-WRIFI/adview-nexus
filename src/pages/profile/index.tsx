@@ -1,5 +1,4 @@
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
@@ -40,7 +39,7 @@ export default function ProfilePage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   
   // Set initial values when user data is loaded
-  useState(() => {
+  useEffect(() => {
     if (user) {
       setName(user.first_name);
       setPhone(user.phone);
@@ -48,7 +47,7 @@ export default function ProfilePage() {
       setCity(user.city);
       setBio(user.bio || '');
     }
-  });
+  }, [user]);
   
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
