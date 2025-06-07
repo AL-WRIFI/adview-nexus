@@ -4,10 +4,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Crown, Clock, Eye, TrendingUp } from 'lucide-react';
-import { useUserListings } from '@/hooks/use-api';
+import { useUserListings, usePromotionPackages } from '@/hooks/use-api';
+import { Listing } from '@/types';
 
 export function PromoteTab() {
   const { data: userListings = [], isLoading } = useUserListings();
+  const { data: promotionPackages = [] } = usePromotionPackages();
 
   if (isLoading) {
     return (
@@ -27,7 +29,7 @@ export function PromoteTab() {
     );
   }
 
-  const promotableListings = Array.isArray(userListings) ? userListings.filter(listing => 
+  const promotableListings = Array.isArray(userListings) ? userListings.filter((listing: Listing) => 
     listing.status === 'active' && !listing.featured
   ) : [];
 
@@ -131,10 +133,10 @@ export function PromoteTab() {
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {promotableListings.map((listing) => {
+            {promotableListings.map((listing: Listing) => {
               const imageUrl = typeof listing.image === 'string' 
                 ? listing.image 
-                : listing.image?.image_url || '/placeholder.svg';
+                : listing.main_image_url || '/placeholder.svg';
               
               return (
                 <Card key={listing.id}>

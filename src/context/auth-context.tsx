@@ -2,12 +2,13 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User } from '@/types';
 import { useCurrentUser, useLogin, useLogout, useRegister } from '@/hooks/use-api';
+import { TokenManager } from '@/services/api';
 
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (identifier: string, password: string) => Promise<void>;
   register: (userData: any) => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -26,20 +27,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Update user state when API data changes
   useEffect(() => {
-    if (currentUserData?.data) {
-      setUser(currentUserData.data);
+    if (currentUserData) {
+      setUser(currentUserData);
     } else if (userError) {
       setUser(null);
-      // Clear token if user fetch fails
-      localStorage.removeItem('authToken');
-      sessionStorage.removeItem('authToken');
+      TokenManager.removeToken();
     }
     setIsLoading(isLoadingUser);
   }, [currentUserData, userError, isLoadingUser]);
 
-  const login = async (email: string, password: string) => {
+  const login = async (identifier: string, password: string) => {
     try {
-      const response = await loginMutation.mutateAsync({ email, password });
+      const response = await loginMutation.mutateAsync({ identifier, password });
       if (response.data?.user) {
         setUser(response.data.user);
       }
@@ -69,8 +68,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error('Logout error:', error);
       // Even if logout fails on server, clear local state
       setUser(null);
-      localStorage.removeItem('authToken');
-      sessionStorage.removeItem('authToken');
+      TokenManager.removeToken();
     }
   };
 
@@ -93,3 +91,6 @@ export function useAuth() {
   }
   return context;
 }
+
+// Export TokenManager for external use
+export { TokenManager };

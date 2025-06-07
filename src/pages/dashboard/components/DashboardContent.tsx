@@ -24,6 +24,15 @@ export function DashboardContent({
   deleteConfirmOpen,
   setDeleteConfirmOpen,
 }: DashboardContentProps) {
+  
+  const handleSetSelectedAd = (id: string | null) => {
+    setSelectedAd(id);
+  };
+
+  const handleSetSelectedAdNumber = (id: number) => {
+    setSelectedAd(id.toString());
+  };
+
   return (
     <div>
       <Tabs defaultValue={activePage} className="w-full">
@@ -34,7 +43,7 @@ export function DashboardContent({
         </TabsList>
         <TabsContent value="ads" className="space-y-4">
           <AdsTab 
-            setSelectedAd={setSelectedAd}
+            setSelectedAd={handleSetSelectedAdNumber}
             setPromoteDialogOpen={setPromoteDialogOpen}
           />
         </TabsContent>
@@ -48,3 +57,5 @@ export function DashboardContent({
     </div>
   );
 }
+
+export default DashboardContent;

@@ -1,18 +1,53 @@
 
 import { ApiResponse, PaginatedResponse, Listing, Comment, User, SearchFilters, Favorite, Category, SubCategory, Brand, State, City } from '@/types';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://admin2.mixsyria.com/api/v1';
+// Configuration
+const API_CONFIG = {
+  BASE_URL: import.meta.env.VITE_API_BASE_URL || 'https://admin2.mixsyria.com/api/v1',
+  TIMEOUT: 30000,
+  RETRY_ATTEMPTS: 3,
+  RETRY_DELAY: 1000,
+} as const;
 
-const getAuthToken = () => {
-  return localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-};
+// Token management utilities
+class TokenManager {
+  private static readonly TOKEN_KEY = 'authToken';
+  private static readonly SESSION_TOKEN_KEY = 'sessionAuthToken';
 
-async function fetchAPI<T>(endpoint: string, options?: RequestInit): Promise<T> {
-  try {
-    const url = `${API_BASE_URL}${endpoint}`;
-    const token = getAuthToken();
+  static getToken(): string | null {
+    return localStorage.getItem(this.TOKEN_KEY) || sessionStorage.getItem(this.SESSION_TOKEN_KEY);
+  }
+
+  static setToken(token: string, remember: boolean = true): void {
+    if (remember) {
+      localStorage.setItem(this.TOKEN_KEY, token);
+      sessionStorage.removeItem(this.SESSION_TOKEN_KEY);
+    } else {
+      sessionStorage.setItem(this.SESSION_TOKEN_KEY, token);
+      localStorage.removeItem(this.TOKEN_KEY);
+    }
+  }
+
+  static removeToken(): void {
+    localStorage.removeItem(this.TOKEN_KEY);
+    sessionStorage.removeItem(this.SESSION_TOKEN_KEY);
+  }
+
+  static hasToken(): boolean {
+    return !!this.getToken();
+  }
+}
+
+// HTTP Client with retry logic and proper error handling
+class ApiClient {
+  private static async request<T>(
+    endpoint: string,
+    options: RequestInit = {}
+  ): Promise<T> {
+    const url = `${API_CONFIG.BASE_URL}${endpoint}`;
+    const token = TokenManager.getToken();
     
-    const isFormData = options?.body instanceof FormData;
+    const isFormData = options.body instanceof FormData;
     
     const defaultHeaders: Record<string, string> = {
       Accept: 'application/json',
@@ -20,76 +55,117 @@ async function fetchAPI<T>(endpoint: string, options?: RequestInit): Promise<T> 
       ...(!isFormData ? { 'Content-Type': 'application/json' } : {}),
     };
 
-    const response = await fetch(url, {
+    const requestOptions: RequestInit = {
       ...options,
       headers: {
         ...defaultHeaders,
-        ...(options?.headers || {}),
+        ...(options.headers || {}),
       },
-    });
+    };
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `API Error: ${response.status} ${response.statusText}`);
+    for (let attempt = 1; attempt <= API_CONFIG.RETRY_ATTEMPTS; attempt++) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), API_CONFIG.TIMEOUT);
+
+        const response = await fetch(url, {
+          ...requestOptions,
+          signal: controller.signal,
+        });
+
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          
+          // Handle authentication errors
+          if (response.status === 401) {
+            TokenManager.removeToken();
+            window.location.href = '/auth/login';
+            throw new Error('Authentication required');
+          }
+
+          throw new Error(
+            errorData.message || 
+            `API Error: ${response.status} ${response.statusText}`
+          );
+        }
+
+        const data = await response.json();
+        return data as T;
+
+      } catch (error) {
+        console.error(`API request attempt ${attempt} failed:`, error);
+        
+        if (attempt === API_CONFIG.RETRY_ATTEMPTS) {
+          throw error;
+        }
+        
+        // Wait before retrying
+        await new Promise(resolve => 
+          setTimeout(resolve, API_CONFIG.RETRY_DELAY * attempt)
+        );
+      }
     }
 
-    const data = await response.json();
-    return data as T;
-  } catch (error) {
-    console.error('API request failed:', error);
-    throw error;
+    throw new Error('Max retry attempts exceeded');
+  }
+
+  static get<T>(endpoint: string): Promise<T> {
+    return this.request<T>(endpoint, { method: 'GET' });
+  }
+
+  static post<T>(endpoint: string, data?: any): Promise<T> {
+    const body = data instanceof FormData ? data : JSON.stringify(data);
+    return this.request<T>(endpoint, { method: 'POST', body });
+  }
+
+  static put<T>(endpoint: string, data?: any): Promise<T> {
+    const body = data instanceof FormData ? data : JSON.stringify(data);
+    return this.request<T>(endpoint, { method: 'PUT', body });
+  }
+
+  static delete<T>(endpoint: string): Promise<T> {
+    return this.request<T>(endpoint, { method: 'DELETE' });
   }
 }
 
-// Check if user is authenticated
-export const isAuthenticated = () => {
-  return !!getAuthToken();
-};
-
 // Categories API
 export const categoriesAPI = {
-  getCategories: async (): Promise<ApiResponse<Category[]>> => {
-    return fetchAPI('/categories');
-  },
+  getCategories: (): Promise<ApiResponse<Category[]>> => 
+    ApiClient.get('/categories'),
 
-  getCategory: async (id: number): Promise<ApiResponse<Category>> => {
-    return fetchAPI(`/categories/${id}`);
-  },
+  getCategory: (id: number): Promise<ApiResponse<Category>> => 
+    ApiClient.get(`/categories/${id}`),
 
-  getSubCategories: async (): Promise<ApiResponse<SubCategory[]>> => {
-    return fetchAPI('/subcategories');
-  },
+  getSubCategories: (): Promise<ApiResponse<SubCategory[]>> => 
+    ApiClient.get('/subcategories'),
 
-  getChildCategories: async (): Promise<ApiResponse<SubCategory[]>> => {
-    return fetchAPI('/childcategories');
-  },
-};
+  getChildCategories: (): Promise<ApiResponse<SubCategory[]>> => 
+    ApiClient.get('/childcategories'),
 
-// Brands API
-export const brandsAPI = {
-  getBrands: async (): Promise<ApiResponse<Brand[]>> => {
-    return fetchAPI('/brands');
-  },
+  getBrands: (): Promise<ApiResponse<Brand[]>> => 
+    ApiClient.get('/brands'),
+
+  getBrandsByCategory: (categoryId: number): Promise<ApiResponse<Brand[]>> => 
+    ApiClient.get(`/brands/${categoryId}`),
 };
 
 // Location API
 export const locationAPI = {
-  getStates: async (): Promise<ApiResponse<State[]>> => {
-    return fetchAPI('/states');
-  },
+  getStates: (): Promise<ApiResponse<State[]>> => 
+    ApiClient.get('/states'),
 
-  getCities: async (stateId: number): Promise<ApiResponse<City[]>> => {
-    return fetchAPI(`/states/${stateId}/cities`);
-  },
+  getCitiesByState: (stateId: number): Promise<ApiResponse<City[]>> => 
+    ApiClient.get(`/states/${stateId}/cities`),
 
-  getAllCities: async (): Promise<ApiResponse<City[]>> => {
-    return fetchAPI('/cities');
-  },
+  getAllCities: (): Promise<ApiResponse<City[]>> => 
+    ApiClient.get('/cities'),
 };
 
 // Listings API
 export const listingsAPI = {
-  getListings: async (params?: SearchFilters): Promise<ApiResponse<PaginatedResponse<Listing>>> => {
+  getListings: (params?: SearchFilters): Promise<ApiResponse<PaginatedResponse<Listing>>> => {
     const queryParams = new URLSearchParams();
     if (params) {
       Object.entries(params).forEach(([key, value]) => {
@@ -99,203 +175,212 @@ export const listingsAPI = {
       });
     }
     const queryString = queryParams.toString();
-    return fetchAPI(`/listings${queryString ? `?${queryString}` : ''}`);
+    return ApiClient.get(`/listings${queryString ? `?${queryString}` : ''}`);
   },
 
-  getListing: async (id: number): Promise<ApiResponse<Listing>> => {
-    return fetchAPI(`/listings/${id}`);
-  },
+  getListing: (id: number): Promise<ApiResponse<Listing>> => 
+    ApiClient.get(`/listing/${id}`),
 
-  createListing: async (listingData: FormData): Promise<ApiResponse<Listing>> => {
-    return fetchAPI('/listings', {
-      method: 'POST',
-      body: listingData,
-    });
-  },
+  getRelatedListings: (listingId: number, limit: number = 4): Promise<ApiResponse<Listing[]>> => 
+    ApiClient.get(`/listing/${listingId}/related?limit=${limit}`),
 
-  updateListing: async (id: number, listingData: FormData): Promise<ApiResponse<Listing>> => {
-    return fetchAPI(`/listings/${id}`, {
-      method: 'POST',
-      body: listingData,
-    });
-  },
+  incrementViews: (listingId: number): Promise<ApiResponse<void>> => 
+    ApiClient.get(`/listing/${listingId}/increment-views`),
 
-  deleteListing: async (id: number): Promise<ApiResponse<void>> => {
-    return fetchAPI(`/listings/${id}`, {
-      method: 'DELETE',
-    });
-  },
+  getFeaturedListings: (): Promise<ApiResponse<Listing[]>> => 
+    ApiClient.get('/featured-listings'),
 
-  getRelatedListings: async (listingId: number, limit: number = 4): Promise<ApiResponse<Listing[]>> => {
-    return fetchAPI(`/listings/${listingId}/related?limit=${limit}`);
-  },
+  getLatestListings: (): Promise<ApiResponse<Listing[]>> => 
+    ApiClient.get('/latest-listings'),
 
-  getComments: async (listingId: number): Promise<ApiResponse<Comment[]>> => {
-    return fetchAPI(`/listings/${listingId}/comments`);
-  },
+  getMostViewedListings: (): Promise<ApiResponse<Listing[]>> => 
+    ApiClient.get('/most-viewed-listings'),
 
-  addComment: async (listingId: number, content: string): Promise<ApiResponse<Comment>> => {
-    return fetchAPI(`/listings/${listingId}/comments`, {
-      method: 'POST',
-      body: JSON.stringify({ content }),
-    });
-  },
-
-  addReply: async (listingId: number, commentId: number, content: string): Promise<ApiResponse<Comment>> => {
-    return fetchAPI(`/listings/${listingId}/comments/${commentId}/replies`, {
-      method: 'POST',
-      body: JSON.stringify({ content }),
-    });
-  },
-
-  deleteComment: async (listingId: number, commentId: number): Promise<ApiResponse<void>> => {
-    return fetchAPI(`/listings/${listingId}/comments/${commentId}`, {
-      method: 'DELETE',
-    });
-  },
-
-  editComment: async (listingId: number, commentId: number, content: string): Promise<ApiResponse<Comment>> => {
-    return fetchAPI(`/listings/${listingId}/comments/${commentId}`, {
-      method: 'PUT',
-      body: JSON.stringify({ content }),
-    });
-  },
-
-  deleteReply: async (listingId: number, commentId: number, replyId: number): Promise<ApiResponse<void>> => {
-    return fetchAPI(`/listings/${listingId}/comments/${commentId}/replies/${replyId}`, {
-      method: 'DELETE',
-    });
-  },
-
-  editReply: async (listingId: number, commentId: number, replyId: number, content: string): Promise<ApiResponse<Comment>> => {
-    return fetchAPI(`/listings/${listingId}/comments/${commentId}/replies/${replyId}`, {
-      method: 'PUT',
-      body: JSON.stringify({ content }),
-    });
-  },
-
-  addToFavorites: async (listingId: number): Promise<ApiResponse<void>> => {
-    return fetchAPI('/user/favorites', {
-      method: 'POST',
-      body: JSON.stringify({ listing_id: listingId }),
-    });
-  },
-
-  removeFromFavorites: async (listingId: number): Promise<ApiResponse<void>> => {
-    return fetchAPI(`/user/favorites/${listingId}`, {
-      method: 'DELETE',
-    });
-  },
-
-  getFavorites: async (): Promise<ApiResponse<PaginatedResponse<Favorite>>> => {
-    return fetchAPI('/user/favorites');
-  },
-
-  isFavorite: async (listingId: number): Promise<ApiResponse<{ is_favorited: boolean }>> => {
-    return fetchAPI(`/listings/${listingId}/favorite-status`);
-  },
+  getComments: (listingId: number): Promise<ApiResponse<Comment[]>> => 
+    ApiClient.get(`/listings/${listingId}/comments`),
 };
 
-// User API
-export const userAPI = {
-  getCurrentUser: async (): Promise<ApiResponse<User>> => {
-    return fetchAPI('/user');
-  },
+// User Listings API (Protected routes)
+export const userListingsAPI = {
+  getUserListings: (): Promise<ApiResponse<Listing[]>> => 
+    ApiClient.get('/user/listings'),
 
-  getUserListings: async (userId?: number): Promise<ApiResponse<Listing[]>> => {
-    const endpoint = userId ? `/users/${userId}/listings` : '/user/listings';
-    return fetchAPI(endpoint);
-  },
+  createListing: (listingData: FormData): Promise<ApiResponse<Listing>> => 
+    ApiClient.post('/user/listings', listingData),
 
-  updateProfile: async (data: FormData): Promise<ApiResponse<User>> => {
-    return fetchAPI('/user/profile', {
-      method: 'POST',
-      body: data,
-    });
-  },
+  updateListing: (id: number, listingData: FormData): Promise<ApiResponse<Listing>> => 
+    ApiClient.put(`/user/listings/${id}`, listingData),
 
-  changePassword: async (data: { current_password: string; password: string; password_confirmation: string }): Promise<ApiResponse<void>> => {
-    return fetchAPI('/user/change-password', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  },
+  deleteListing: (id: number): Promise<ApiResponse<void>> => 
+    ApiClient.delete(`/user/listings/${id}`),
 
-  getUserStatistics: async (): Promise<ApiResponse<any>> => {
-    return fetchAPI('/user/statistics');
-  },
-};
+  addComment: (listingId: number, content: string): Promise<ApiResponse<Comment>> => 
+    ApiClient.post(`/user/listings/${listingId}/comments`, { content }),
 
-// Search API
-export const searchAPI = {
-  searchListings: async (query: string, filters?: SearchFilters): Promise<ApiResponse<PaginatedResponse<Listing>>> => {
-    const queryParams = new URLSearchParams({ search: query });
-    if (filters) {
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && value !== '') {
-          queryParams.append(key, value.toString());
-        }
-      });
-    }
-    return fetchAPI(`/listings?${queryParams.toString()}`);
-  },
+  addReply: (listingId: number, commentId: number, content: string): Promise<ApiResponse<Comment>> => 
+    ApiClient.post(`/user/listings/${listingId}/comments/${commentId}/replies`, { content }),
+
+  editReply: (listingId: number, commentId: number, replyId: number, content: string): Promise<ApiResponse<Comment>> => 
+    ApiClient.put(`/user/listings/${listingId}/comments/${commentId}/replies/${replyId}`, { content }),
+
+  deleteReply: (listingId: number, commentId: number, replyId: number): Promise<ApiResponse<void>> => 
+    ApiClient.delete(`/user/listings/${listingId}/comments/${commentId}/replies/${replyId}`),
 };
 
 // Auth API
 export const authAPI = {
-  getCurrentUser: async (): Promise<ApiResponse<User>> => {
-    return fetchAPI('/user');
-  },
+  login: (identifier: string, password: string): Promise<ApiResponse<{ user: User; token: string }>> => 
+    ApiClient.post('/user/login', { identifier, password }),
 
-  login: async (email: string, password: string): Promise<ApiResponse<{ user: User; token: string }>> => {
-    return fetchAPI('/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
-    });
-  },
+  register: (userData: {
+    first_name: string;
+    last_name: string;
+    username: string;
+    email: string;
+    phone: string;
+    city_id: number;
+    state_id: number;
+    password: string;
+    password_confirmation: string;
+  }): Promise<ApiResponse<{ user: User; token: string }>> => 
+    ApiClient.post('/user/register', userData),
 
-  register: async (userData: any): Promise<ApiResponse<{ user: User; token: string }>> => {
-    return fetchAPI('/auth/register', {
-      method: 'POST',
-      body: JSON.stringify(userData),
-    });
-  },
+  logout: (): Promise<ApiResponse<void>> => 
+    ApiClient.post('/user/logout'),
 
-  logout: async (): Promise<ApiResponse<void>> => {
-    return fetchAPI('/auth/logout', {
-      method: 'POST',
-    });
-  },
+  sendVerificationCode: (identifier: string): Promise<ApiResponse<void>> => 
+    ApiClient.post('/user/send-verification-code', { identifier }),
+
+  verifyCode: (identifier: string, code: string): Promise<ApiResponse<void>> => 
+    ApiClient.post('/user/verify-code', { identifier, code }),
+
+  resetPassword: (data: { token: string; password: string; password_confirmation: string }): Promise<ApiResponse<void>> => 
+    ApiClient.post('/user/reset-password', data),
+
+  changePassword: (data: { 
+    current_password: string; 
+    new_password: string; 
+    new_password_confirmation: string; 
+  }): Promise<ApiResponse<void>> => 
+    ApiClient.post('/user/change-password', data),
 };
+
+// Profile API
+export const profileAPI = {
+  getProfile: (): Promise<ApiResponse<User>> => 
+    ApiClient.get('/user/profile'),
+
+  updateProfile: (data: FormData): Promise<ApiResponse<User>> => 
+    ApiClient.post('/user/profile', data),
+
+  getFavorites: (): Promise<ApiResponse<PaginatedResponse<Favorite>>> => 
+    ApiClient.get('/user/favorites'),
+
+  addToFavorites: (listingId: number): Promise<ApiResponse<void>> => 
+    ApiClient.post(`/user/listings/${listingId}/favorite`),
+
+  removeFromFavorites: (listingId: number): Promise<ApiResponse<void>> => 
+    ApiClient.delete(`/user/listings/${listingId}/favorite`),
+
+  checkIsFavorite: (listingId: number): Promise<ApiResponse<{ is_favorite: boolean }>> => 
+    ApiClient.get(`/user/listings/${listingId}/is-favorite`),
+};
+
+// Promotion API
+export const promotionAPI = {
+  getPromotionPackages: (): Promise<ApiResponse<any[]>> => 
+    ApiClient.get('/promotion-packages'),
+
+  promoteListin: (listingId: number, packageData: any): Promise<ApiResponse<any>> => 
+    ApiClient.post(`/user/listings/${listingId}/promote`, packageData),
+
+  getUserPromotions: (): Promise<ApiResponse<any[]>> => 
+    ApiClient.get('/user/listing-promotions'),
+};
+
+// Account Settings API
+export const accountAPI = {
+  getAccountSettings: (): Promise<ApiResponse<any>> => 
+    ApiClient.get('/user/account/settings'),
+
+  deactivateAccount: (data: { reason: string; description: string }): Promise<ApiResponse<void>> => 
+    ApiClient.post('/user/account/deactivate', data),
+
+  deleteAccount: (data: { reason: string; description: string }): Promise<ApiResponse<void>> => 
+    ApiClient.post('/user/account/delete', data),
+
+  cancelDeactivation: (): Promise<ApiResponse<void>> => 
+    ApiClient.delete('/user/account/cancel-deactivation'),
+
+  getVerificationStatus: (): Promise<ApiResponse<any>> => 
+    ApiClient.get('/user/account/verification-status'),
+
+  verifyProfile: (data: FormData): Promise<ApiResponse<any>> => 
+    ApiClient.post('/user/account/verify-profile', data),
+};
+
+// Settings API
+export const settingsAPI = {
+  getSiteIdentity: (): Promise<ApiResponse<any>> => 
+    ApiClient.get('/settings/site-identity'),
+
+  getBasicSettings: (): Promise<ApiResponse<any>> => 
+    ApiClient.get('/settings/basic'),
+
+  getNavbarVariant: (): Promise<ApiResponse<any>> => 
+    ApiClient.get('/settings/navbar-variant'),
+
+  getFooterVariant: (): Promise<ApiResponse<any>> => 
+    ApiClient.get('/settings/footer-variant'),
+
+  getColorSettings: (): Promise<ApiResponse<any>> => 
+    ApiClient.get('/settings/colors'),
+
+  getSeoSettings: (): Promise<ApiResponse<any>> => 
+    ApiClient.get('/settings/seo'),
+
+  getLanguages: (): Promise<ApiResponse<any>> => 
+    ApiClient.get('/settings/languages'),
+
+  getAllSettings: (): Promise<ApiResponse<any>> => 
+    ApiClient.get('/settings/all'),
+
+  getListingSettings: (): Promise<ApiResponse<any>> => 
+    ApiClient.get('/settings/listing-settings'),
+};
+
+// Export Token Manager for external use
+export { TokenManager };
 
 // Legacy API object for backward compatibility
 export const api = {
-  // Listings
-  getListings: listingsAPI.getListings,
-  getListing: listingsAPI.getListing,
-  createListing: listingsAPI.createListing,
-  updateListing: listingsAPI.updateListing,
-  deleteListing: listingsAPI.deleteListing,
-  getUserListings: userAPI.getUserListings,
-
-  // Comments
-  getComments: listingsAPI.getComments,
-  addComment: listingsAPI.addComment,
-  addReply: listingsAPI.addReply,
-  deleteComment: listingsAPI.deleteComment,
-  editComment: listingsAPI.editComment,
-  deleteReply: listingsAPI.deleteReply,
-  editReply: listingsAPI.editReply,
-
-  // Favorites
-  getFavorites: listingsAPI.getFavorites,
-  addToFavorites: listingsAPI.addToFavorites,
-  removeFromFavorites: listingsAPI.removeFromFavorites,
-  isFavorite: listingsAPI.isFavorite,
-
   // Auth
-  getCurrentUser: authAPI.getCurrentUser,
   login: authAPI.login,
   register: authAPI.register,
   logout: authAPI.logout,
+  getCurrentUser: profileAPI.getProfile,
+
+  // Listings
+  getListings: listingsAPI.getListings,
+  getListing: listingsAPI.getListing,
+  createListing: userListingsAPI.createListing,
+  updateListing: userListingsAPI.updateListing,
+  deleteListing: userListingsAPI.deleteListing,
+  getUserListings: userListingsAPI.getUserListings,
+
+  // Comments
+  getComments: listingsAPI.getComments,
+  addComment: userListingsAPI.addComment,
+  addReply: userListingsAPI.addReply,
+  editReply: userListingsAPI.editReply,
+  deleteReply: userListingsAPI.deleteReply,
+
+  // Favorites
+  getFavorites: profileAPI.getFavorites,
+  addToFavorites: profileAPI.addToFavorites,
+  removeFromFavorites: profileAPI.removeFromFavorites,
+  isFavorite: profileAPI.checkIsFavorite,
 };
+
+// Check if user is authenticated
+export const isAuthenticated = (): boolean => TokenManager.hasToken();

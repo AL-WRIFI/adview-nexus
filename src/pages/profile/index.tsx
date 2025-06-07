@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -155,9 +154,9 @@ export default function ProfilePage() {
               <CardHeader className="text-center">
                 <div className="relative mx-auto w-24 h-24 mb-4">
                   <div className="w-24 h-24 rounded-full overflow-hidden bg-muted flex items-center justify-center">
-                    {previewAvatar || user.avatar || user.image ? (
+                    {previewAvatar || user.avatar_url || user.image ? (
                       <img 
-                        src={previewAvatar || user.avatar || user.image} 
+                        src={previewAvatar || user.avatar_url || user.image} 
                         alt={user.first_name || user.name || 'المستخدم'} 
                         className="w-full h-full object-cover"
                       />
