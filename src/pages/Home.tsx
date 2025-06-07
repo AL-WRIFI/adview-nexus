@@ -1,10 +1,9 @@
 
 import { useState, useEffect } from 'react';
 import { Header } from '@/components/layout/header';
-import { CategoryBar } from '@/components/layout/category/CategoryBar';
-import { DesktopCategoryBar } from '@/components/layout/category/DesktopCategoryBar';
+import { ModernCategoryBar } from '@/components/layout/category/ModernCategoryBar';
 import { AdCard } from '@/components/ads/ad-card';
-import { AdFilters } from '@/components/filters/ad-filters';
+import { ModernAdFilters } from '@/components/filters/ModernAdFilters';
 import { Footer } from '@/components/layout/footer';
 import { MobileNav } from '@/components/layout/mobile-nav';
 import { Button } from '@/components/ui/button';
@@ -53,31 +52,37 @@ export default function Home() {
   const regularAds = Array.isArray(adData) ? adData.filter((ad: Listing) => !ad.featured) : [];
   
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-background">
       <Header />
-      <CategoryBar />
-      {/* {isMobile ? <CategoryBar /> : <DesktopCategoryBar/>} */}
-      
+      <ModernCategoryBar />
       
       <main className="flex-1 pb-20 md:pb-0">
         <div className="container px-4 mx-auto py-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            {/* Sidebar with filters */}
-            <div className="col-span-1 hidden md:block">
-              <AdFilters 
-                layout="sidebar" 
-                onLayoutChange={setAdLayout} 
-                currentLayout={adLayout}
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            {/* Sidebar with filters - Hidden on mobile, shown as sheet */}
+            <div className="col-span-1 hidden lg:block">
+              <ModernAdFilters 
                 onFilterChange={handleFilterChange}
+                currentFilters={filters}
               />
             </div>
             
             {/* Main content */}
-            <div className="col-span-1 md:col-span-3">
-              {/* View toggle buttons and items per page - compact layout for mobile */}
-              <div className="flex justify-end mb-4 gap-3 items-center">
-                {isMobile ? (
-                  <div className="flex items-center border rounded-md overflow-hidden bg-white dark:bg-dark-card">
+            <div className="col-span-1 lg:col-span-3">
+              {/* Mobile Filters and View Controls */}
+              <div className="flex justify-between mb-4 gap-3 items-center">
+                {/* Mobile Filter Button */}
+                {isMobile && (
+                  <ModernAdFilters 
+                    onFilterChange={handleFilterChange}
+                    currentFilters={filters}
+                  />
+                )}
+                
+                {/* View Controls */}
+                <div className="flex items-center gap-3 ml-auto">
+                  <div className="flex items-center">
+                    <span className="text-sm mr-2 text-muted-foreground">عرض</span>
                     <Select
                       value={itemsPerPage.toString()}
                       onValueChange={(value) => {
@@ -85,7 +90,7 @@ export default function Home() {
                         setPage(1);
                       }}
                     >
-                      <SelectTrigger className="w-12 h-8 border-0 focus:ring-0">
+                      <SelectTrigger className="w-16 h-8">
                         <SelectValue placeholder="10" />
                       </SelectTrigger>
                       <SelectContent>
@@ -95,77 +100,31 @@ export default function Home() {
                         <SelectItem value="50">50</SelectItem>
                       </SelectContent>
                     </Select>
-                    
-                    <div className="flex border-r border-border dark:border-dark-border">
-                      <Button 
-                        variant={adLayout === 'grid' ? "default" : "ghost"} 
-                        size="icon"
-                        onClick={() => setAdLayout('grid')}
-                        className="h-8 w-8 rounded-none"
-                        aria-label="Grid view"
-                        title="عرض شبكي"
-                      >
-                        <Grid2X2 className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant={adLayout === 'list' ? "default" : "ghost"}
-                        size="icon" 
-                        onClick={() => setAdLayout('list')}
-                        className="h-8 w-8 rounded-none"
-                        aria-label="List view"
-                        title="عرض قائمة"
-                      >
-                        <List className="h-4 w-4" />
-                      </Button>
-                    </div>
                   </div>
-                ) : (
-                  <>
-                    <div className="flex items-center">
-                      <span className="text-sm ml-2">عرض</span>
-                      <Select
-                        value={itemsPerPage.toString()}
-                        onValueChange={(value) => {
-                          setItemsPerPage(parseInt(value, 10));
-                          setPage(1);
-                        }}
-                      >
-                        <SelectTrigger className="w-16 h-8">
-                          <SelectValue placeholder="10" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="5">5</SelectItem>
-                          <SelectItem value="10">10</SelectItem>
-                          <SelectItem value="20">20</SelectItem>
-                          <SelectItem value="50">50</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    <div className="flex border rounded-sm overflow-hidden">
-                      <Button 
-                        variant={adLayout === 'grid' ? "default" : "ghost"} 
-                        size="icon"
-                        onClick={() => setAdLayout('grid')}
-                        className="h-8 w-8 rounded-none"
-                        aria-label="Grid view"
-                        title="عرض شبكي"
-                      >
-                        <Grid2X2 className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant={adLayout === 'list' ? "default" : "ghost"}
-                        size="icon" 
-                        onClick={() => setAdLayout('list')}
-                        className="h-8 w-8 rounded-none"
-                        aria-label="List view"
-                        title="عرض قائمة"
-                      >
-                        <List className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </>
-                )}
+                  
+                  <div className="flex border rounded-lg overflow-hidden bg-background">
+                    <Button 
+                      variant={adLayout === 'grid' ? "default" : "ghost"} 
+                      size="icon"
+                      onClick={() => setAdLayout('grid')}
+                      className="h-8 w-8 rounded-none"
+                      aria-label="Grid view"
+                      title="عرض شبكي"
+                    >
+                      <Grid2X2 className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      variant={adLayout === 'list' ? "default" : "ghost"}
+                      size="icon" 
+                      onClick={() => setAdLayout('list')}
+                      className="h-8 w-8 rounded-none"
+                      aria-label="List view"
+                      title="عرض قائمة"
+                    >
+                      <List className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
               </div>
               
               {/* Featured ads section */}
@@ -190,7 +149,7 @@ export default function Home() {
                     {(featuredAdsData) => (
                       <div className={`grid gap-4 ${
                         adLayout === 'grid' 
-                          ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3' 
+                          ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' 
                           : 'grid-cols-1'
                       }`}>
                         {featuredAdsData.slice(0, 3).map((ad) => (
@@ -223,7 +182,7 @@ export default function Home() {
                     regularAdsData.length > 0 ? (
                       <div className={`grid gap-4 ${
                         adLayout === 'grid' 
-                          ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3' 
+                          ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' 
                           : 'grid-cols-1'
                       }`}>
                         {regularAdsData.map((ad) => (
@@ -235,7 +194,7 @@ export default function Home() {
                         ))}
                       </div>
                     ) : (
-                      <div className="text-center py-12 bg-gray-50 dark:bg-dark-surface">
+                      <div className="text-center py-12 bg-accent/30 rounded-lg">
                         <p className="text-muted-foreground mb-4">لا توجد إعلانات متطابقة مع البحث</p>
                       </div>
                     )
@@ -244,8 +203,8 @@ export default function Home() {
                 
                 {/* Error state */}
                 {adsError && (
-                  <div className="text-center py-12 bg-gray-50 dark:bg-dark-surface">
-                    <p className="text-red-500 mb-4">حدث خطأ أثناء تحميل الإعلانات</p>
+                  <div className="text-center py-12 bg-destructive/10 rounded-lg">
+                    <p className="text-destructive mb-4">حدث خطأ أثناء تحميل الإعلانات</p>
                     <Button onClick={() => window.location.reload()}>إعادة المحاولة</Button>
                   </div>
                 )}
