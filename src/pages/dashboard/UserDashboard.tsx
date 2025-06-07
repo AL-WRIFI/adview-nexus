@@ -7,7 +7,7 @@ import { Footer } from '@/components/layout/footer';
 import { MobileNav } from '@/components/layout/mobile-nav';
 import { Button } from '@/components/ui/button';
 import DashboardSidebar from './components/DashboardSidebar';
-import DashboardContent from './components/DashboardContent';
+import { DashboardContent } from './components/DashboardContent';
 import { useAuth } from '@/context/auth-context';
 import { useAdsDialog } from './hooks/useAdsDialog';
 
@@ -73,7 +73,6 @@ export default function UserDashboard() {
               <DashboardSidebar 
                 activePage={activePage} 
                 setActivePage={setActivePage} 
-                className="bg-white dark:bg-neutral-800 border-gray-200 dark:border-neutral-700"
               />
             </div>
             
@@ -98,7 +97,6 @@ export default function UserDashboard() {
                       setSidebarOpen(false);
                     }}
                     isMobile={true}
-                    className="bg-white dark:bg-neutral-800"
                   />
                 </div>
               </div>
@@ -114,7 +112,6 @@ export default function UserDashboard() {
                 setPromoteDialogOpen={setPromoteDialogOpen}
                 deleteConfirmOpen={deleteConfirmOpen}
                 setDeleteConfirmOpen={setDeleteConfirmOpen}
-                className="bg-white dark:bg-neutral-900"
               />
             </div>
           </div>

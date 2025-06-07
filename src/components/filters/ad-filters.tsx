@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { Search, ChevronDown, X, Filter, MapPin, Grid2X2, List } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -174,7 +173,7 @@ export function AdFilters({
     // Add location if nearby ads is selected
     if (nearbyAds && location) {
       filters.lat = location.lat;
-      filters.lon = location.lng;
+      filters.lon = location.lon; // Fixed: use 'lon' instead of 'lng'
       filters.radius = 20; // 20 km radius
     }
     

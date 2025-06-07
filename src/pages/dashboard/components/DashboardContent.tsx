@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AdsTab } from './tabs/AdsTab';
@@ -12,7 +13,6 @@ interface DashboardContentProps {
   setPromoteDialogOpen: (open: boolean) => void;
   deleteConfirmOpen: boolean;
   setDeleteConfirmOpen: (open: boolean) => void;
-  className?: string;
 }
 
 export function DashboardContent({
@@ -23,10 +23,9 @@ export function DashboardContent({
   setPromoteDialogOpen,
   deleteConfirmOpen,
   setDeleteConfirmOpen,
-  className
 }: DashboardContentProps) {
   return (
-    <div className={className}>
+    <div>
       <Tabs defaultValue={activePage} className="w-full">
         <TabsList>
           <TabsTrigger value="ads">إعلاناتي</TabsTrigger>
@@ -35,12 +34,12 @@ export function DashboardContent({
         </TabsList>
         <TabsContent value="ads" className="space-y-4">
           <AdsTab 
-            setSelectedAd={(id: string | null) => setSelectedAd(id)}
+            setSelectedAd={setSelectedAd}
             setPromoteDialogOpen={setPromoteDialogOpen}
           />
         </TabsContent>
         <TabsContent value="promote" className="space-y-4">
-          <PromoteTab setPromoteDialogOpen={setPromoteDialogOpen} />
+          <PromoteTab />
         </TabsContent>
         <TabsContent value="analytics" className="space-y-4">
           <AnalyticsTab />

@@ -86,8 +86,8 @@ export default function EditAd() {
       title: listingData?.title || "",
       description: listingData?.description || "",
       price: listingData?.price || 0,
-      condition: listingData?.condition || "new",
-      listing_type: listingData?.listing_type || "sale",
+      condition: (listingData?.condition as "new" | "used") || "new",
+      listing_type: (listingData?.listing_type as "sale" | "rent") || "sale",
       category_id: listingData?.category_id || 0,
       sub_category_id: listingData?.sub_category_id || undefined,
       child_category_id: listingData?.child_category_id || undefined,
@@ -106,8 +106,8 @@ export default function EditAd() {
         title: listingData.title || "",
         description: listingData.description || "",
         price: listingData.price || 0,
-        condition: listingData.condition || "new",
-        listing_type: listingData.listing_type || "sale",
+        condition: (listingData.condition as "new" | "used") || "new",
+        listing_type: (listingData.listing_type as "sale" | "rent") || "sale",
         category_id: listingData.category_id || 0,
         sub_category_id: listingData.sub_category_id || undefined,
         child_category_id: listingData.child_category_id || undefined,
@@ -123,12 +123,25 @@ export default function EditAd() {
 
   const updateListingMutation = useUpdateListing();
 
-  const handleSubmit = async (data: FormData) => {
+  const handleSubmit = async (data: z.infer<typeof formSchema>) => {
     if (!id) return;
+    
+    const formData = new FormData();
+    Object.entries(data).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        formData.append(key, String(value));
+      }
+    });
+    
+    if (files.length > 0) {
+      files.forEach((file) => {
+        formData.append('images', file);
+      });
+    }
     
     updateListingMutation.mutate({ 
       id: Number(id), 
-      data 
+      data: formData 
     }, {
       onSuccess: () => {
         navigate('/dashboard');
@@ -136,12 +149,25 @@ export default function EditAd() {
     });
   };
 
-  const handleSaveDraft = async (data: FormData) => {
+  const handleSaveDraft = async (data: z.infer<typeof formSchema>) => {
     if (!id) return;
+    
+    const formData = new FormData();
+    Object.entries(data).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        formData.append(key, String(value));
+      }
+    });
+    
+    if (files.length > 0) {
+      files.forEach((file) => {
+        formData.append('images', file);
+      });
+    }
     
     updateListingMutation.mutate({ 
       id: Number(id), 
-      data 
+      data: formData 
     }, {
       onSuccess: () => {
         // Draft saved
