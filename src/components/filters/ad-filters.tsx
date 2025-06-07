@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { Search, ChevronDown, X, Filter, MapPin, Grid2X2, List } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -107,17 +108,11 @@ export function AdFilters({
   const [displayMode, setDisplayMode] = useState<'grid' | 'list'>('grid'); // For categories display
   
   // Fetch data from API
-  const { data: categoriesResponse, isLoading: loadingCategories } = useCategories();
-  const { data: brandsResponse, isLoading: loadingBrands } = useBrands();
-  const { data: statesResponse, isLoading: loadingStates } = useStates();
-  const { data: citiesResponse, isLoading: loadingCities } = useAllCities();
+  const { data: categories = [], isLoading: loadingCategories } = useCategories();
+  const { data: brands = [], isLoading: loadingBrands } = useBrands();
+  const { data: states = [], isLoading: loadingStates } = useStates();
+  const { data: cities = [], isLoading: loadingCities } = useAllCities();
   const { data: location, isLoading: loadingLocation } = useCurrentLocation();
-
-  // Extract actual data arrays from API responses
-  const categories = categoriesResponse || [];
-  const brands = brandsResponse || [];
-  const states = statesResponse || [];
-  const cities = citiesResponse || [];
   
   // If a specific category is provided via props, use it
   useEffect(() => {
@@ -173,7 +168,7 @@ export function AdFilters({
     // Add location if nearby ads is selected
     if (nearbyAds && location) {
       filters.lat = location.lat;
-      filters.lon = location.lon; // Fixed: use 'lon' instead of 'lng'
+      filters.lon = location.lon;
       filters.radius = 20; // 20 km radius
     }
     
@@ -543,35 +538,34 @@ export function AdFilters({
           </div>
         </div>
         
-        {!isSidebar && (
-          <div className="flex justify-end mb-2">
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">طريقة العرض:</span>
-              <div className="flex border rounded overflow-hidden">
-                <Button
-                  variant={displayMode === 'grid' ? "default" : "ghost"}
-                  size="icon"
-                  onClick={() => setDisplayMode('grid')}
-                  className="h-6 w-6 rounded-none"
-                  aria-label="Grid view"
-                  title="عرض شبكة"
-                >
-                  <Grid2X2 className="h-3 w-3" />
-                </Button>
-                <Button
-                  variant={displayMode === 'list' ? "default" : "ghost"}
-                  size="icon"
-                  onClick={() => setDisplayMode('list')}
-                  className="h-6 w-6 rounded-none"
-                  aria-label="List view"
-                  title="عرض قائمة"
-                >
-                  <List className="h-3 w-3" />
-                </Button>
-              </div>
+        {/* Display Mode Toggle */}
+        <div className="flex justify-end mb-2">
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">طريقة العرض:</span>
+            <div className="flex border rounded overflow-hidden">
+              <Button
+                variant={displayMode === 'grid' ? "default" : "ghost"}
+                size="icon"
+                onClick={() => setDisplayMode('grid')}
+                className="h-6 w-6 rounded-none"
+                aria-label="Grid view"
+                title="عرض شبكة"
+              >
+                <Grid2X2 className="h-3 w-3" />
+              </Button>
+              <Button
+                variant={displayMode === 'list' ? "default" : "ghost"}
+                size="icon"
+                onClick={() => setDisplayMode('list')}
+                className="h-6 w-6 rounded-none"
+                aria-label="List view"
+                title="عرض قائمة"
+              >
+                <List className="h-3 w-3" />
+              </Button>
             </div>
           </div>
-        )}
+        </div>
         
         {/* Categories */}
         <div>
@@ -579,40 +573,8 @@ export function AdFilters({
             className="flex items-center justify-between cursor-pointer py-2"
             onClick={() => setCategoryOpen(!categoryOpen)}
           >
-            <h3 className="text-lg font-bold"></h3>
-            <div className="flex items-center gap-2">
-              {isSidebar && (
-                <div className="flex border rounded overflow-hidden">
-                  <Button
-                    variant={displayMode === 'grid' ? "default" : "ghost"}
-                    size="icon"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setDisplayMode('grid');
-                    }}
-                    className="h-6 w-6 rounded-none"
-                    aria-label="Grid view"
-                    title="عرض شبكة"
-                  >
-                    <Grid2X2 className="h-3 w-3" />
-                  </Button>
-                  <Button
-                    variant={displayMode === 'list' ? "default" : "ghost"}
-                    size="icon"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setDisplayMode('list');
-                    }}
-                    className="h-6 w-6 rounded-none"
-                    aria-label="List view"
-                    title="عرض قائمة"
-                  >
-                    <List className="h-3 w-3" />
-                  </Button>
-                </div>
-              )}
-              <ChevronDown className={`w-5 h-5 transition-transform ${categoryOpen ? 'rotate-180' : ''}`} />
-            </div>
+            <h3 className="text-lg font-bold">التصنيفات</h3>
+            <ChevronDown className={`w-5 h-5 transition-transform ${categoryOpen ? 'rotate-180' : ''}`} />
           </div>
           
           {categoryOpen && (
@@ -635,7 +597,7 @@ export function AdFilters({
                     <SelectContent>
                       {subcategories.map((subcat) => (
                         <SelectItem 
-                          key={subcat.slug} 
+                          key={subcat.id} 
                           value={subcat.id?.toString() || `subcat-${subcat.slug}`}
                         >
                           {subcat.name}
@@ -655,7 +617,7 @@ export function AdFilters({
             className="flex items-center justify-between cursor-pointer py-2"
             onClick={() => setBrandOpen(!brandOpen)}
           >
-            <h3 className="text-lg font-bold"></h3>
+            <h3 className="text-lg font-bold">الماركات</h3>
             <ChevronDown className={`w-5 h-5 transition-transform ${brandOpen ? 'rotate-180' : ''}`} />
           </div>
           
@@ -672,7 +634,7 @@ export function AdFilters({
             className="flex items-center justify-between cursor-pointer py-2"
             onClick={() => setPriceOpen(!priceOpen)}
           >
-            <h3 className="text-lg font-bold"></h3>
+            <h3 className="text-lg font-bold">السعر</h3>
             <ChevronDown className={`w-5 h-5 transition-transform ${priceOpen ? 'rotate-180' : ''}`} />
           </div>
           
@@ -717,7 +679,7 @@ export function AdFilters({
             className="flex items-center justify-between cursor-pointer py-2"
             onClick={() => setLocationOpen(!locationOpen)}
           >
-            <h3 className="text-lg font-bold"></h3>
+            <h3 className="text-lg font-bold">الموقع</h3>
             <ChevronDown className={`w-5 h-5 transition-transform ${locationOpen ? 'rotate-180' : ''}`} />
           </div>
           
@@ -866,33 +828,6 @@ export function AdFilters({
             </div>
           </div>
         </div>
-        
-        {/* Layout toggle
-        {onLayoutChange && isSidebar && (
-          <div className="p-3 bg-gray-50 rounded-md">
-            <h3 className="font-medium mb-3">طريقة عرض الإعلانات</h3>
-            <div className="flex justify-around">
-              <Button
-                variant={currentLayout === 'list' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => onLayoutChange('list')}
-                className="flex-1 ml-2"
-              >
-                <List className="h-4 w-4 ml-2" />
-                قائمة
-              </Button>
-              <Button
-                variant={currentLayout === 'grid' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => onLayoutChange('grid')}
-                className="flex-1"
-              >
-                <Grid2X2 className="h-4 w-4 ml-2" />
-                شبكة
-              </Button>
-            </div>
-          </div>
-        )} */}
         
         {/* Apply filters button */}
         <div className="flex justify-end mt-4 gap-2">

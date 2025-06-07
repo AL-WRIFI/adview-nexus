@@ -1,271 +1,280 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { SearchFilters, Listing, User, Category, Brand, State, City, Comment, Favorite, PaginatedResponse, ApiResponse } from '@/types';
+import { 
+  listingsAPI, 
+  userAPI, 
+  categoriesAPI, 
+  brandsAPI, 
+  locationAPI, 
+  authAPI,
+  searchAPI 
+} from '@/services/api';
 
-// Mock API functions
-const api = {
-  getCurrentUser: (): Promise<ApiResponse<User>> => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({
-          success: true,
-          data: {
-            id: 1,
-            first_name: 'أحمد',
-            last_name: 'محمد',
-            email: 'ahmed@example.com',
-            phone: '+966501234567',
-            bio: 'مطور تطبيقات',
-            city: 'الرياض'
-          }
-        });
-      }, 1000);
-    });
-  },
-
-  login: (email: string, password: string): Promise<ApiResponse<{ user: User; token: string }>> => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({
-          success: true,
-          data: {
-            user: {
-              id: 1,
-              first_name: 'أحمد',
-              last_name: 'محمد',
-              email: email,
-              phone: '+966501234567'
-            },
-            token: 'mock-token'
-          }
-        });
-      }, 1000);
-    });
-  },
-
-  register: (userData: any): Promise<ApiResponse<{ user: User; token: string }>> => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({
-          success: true,
-          data: {
-            user: {
-              id: Date.now(),
-              first_name: userData.first_name,
-              last_name: userData.last_name,
-              email: userData.email,
-              phone: userData.phone
-            },
-            token: 'mock-token'
-          }
-        });
-      }, 1000);
-    });
-  },
-
-  logout: (): Promise<ApiResponse<null>> => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({ success: true, data: null });
-      }, 500);
-    });
-  },
-
-  forgotPassword: (email: string): Promise<ApiResponse<null>> => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({ success: true, data: null });
-      }, 1000);
-    });
-  },
-
-  resetPassword: (token: string, password: string): Promise<ApiResponse<null>> => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({ success: true, data: null });
-      }, 1000);
-    });
-  }
-};
-
-// Hook implementations
+// User Authentication hooks
 export const useCurrentUser = () => {
   return useQuery({
     queryKey: ['currentUser'],
-    queryFn: api.getCurrentUser,
+    queryFn: () => authAPI.getCurrentUser(),
+    retry: false,
   });
 };
 
 export const useLogin = () => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ email, password }: { email: string; password: string }) =>
-      api.login(email, password),
+      authAPI.login(email, password),
+    onSuccess: (data) => {
+      if (data.data?.token) {
+        localStorage.setItem('authToken', data.data.token);
+      }
+      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+    },
   });
 };
 
 export const useRegister = () => {
+  const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (userData: any) => api.register(userData),
+    mutationFn: (userData: any) => authAPI.register(userData),
+    onSuccess: (data) => {
+      if (data.data?.token) {
+        localStorage.setItem('authToken', data.data.token);
+      }
+      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+    },
   });
 };
 
 export const useLogout = () => {
+  const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: api.logout,
+    mutationFn: authAPI.logout,
+    onSuccess: () => {
+      localStorage.removeItem('authToken');
+      sessionStorage.removeItem('authToken');
+      queryClient.clear();
+    },
   });
 };
 
 export const useForgotPassword = () => {
   return useMutation({
-    mutationFn: (email: string) => api.forgotPassword(email),
+    mutationFn: (email: string) => {
+      // Implement forgot password API call
+      return Promise.resolve({ success: true, data: null });
+    },
   });
 };
 
 export const useResetPassword = () => {
   return useMutation({
-    mutationFn: ({ token, password }: { token: string; password: string }) =>
-      api.resetPassword(token, password),
+    mutationFn: ({ token, password }: { token: string; password: string }) => {
+      // Implement reset password API call
+      return Promise.resolve({ success: true, data: null });
+    },
   });
 };
 
+// Listings hooks
 export const useAds = (filters?: SearchFilters) => {
   return useQuery({
     queryKey: ['ads', filters],
-    queryFn: async (): Promise<PaginatedResponse<Listing>> => {
-      return {
-        data: [],
-        current_page: 1,
-        per_page: 12,
-        total: 0,
-        last_page: 1
-      };
-    },
+    queryFn: () => listingsAPI.getListings(filters),
+    select: (data) => data.data,
+  });
+};
+
+export const useListings = (filters?: SearchFilters) => {
+  return useQuery({
+    queryKey: ['listings', filters],
+    queryFn: () => listingsAPI.getListings(filters),
+    select: (data) => data.data,
   });
 };
 
 export const useAd = (id: number) => {
   return useQuery({
     queryKey: ['ad', id],
-    queryFn: async (): Promise<Listing | null> => {
-      return null;
-    },
+    queryFn: () => listingsAPI.getListing(id),
+    select: (data) => data.data,
+    enabled: !!id,
   });
 };
 
-export const useRelatedAds = (categoryId: number, excludeId: number) => {
+export const useListing = (id: number) => {
   return useQuery({
-    queryKey: ['relatedAds', categoryId, excludeId],
-    queryFn: async (): Promise<Listing[]> => {
-      return [];
+    queryKey: ['listing', id],
+    queryFn: () => listingsAPI.getListing(id),
+    select: (data) => data.data,
+    enabled: !!id,
+  });
+};
+
+export const useRelatedAds = (listingId: number, limit: number = 4) => {
+  return useQuery({
+    queryKey: ['relatedAds', listingId, limit],
+    queryFn: () => listingsAPI.getRelatedListings(listingId, limit),
+    select: (data) => data.data,
+    enabled: !!listingId,
+  });
+};
+
+export const useUserListings = () => {
+  return useQuery({
+    queryKey: ['userListings'],
+    queryFn: () => userAPI.getUserListings(),
+    select: (data) => data.data,
+  });
+};
+
+export const useCreateListing = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: FormData) => listingsAPI.createListing(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['listings'] });
+      queryClient.invalidateQueries({ queryKey: ['userListings'] });
     },
   });
 };
 
+export const useUpdateListing = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: FormData }) => 
+      listingsAPI.updateListing(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['listings'] });
+      queryClient.invalidateQueries({ queryKey: ['userListings'] });
+    },
+  });
+};
+
+export const useDeleteListing = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => listingsAPI.deleteListing(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['listings'] });
+      queryClient.invalidateQueries({ queryKey: ['userListings'] });
+    },
+  });
+};
+
+// Categories hooks
 export const useCategories = () => {
   return useQuery({
     queryKey: ['categories'],
-    queryFn: async (): Promise<Category[]> => {
-      return [];
-    },
+    queryFn: () => categoriesAPI.getCategories(),
+    select: (data) => data.data,
   });
 };
 
 export const useCategory = (id: number) => {
   return useQuery({
     queryKey: ['category', id],
-    queryFn: async (): Promise<Category | null> => {
-      return null;
-    },
+    queryFn: () => categoriesAPI.getCategory(id),
+    select: (data) => data.data,
+    enabled: !!id,
   });
 };
 
+// Brands hooks
 export const useBrands = () => {
   return useQuery({
     queryKey: ['brands'],
-    queryFn: async (): Promise<Brand[]> => {
-      return [];
-    },
+    queryFn: () => brandsAPI.getBrands(),
+    select: (data) => data.data,
   });
 };
 
 export const useBrand = (id: number) => {
   return useQuery({
     queryKey: ['brand', id],
-    queryFn: async (): Promise<Brand | null> => {
-      return null;
-    },
+    queryFn: () => Promise.resolve({ data: null }),
+    enabled: !!id,
   });
 };
 
+// Location hooks
 export const useStates = () => {
   return useQuery({
     queryKey: ['states'],
-    queryFn: async (): Promise<State[]> => {
-      return [];
-    },
+    queryFn: () => locationAPI.getStates(),
+    select: (data) => data.data,
   });
 };
 
 export const useCities = (stateId?: number) => {
   return useQuery({
     queryKey: ['cities', stateId],
-    queryFn: async (): Promise<City[]> => {
-      return [];
-    },
+    queryFn: () => stateId ? locationAPI.getCities(stateId) : locationAPI.getAllCities(),
+    select: (data) => data.data,
   });
 };
 
 export const useAllCities = () => {
   return useQuery({
     queryKey: ['allCities'],
-    queryFn: async (): Promise<City[]> => {
-      return [];
-    },
+    queryFn: () => locationAPI.getAllCities(),
+    select: (data) => data.data,
   });
 };
 
 export const useCurrentLocation = () => {
   return useQuery({
     queryKey: ['currentLocation'],
-    queryFn: async () => {
-      return { lat: 0, lon: 0 };
+    queryFn: () => {
+      return new Promise<{ lat: number; lon: number }>((resolve, reject) => {
+        if (!navigator.geolocation) {
+          reject(new Error('Geolocation is not supported'));
+          return;
+        }
+        
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            resolve({
+              lat: position.coords.latitude,
+              lon: position.coords.longitude,
+            });
+          },
+          (error) => reject(error),
+          { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 }
+        );
+      });
     },
+    retry: false,
+    staleTime: 300000, // 5 minutes
   });
 };
 
+// Favorites hooks
 export const useFavorites = () => {
   return useQuery({
     queryKey: ['favorites'],
-    queryFn: async (): Promise<PaginatedResponse<Favorite>> => {
-      return {
-        data: [],
-        current_page: 1,
-        per_page: 12,
-        total: 0,
-        last_page: 1,
-        length: 0,
-        slice: (start: number, end: number) => []
-      };
-    },
+    queryFn: () => listingsAPI.getFavorites(),
+    select: (data) => data.data,
   });
 };
 
 export const useIsFavorite = (listingId: number) => {
   return useQuery({
     queryKey: ['isFavorite', listingId],
-    queryFn: async (): Promise<boolean> => {
-      return false;
-    },
+    queryFn: () => listingsAPI.isFavorite(listingId),
+    select: (data) => data.data?.is_favorited || false,
+    enabled: !!listingId,
   });
 };
 
 export const useAddToFavorites = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (listingId: number) => {
-      return { success: true };
-    },
-    onSuccess: () => {
+    mutationFn: (listingId: number) => listingsAPI.addToFavorites(listingId),
+    onSuccess: (_, listingId) => {
       queryClient.invalidateQueries({ queryKey: ['favorites'] });
+      queryClient.invalidateQueries({ queryKey: ['isFavorite', listingId] });
     },
   });
 };
@@ -273,102 +282,29 @@ export const useAddToFavorites = () => {
 export const useRemoveFromFavorites = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (listingId: number) => {
-      return { success: true };
-    },
-    onSuccess: () => {
+    mutationFn: (listingId: number) => listingsAPI.removeFromFavorites(listingId),
+    onSuccess: (_, listingId) => {
       queryClient.invalidateQueries({ queryKey: ['favorites'] });
+      queryClient.invalidateQueries({ queryKey: ['isFavorite', listingId] });
     },
   });
 };
 
+// Comments hooks
 export const useComments = (listingId: number) => {
   return useQuery({
     queryKey: ['comments', listingId],
-    queryFn: async (): Promise<Comment[]> => {
-      return [];
-    },
+    queryFn: () => listingsAPI.getComments(listingId),
+    select: (data) => data.data,
+    enabled: !!listingId,
   });
 };
 
-export const useCreateListing = () => {
-  return useMutation({
-    mutationFn: async (data: FormData) => {
-      return { success: true };
-    },
-  });
-};
-
-export const useUpdateListing = () => {
-  return useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: FormData }) => {
-      return { success: true };
-    },
-  });
-};
-
-export const useListing = (id: number) => {
-  return useQuery({
-    queryKey: ['listing', id],
-    queryFn: async (): Promise<Listing | null> => {
-      return null;
-    },
-  });
-};
-
-export const useListings = (filters?: SearchFilters) => {
-  return useQuery({
-    queryKey: ['listings', filters],
-    queryFn: async (): Promise<PaginatedResponse<Listing>> => {
-      return {
-        data: [],
-        current_page: 1,
-        per_page: 12,
-        total: 0,
-        last_page: 1
-      };
-    },
-  });
-};
-
-export const useUserListings = () => {
-  return useQuery({
-    queryKey: ['userListings'],
-    queryFn: async (): Promise<PaginatedResponse<Listing>> => {
-      return {
-        data: [],
-        current_page: 1,
-        per_page: 12,
-        total: 0,
-        last_page: 1
-      };
-    },
-  });
-};
-
-export const useDeleteListing = () => {
-  return useMutation({
-    mutationFn: async (id: number) => {
-      return { success: true };
-    },
-  });
-};
-
-export const useUpdateProfile = () => {
-  return useMutation({
-    mutationFn: async (data: Partial<User>) => {
-      return { success: true };
-    },
-  });
-};
-
-// Fix the comment hooks to accept proper parameters
 export const useAddComment = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ listingId: id, content }: { listingId: number; content: string }) => {
-      return { success: true };
-    },
+    mutationFn: ({ listingId, content }: { listingId: number; content: string }) =>
+      listingsAPI.addComment(listingId, content),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['comments', variables.listingId] });
     },
@@ -378,11 +314,10 @@ export const useAddComment = () => {
 export const useAddReply = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ commentId, content }: { commentId: number; content: string }) => {
-      return { success: true };
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['comments'] });
+    mutationFn: ({ listingId, commentId, content }: { listingId: number; commentId: number; content: string }) =>
+      listingsAPI.addReply(listingId, commentId, content),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['comments', variables.listingId] });
     },
   });
 };
@@ -390,11 +325,10 @@ export const useAddReply = () => {
 export const useEditComment = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ commentId, content }: { commentId: number; content: string }) => {
-      return { success: true };
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['comments'] });
+    mutationFn: ({ listingId, commentId, content }: { listingId: number; commentId: number; content: string }) =>
+      listingsAPI.editComment(listingId, commentId, content),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['comments', variables.listingId] });
     },
   });
 };
@@ -402,11 +336,10 @@ export const useEditComment = () => {
 export const useDeleteComment = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (commentId: number) => {
-      return { success: true };
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['comments'] });
+    mutationFn: ({ listingId, commentId }: { listingId: number; commentId: number }) =>
+      listingsAPI.deleteComment(listingId, commentId),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['comments', variables.listingId] });
     },
   });
 };
@@ -414,11 +347,10 @@ export const useDeleteComment = () => {
 export const useEditReply = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ commentId, replyId, content }: { commentId: number; replyId: number; content: string }) => {
-      return { success: true };
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['comments'] });
+    mutationFn: ({ listingId, commentId, replyId, content }: { listingId: number; commentId: number; replyId: number; content: string }) =>
+      listingsAPI.editReply(listingId, commentId, replyId, content),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['comments', variables.listingId] });
     },
   });
 };
@@ -426,11 +358,21 @@ export const useEditReply = () => {
 export const useDeleteReply = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ commentId, replyId }: { commentId: number; replyId: number }) => {
-      return { success: true };
+    mutationFn: ({ listingId, commentId, replyId }: { listingId: number; commentId: number; replyId: number }) =>
+      listingsAPI.deleteReply(listingId, commentId, replyId),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['comments', variables.listingId] });
     },
+  });
+};
+
+// User profile hooks
+export const useUpdateProfile = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: FormData) => userAPI.updateProfile(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['comments'] });
+      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
     },
   });
 };
@@ -438,13 +380,17 @@ export const useDeleteReply = () => {
 export const useUserStats = () => {
   return useQuery({
     queryKey: ['userStats'],
-    queryFn: async () => {
-      return {
-        totalListings: 0,
-        activeListings: 0,
-        totalViews: 0,
-        totalFavorites: 0
-      };
-    },
+    queryFn: () => userAPI.getUserStatistics(),
+    select: (data) => data.data,
+  });
+};
+
+// Search hooks
+export const useSearch = (query: string, filters?: SearchFilters) => {
+  return useQuery({
+    queryKey: ['search', query, filters],
+    queryFn: () => searchAPI.searchListings(query, filters),
+    select: (data) => data.data,
+    enabled: !!query,
   });
 };

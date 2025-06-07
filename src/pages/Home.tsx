@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Header } from '@/components/layout/header';
 import { ModernCategoryBar } from '@/components/layout/category/ModernCategoryBar';
@@ -32,7 +33,7 @@ export default function Home() {
     page,
     per_page: itemsPerPage,
     ...filters,
-    ...(locationLoaded ? { lat: locationData?.lat, lon: locationData?.lon, radius: 50 } : {})
+    ...(locationLoaded && locationData ? { lat: locationData.lat, lon: locationData.lon, radius: 50 } : {})
   });
   
   const handleFilterChange = (newFilters: SearchFilters) => {
@@ -42,9 +43,7 @@ export default function Home() {
   
   // Extract data - ensure we have access to the right structure
   const adData = adsResponse?.data || [];
-  // Use fallback for pagination
-  const totalPages = adsResponse?.last_page || 
-                     (adsResponse?.total) || 1;
+  const totalPages = adsResponse?.last_page || 1;
   
   // Split into featured and regular ads
   const featuredAds = Array.isArray(adData) ? adData.filter((ad: Listing) => ad.featured) : [];
@@ -209,7 +208,7 @@ export default function Home() {
                 )}
                 
                 {/* Pagination */}
-                {!isLoadingAds && !adsError && adsResponse && (
+                {!isLoadingAds && !adsError && adsResponse && totalPages > 1 && (
                   <Pagination 
                     currentPage={page} 
                     totalPages={totalPages}

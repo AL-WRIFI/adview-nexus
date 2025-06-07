@@ -1,169 +1,171 @@
-import { useState } from 'react';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { DollarSign, TrendingUp } from 'lucide-react';
-import { usePromotionPackages } from '@/hooks/use-promotions';
+
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Crown, Clock, Eye, TrendingUp } from 'lucide-react';
 import { useUserListings } from '@/hooks/use-api';
-import { PromoteListingDialog } from '@/components/promotions/PromoteListingDialog';
-import { UserPromotionsTab } from '@/components/promotions/UserPromotionsTab';
-import { ActivePromotionsDisplay } from '@/components/promotions/ActivePromotionsDisplay';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import { Listing } from '@/types';
 
 export function PromoteTab() {
-  const [promoteDialogOpen, setPromoteDialogOpen] = useState(false);
-  const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
+  const { data: userListings = [], isLoading } = useUserListings();
 
-  const { data: packages, isLoading: packagesLoading } = usePromotionPackages();
-  const { data: listings, isLoading: listingsLoading } = useUserListings();
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {[...Array(4)].map((_, i) => (
+          <Card key={i}>
+            <CardHeader>
+              <div className="w-full h-48 bg-gray-200 animate-pulse rounded" />
+            </CardHeader>
+            <CardContent>
+              <div className="h-4 bg-gray-200 animate-pulse rounded mb-2" />
+              <div className="h-4 bg-gray-200 animate-pulse rounded w-2/3" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  }
 
-  const listingsData = Array.isArray(listings?.data) ? listings.data : [];
-
-  const handlePromoteListing = (listing: Listing) => {
-    setSelectedListing(listing);
-    setPromoteDialogOpen(true);
-  };
+  const promotableListings = Array.isArray(userListings) ? userListings.filter(listing => 
+    listing.status === 'active' && !listing.featured
+  ) : [];
 
   return (
     <div className="space-y-6">
-      {/* Active Promotions Section */}
-      <ActivePromotionsDisplay />
+      <div>
+        <h3 className="text-lg font-medium">ترويج الإعلانات</h3>
+        <p className="text-sm text-muted-foreground">
+          قم بترويج إعلاناتك لزيادة الوصول والمشاهدات
+        </p>
+      </div>
 
-      <Tabs defaultValue="packages" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="packages">باقات الترقية</TabsTrigger>
-          <TabsTrigger value="my-listings">إعلاناتي</TabsTrigger>
-          <TabsTrigger value="my-promotions">تاريخ الترقيات</TabsTrigger>
-        </TabsList>
+      {/* Promotion packages */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <Card className="border-2 border-yellow-200 bg-yellow-50">
+          <CardHeader className="text-center">
+            <Crown className="mx-auto h-8 w-8 text-yellow-600 mb-2" />
+            <CardTitle className="text-lg">ترويج مميز</CardTitle>
+            <div className="text-2xl font-bold text-yellow-600">99 ريال</div>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-2 text-sm">
+              <li className="flex items-center">
+                <TrendingUp className="h-4 w-4 ml-2 text-green-500" />
+                ظهور في المقدمة
+              </li>
+              <li className="flex items-center">
+                <Eye className="h-4 w-4 ml-2 text-blue-500" />
+                زيادة المشاهدات 5x
+              </li>
+              <li className="flex items-center">
+                <Clock className="h-4 w-4 ml-2 text-purple-500" />
+                لمدة 30 يوم
+              </li>
+            </ul>
+          </CardContent>
+        </Card>
 
-        <TabsContent value="packages" className="space-y-6">
+        <Card className="border-2 border-blue-200 bg-blue-50">
+          <CardHeader className="text-center">
+            <TrendingUp className="mx-auto h-8 w-8 text-blue-600 mb-2" />
+            <CardTitle className="text-lg">ترويج عادي</CardTitle>
+            <div className="text-2xl font-bold text-blue-600">49 ريال</div>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-2 text-sm">
+              <li className="flex items-center">
+                <TrendingUp className="h-4 w-4 ml-2 text-green-500" />
+                ظهور محسن
+              </li>
+              <li className="flex items-center">
+                <Eye className="h-4 w-4 ml-2 text-blue-500" />
+                زيادة المشاهدات 3x
+              </li>
+              <li className="flex items-center">
+                <Clock className="h-4 w-4 ml-2 text-purple-500" />
+                لمدة 15 يوم
+              </li>
+            </ul>
+          </CardContent>
+        </Card>
+
+        <Card className="border-2 border-green-200 bg-green-50">
+          <CardHeader className="text-center">
+            <Eye className="mx-auto h-8 w-8 text-green-600 mb-2" />
+            <CardTitle className="text-lg">ترويج سريع</CardTitle>
+            <div className="text-2xl font-bold text-green-600">19 ريال</div>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-2 text-sm">
+              <li className="flex items-center">
+                <TrendingUp className="h-4 w-4 ml-2 text-green-500" />
+                ظهور أفضل
+              </li>
+              <li className="flex items-center">
+                <Eye className="h-4 w-4 ml-2 text-blue-500" />
+                زيادة المشاهدات 2x
+              </li>
+              <li className="flex items-center">
+                <Clock className="h-4 w-4 ml-2 text-purple-500" />
+                لمدة 7 أيام
+              </li>
+            </ul>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* User's listings available for promotion */}
+      <div>
+        <h4 className="font-medium mb-4">إعلاناتك المتاحة للترويج</h4>
+        
+        {promotableListings.length === 0 ? (
           <Card>
-            <CardHeader>
-              <CardTitle>باقات ترقية الإعلانات</CardTitle>
-              <CardDescription>اجعل إعلاناتك تظهر في المقدمة للحصول على مزيد من المشاهدات</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {packagesLoading ? (
-                <div className="text-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-                  <p className="mt-2 text-muted-foreground">جاري تحميل الباقات...</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {packages?.map((pkg) => (
-                    <Card key={pkg.id} className="border-2 hover:border-primary transition-colors">
-                      <CardHeader className="pb-2">
-                        <CardTitle>{pkg.name}</CardTitle>
-                        <CardDescription>{pkg.description}</CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-3xl font-bold text-primary">{pkg.price} ريال</p>
-                        <p className="text-muted-foreground mt-1">
-                          لمدة {pkg.duration_days} {pkg.duration_days === 1 ? 'يوم' : pkg.duration_days > 10 ? 'يوم' : 'أيام'}
-                        </p>
-                      </CardContent>
-                      <CardFooter className="pt-0">
-                        <Button 
-                          className="w-full"
-                          onClick={() => setPromoteDialogOpen(true)}
-                          disabled={!pkg.is_active}
-                        >
-                          <DollarSign className="ml-2 h-4 w-4" />
-                          اختر الباقة
-                        </Button>
-                      </CardFooter>
-                    </Card>
-                  ))}
-                </div>
-              )}
+            <CardContent className="text-center py-8">
+              <TrendingUp className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+              <p className="text-muted-foreground">لا توجد إعلانات متاحة للترويج</p>
+              <p className="text-sm text-muted-foreground mt-2">
+                قم بإنشاء إعلان جديد أو تأكد من أن إعلاناتك نشطة
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {promotableListings.map((listing) => {
+              const imageUrl = typeof listing.image === 'string' 
+                ? listing.image 
+                : listing.image?.image_url || '/placeholder.svg';
               
-              <div className="mt-6 bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
-                <h3 className="font-bold mb-2">مميزات الإعلانات المدفوعة</h3>
-                <ul className="list-disc pr-5 space-y-1">
-                  <li>ظهور في الصفحة الرئيسية</li>
-                  <li>ظهور في أعلى نتائج البحث</li>
-                  <li>تمييز الإعلان بعلامة مميزة</li>
-                  <li>زيادة عدد المشاهدات بنسبة تصل إلى 300%</li>
-                  <li>زيادة فرص البيع السريع</li>
-                </ul>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="my-listings" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>إعلاناتي</CardTitle>
-              <CardDescription>اختر الإعلان الذي تريد ترقيته</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {listingsLoading ? (
-                <div className="text-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-                  <p className="mt-2 text-muted-foreground">جاري تحميل الإعلانات...</p>
-                </div>
-              ) : listingsData && listingsData.length > 0 ? (
-                <div className="grid gap-4">
-                  {listingsData.map((listing) => (
-                    <Card key={listing.id} className="hover:shadow-md transition-shadow">
-                      <CardContent className="p-4">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            {listing.image && (
-                              <img 
-                                src={typeof listing.image === 'string' ? listing.image : listing.image?.image_url || '/placeholder.svg'} 
-                                alt={listing.title}
-                                className="w-16 h-16 object-cover rounded"
-                              />
-                            )}
-                            <div>
-                              <h3 className="font-semibold">{listing.title}</h3>
-                              <p className="text-sm text-muted-foreground">{listing.price} ريال</p>
-                              <div className="flex items-center gap-2 mt-1">
-                                {listing.featured && (
-                                  <Badge variant="default" className="text-xs">
-                                    <TrendingUp className="w-3 h-3 mr-1" />
-                                    مُرقى
-                                  </Badge>
-                                )}
-                                <Badge variant="outline" className="text-xs">
-                                  {listing.status}
-                                </Badge>
-                              </div>
-                            </div>
-                          </div>
-                          <Button
-                            onClick={() => handlePromoteListing(listing)}
-                            disabled={listing.status !== 'active'}
-                          >
-                            ترقية الإعلان
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <p className="text-muted-foreground">لا توجد إعلانات لترقيتها</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="my-promotions">
-          <UserPromotionsTab />
-        </TabsContent>
-      </Tabs>
-
-      <PromoteListingDialog
-        open={promoteDialogOpen}
-        onOpenChange={setPromoteDialogOpen}
-        listing={selectedListing}
-      />
+              return (
+                <Card key={listing.id}>
+                  <CardHeader className="p-0">
+                    <img 
+                      src={imageUrl} 
+                      alt={listing.title}
+                      className="w-full h-48 object-cover rounded-t-lg"
+                    />
+                  </CardHeader>
+                  <CardContent className="p-4">
+                    <h5 className="font-medium mb-2 truncate">{listing.title}</h5>
+                    <div className="flex justify-between items-center mb-3">
+                      <span className="text-lg font-bold text-brand">
+                        {listing.price} ريال
+                      </span>
+                      <Badge variant="secondary">{listing.status}</Badge>
+                    </div>
+                    <div className="text-sm text-muted-foreground mb-3">
+                      المشاهدات: {listing.views_count || 0}
+                    </div>
+                    <Button className="w-full" size="sm">
+                      ترويج هذا الإعلان
+                    </Button>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
