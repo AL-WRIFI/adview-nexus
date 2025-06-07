@@ -43,7 +43,11 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Input } from "../ui/input";
 
-export function Header() {
+interface HeaderProps {
+  isLoggedIn?: boolean;
+}
+
+export function Header({ isLoggedIn }: HeaderProps = {}) {
   const { isAuthenticated, user, logout } = useAuth();
   const isMobile = useIsMobile();
   const [isScrolled, setIsScrolled] = useState(false);

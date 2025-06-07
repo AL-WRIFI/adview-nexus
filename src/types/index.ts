@@ -1,3 +1,4 @@
+
 export interface User {
   id: number;
   first_name: string;
@@ -11,6 +12,8 @@ export interface User {
   verified?: boolean;
   created_at?: string;
   createdAt?: string;
+  bio?: string;
+  city?: string;
 }
 
 export interface Category {
@@ -19,6 +22,7 @@ export interface Category {
   icon?: string;
   subcategories?: SubCategory[];
   color?: string;
+  slug?: string;
 }
 
 export interface SubCategory {
@@ -28,6 +32,7 @@ export interface SubCategory {
   icon?: string;
   subcategories?: SubCategory[];
   children?: SubCategory[];
+  slug?: string;
 }
 
 export interface Brand {
@@ -148,6 +153,7 @@ export interface Conversation {
 
 export interface SearchFilters {
   search?: string;
+  query?: string;
   category_id?: number;
   sub_category_id?: number;
   child_category_id?: number;
@@ -157,7 +163,7 @@ export interface SearchFilters {
   price_min?: number;
   price_max?: number;
   condition?: 'new' | 'used';
-  listing_type?: 'sale' | 'rent';
+  listing_type?: 'sale' | 'rent' | 'sell' | 'buy' | 'exchange';
   is_negotiable?: boolean;
   radius?: number;
   lat?: number;
@@ -165,6 +171,7 @@ export interface SearchFilters {
   featured?: boolean;
   page?: number;
   per_page?: number;
+  sort?: string;
 }
 
 export interface ApiResponse<T> {
@@ -192,6 +199,8 @@ export interface PaginatedResponse<T> {
     total: number;
     last_page: number;
   };
+  length?: number;
+  slice?: (start: number, end: number) => T[];
 }
 
 export interface Favorite {
@@ -219,4 +228,30 @@ export interface UserPromotion {
   end_date: string;
   is_active: boolean;
   created_at: string;
+}
+
+export interface CommentsListProps {
+  comments: Comment[];
+  listingId: number;
+  isLoading: boolean;
+}
+
+export interface AdImageGalleryProps {
+  images: string[];
+}
+
+export interface DashboardSidebarProps {
+  activePage: string;
+  setActivePage: (page: string) => void;
+  isMobile?: boolean;
+}
+
+export interface DashboardContentProps {
+  activePage: string;
+  selectedAd: string | null;
+  setSelectedAd: (id: string | null) => void;
+  promoteDialogOpen: boolean;
+  setPromoteDialogOpen: (open: boolean) => void;
+  deleteConfirmOpen: boolean;
+  setDeleteConfirmOpen: (open: boolean) => void;
 }

@@ -1,380 +1,457 @@
 
 import { useState, useEffect } from 'react';
-import { Link, useParams, useNavigate } from 'react-router-dom';
-import { 
-  MapPin, Eye, MessageSquare, Phone, Heart, Share, Flag, 
-  Star, Loader2, User
-} from 'lucide-react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { MobileNav } from '@/components/layout/mobile-nav';
-import { Button } from '@/components/ui/button';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AdImageGallery } from '@/components/image-gallery/AdImageGallery';
-import { CommentsList } from '@/components/comments/CommentsList';
 import { RelatedAdsCarousel } from '@/components/ads/related-ads-carousel';
+import { CommentsList } from '@/components/comments/CommentsList';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/context/auth-context';
+import {
+  Heart,
+  Share2,
+  MessageCircle,
+  Phone,
+  MapPin,
+  Calendar,
+  Eye,
+  Flag,
+  Star,
+  Verified
+} from 'lucide-react';
+import {
+  useAd,
+  useRelatedAds,
+  useComments,
+  useIsFavorite,
+  useAddToFavorites,
+  useRemoveFromFavorites,
+  useAddComment,
+  useEditComment,
+  useDeleteComment,
+  useAddReply,
+  useEditReply,
+  useDeleteReply
+} from '@/hooks/use-api';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
-import { 
-  useListing, 
-  useRelatedListings, 
-  useAddComment, 
-  useIsFavorite, 
-  useAddToFavorites, 
-  useRemoveFromFavorites, 
-  useAddReply,
-  useDeleteComment,
-  useEditComment,
-  useDeleteReply,
-  useEditReply
-} from '@/hooks/use-api';
-import { useAuth } from '@/context/auth-context';
-import { toast } from '@/hooks/use-toast';
-import { Comment } from '@/types';
 
 export default function AdDetails() {
   const { id } = useParams<{ id: string }>();
-  const [activeTab, setActiveTab] = useState('comments');
-  const [isFavorite, setIsFavorite] = useState(false);
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const { user } = useAuth();
   
-  const { isAuthenticated, user } = useAuth();
-  
-  const numId = id ? parseInt(id, 10) : 0;
+  const adId = parseInt(id || '0');
   
   // API hooks
-  const { data: ad, isLoading, error } = useListing(numId);
-  const { data: isFavoriteResponse } = useIsFavorite(numId);
-  const { data: relatedAdsResponse } = useRelatedListings(numId);
+  const { data: ad, isLoading: adLoading } = useAd(adId);
+  const { data: relatedAds } = useRelatedAds(ad?.category_id || 0, adId);
+  const { data: comments, isLoading: commentsLoading } = useComments(adId);
+  const { data: isFavorited } = useIsFavorite(adId);
+  const addToFavoritesMutation = useAddToFavorites();
+  const removeFromFavoritesMutation = useRemoveFromFavorites();
+  const addCommentMutation = useAddComment();
+  const editCommentMutation = useEditComment();
+  const deleteCommentMutation = useDeleteComment();
+  const addReplyMutation = useAddReply();
+  const editReplyMutation = useEditReply();
+  const deleteReplyMutation = useDeleteReply();
   
-  const addCommentMutation = useAddComment(numId);
-  const addReplyMutation = useAddReply(numId, 0);
-  const deleteCommentMutation = useDeleteComment(numId, 0);
-  const editCommentMutation = useEditComment(numId);
-  const deleteReplyMutation = useDeleteReply(numId);
-  const editReplyMutation = useEditReply(numId);
-  const addToFavorites = useAddToFavorites();
-  const removeFromFavorites = useRemoveFromFavorites();
-  
+  // Local state
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [showContactInfo, setShowContactInfo] = useState(false);
+  const [isLiked, setIsLiked] = useState(false);
+
   useEffect(() => {
-    if (isFavoriteResponse !== undefined) {
-      setIsFavorite(isFavoriteResponse);
+    if (isFavorited !== undefined) {
+      setIsLiked(isFavorited);
     }
-  }, [isFavoriteResponse]);
+  }, [isFavorited]);
 
-  const handleFavoriteToggle = () => {
-    if (!isAuthenticated) {
+  const handleLike = async () => {
+    if (!user) {
       toast({
         title: "تسجيل الدخول مطلوب",
-        description: "يجب عليك تسجيل الدخول لإضافة للمفضلة",
+        description: "يجب تسجيل الدخول لإضافة الإعلان للمفضلة",
         variant: "destructive"
       });
-      navigate('/auth/login', { state: { from: `/ad/${id}` } });
       return;
     }
-    
-    if (isFavorite) {
-      removeFromFavorites.mutate(numId);
+
+    try {
+      if (isLiked) {
+        await removeFromFavoritesMutation.mutateAsync(adId);
+        setIsLiked(false);
+        toast({
+          title: "تم الحذف من المفضلة",
+          description: "تم حذف الإعلان من قائمة المفضلة بنجاح"
+        });
+      } else {
+        await addToFavoritesMutation.mutateAsync(adId);
+        setIsLiked(true);
+        toast({
+          title: "تم الإضافة للمفضلة",
+          description: "تم إضافة الإعلان لقائمة المفضلة بنجاح"
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "خطأ",
+        description: "حدث خطأ أثناء تحديث المفضلة",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleShare = () => {
+    if (navigator.share) {
+      navigator.share({
+        title: ad?.title || '',
+        text: ad?.description || '',
+        url: window.location.href
+      });
     } else {
-      addToFavorites.mutate(numId);
+      navigator.clipboard.writeText(window.location.href);
+      toast({
+        title: "تم النسخ",
+        description: "تم نسخ رابط الإعلان للحافظة"
+      });
     }
-    setIsFavorite(!isFavorite);
   };
 
-  // Comment handlers
-  const handleAddComment = (text: string) => {
-    if (!isAuthenticated) {
+  const handleAddComment = async (content: string) => {
+    if (!user) {
       toast({
         title: "تسجيل الدخول مطلوب",
-        description: "يجب عليك تسجيل الدخول لإضافة تعليق",
+        description: "يجب تسجيل الدخول لإضافة تعليق",
         variant: "destructive"
       });
-      navigate('/auth/login', { state: { from: `/ad/${id}` } });
       return;
     }
-    
-    if (text.trim() && numId) {
-      addCommentMutation.mutate(text);
-    }
-  };
-  
-  const handleAddReply = (commentId: number, text: string) => {
-    if (!isAuthenticated) {
+
+    try {
+      await addCommentMutation.mutateAsync({ listingId: adId, content });
       toast({
-        title: "تسجيل الدخول مطلوب",
-        description: "يجب عليك تسجيل الدخول للرد على التعليق",
+        title: "تم إضافة التعليق",
+        description: "تم إضافة تعليقك بنجاح"
+      });
+    } catch (error) {
+      toast({
+        title: "خطأ",
+        description: "حدث خطأ أثناء إضافة التعليق",
         variant: "destructive"
       });
-      navigate('/auth/login', { state: { from: `/ad/${id}` } });
-      return;
     }
-    
-    if (text.trim()) {
-      addReplyMutation.mutate(text);
-    }
-  };
-  
-  const handleDeleteComment = (commentId: number) => {
-    deleteCommentMutation.mutate();
-  };
-  
-  const handleEditComment = (commentId: number, text: string) => {
-    editCommentMutation.mutate({ commentId, content: text });
-  };
-  
-  const handleDeleteReply = (commentId: number, replyId: number) => {
-    deleteReplyMutation.mutate({ commentId, replyId });
-  };
-  
-  const handleEditReply = (commentId: number, replyId: number, text: string) => {
-    editReplyMutation.mutate({ commentId, replyId, content: text });
   };
 
-  if (isLoading) {
+  const handleEditComment = async (commentId: number, content: string) => {
+    try {
+      await editCommentMutation.mutateAsync({ commentId, content });
+      toast({
+        title: "تم تحديث التعليق",
+        description: "تم تحديث تعليقك بنجاح"
+      });
+    } catch (error) {
+      toast({
+        title: "خطأ",
+        description: "حدث خطأ أثناء تحديث التعليق",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleDeleteComment = async (commentId: number) => {
+    try {
+      await deleteCommentMutation.mutateAsync(commentId);
+      toast({
+        title: "تم حذف التعليق",
+        description: "تم حذف التعليق بنجاح"
+      });
+    } catch (error) {
+      toast({
+        title: "خطأ",
+        description: "حدث خطأ أثناء حذف التعليق",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleAddReply = async (commentId: number, content: string) => {
+    if (!user) {
+      toast({
+        title: "تسجيل الدخول مطلوب",
+        description: "يجب تسجيل الدخول للرد على التعليق",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      await addReplyMutation.mutateAsync({ commentId, content });
+      toast({
+        title: "تم إضافة الرد",
+        description: "تم إضافة ردك بنجاح"
+      });
+    } catch (error) {
+      toast({
+        title: "خطأ",
+        description: "حدث خطأ أثناء إضافة الرد",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleEditReply = async (commentId: number, replyId: number, content: string) => {
+    try {
+      await editReplyMutation.mutateAsync({ commentId, replyId, content });
+      toast({
+        title: "تم تحديث الرد",
+        description: "تم تحديث ردك بنجاح"
+      });
+    } catch (error) {
+      toast({
+        title: "خطأ",
+        description: "حدث خطأ أثناء تحديث الرد",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleDeleteReply = async (commentId: number, replyId: number) => {
+    try {
+      await deleteReplyMutation.mutateAsync({ commentId, replyId });
+      toast({
+        title: "تم حذف الرد",
+        description: "تم حذف الرد بنجاح"
+      });
+    } catch (error) {
+      toast({
+        title: "خطأ",
+        description: "حدث خطأ أثناء حذف الرد",
+        variant: "destructive"
+      });
+    }
+  };
+
+  if (adLoading) {
     return (
       <div className="min-h-screen flex flex-col">
         <Header />
-        <main className="flex-1 pb-20 md:pb-0">
-          <div className="container px-4 mx-auto py-6">
-            <div className="flex items-center justify-center h-64">
-              <Loader2 className="h-8 w-8 animate-spin" />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-pulse">
+              <div className="h-8 bg-muted rounded w-48 mx-auto mb-4"></div>
+              <div className="h-4 bg-muted rounded w-32 mx-auto"></div>
             </div>
           </div>
-        </main>
+        </div>
         <Footer />
         <MobileNav />
       </div>
     );
   }
 
-  if (error || !ad) {
+  if (!ad) {
     return (
       <div className="min-h-screen flex flex-col">
         <Header />
-        <main className="flex-1 pb-20 md:pb-0">
-          <div className="container px-4 mx-auto py-6">
-            <div className="text-center">
-              <h1 className="text-2xl font-bold mb-4">الإعلان غير موجود</h1>
-              <p className="text-muted-foreground mb-4">الإعلان الذي تبحث عنه غير متوفر</p>
-              <Button asChild>
-                <Link to="/">العودة للرئيسية</Link>
-              </Button>
-            </div>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold mb-4">الإعلان غير موجود</h2>
+            <Button onClick={() => navigate('/')}>
+              العودة للرئيسية
+            </Button>
           </div>
-        </main>
+        </div>
         <Footer />
         <MobileNav />
       </div>
     );
   }
 
-  const timeAgo = formatDistanceToNow(new Date(ad.created_at), { 
-    addSuffix: true,
-    locale: ar
-  });
-
-  // Handle image URL extraction
-  const getImageUrl = (image: any) => {
-    if (image && typeof image === 'object' && 'image_url' in image) {
-      return image.image_url;
-    }
-    return typeof image === 'string' ? image : null;
-  };
-
-  const imageUrl = getImageUrl(ad.image);
-  const images = ad.images?.map(img => 
-    typeof img === 'object' && 'url' in img ? img.url : 
-    typeof img === 'string' ? img : null
-  ).filter(Boolean) || [];
+  const adImages = Array.isArray(ad.images) 
+    ? ad.images.map(img => typeof img === 'string' ? img : img.url || '')
+    : ad.image 
+      ? [typeof ad.image === 'string' ? ad.image : ad.image.image_url]
+      : ['https://placehold.co/600x400'];
 
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
       
       <main className="flex-1 pb-20 md:pb-0">
+        {/* Ad Images */}
         <div className="container px-4 mx-auto py-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Main content */}
-            <div className="lg:col-span-2">
-              {/* Image gallery */}
-              <div className="mb-6">
-                <AdImageGallery 
-                  images={images.length > 0 ? images : (imageUrl ? [imageUrl] : [])}
-                  alt={ad.title}
-                />
-              </div>
+          <AdImageGallery images={adImages} />
+        </div>
 
-              {/* Ad details */}
-              <div className="bg-white dark:bg-dark-card rounded-lg border border-border dark:border-dark-border p-6 mb-6">
-                <div className="flex items-start justify-between mb-4">
+        {/* Ad Details */}
+        <div className="container px-4 mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Main Content */}
+            <div className="lg:col-span-2">
+              <div className="bg-card rounded-lg p-6 border border-border">
+                {/* Title and Price */}
+                <div className="flex justify-between items-start mb-4">
                   <div className="flex-1">
-                    <h1 className="text-2xl font-bold mb-2">{ad.title}</h1>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
-                      <div className="flex items-center">
-                        <MapPin className="h-4 w-4 ml-1" />
-                        <span>{ad.city || ad.location}</span>
-                      </div>
-                      <div className="flex items-center">
-                        <Eye className="h-4 w-4 ml-1" />
-                        <span>{ad.views_count || ad.viewCount || ad.views || 0} مشاهدة</span>
-                      </div>
-                      <span>{timeAgo}</span>
+                    <h1 className="text-2xl lg:text-3xl font-bold mb-2">{ad.title}</h1>
+                    <div className="flex items-center gap-2 text-2xl font-bold text-brand">
+                      {ad.price.toLocaleString()} ريال
                     </div>
                   </div>
                   
-                  <div className="flex items-center gap-2">
+                  {/* Action Buttons */}
+                  <div className="flex gap-2">
                     <Button
                       variant="outline"
                       size="icon"
-                      onClick={handleFavoriteToggle}
-                      className={isFavorite ? 'text-red-500 border-red-200' : ''}
+                      onClick={handleLike}
+                      className={isLiked ? 'text-red-500 border-red-500' : ''}
                     >
-                      <Heart className={`h-4 w-4 ${isFavorite ? 'fill-current' : ''}`} />
+                      <Heart className={`h-5 w-5 ${isLiked ? 'fill-current' : ''}`} />
                     </Button>
-                    <Button variant="outline" size="icon">
-                      <Share className="h-4 w-4" />
-                    </Button>
-                    <Button variant="outline" size="icon">
-                      <Flag className="h-4 w-4" />
+                    
+                    <Button variant="outline" size="icon" onClick={handleShare}>
+                      <Share2 className="h-5 w-5" />
                     </Button>
                   </div>
                 </div>
 
-                {ad.featured && (
-                  <div className="flex items-center gap-2 mb-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
-                    <Star className="h-5 w-5 text-yellow-500 fill-current" />
-                    <span className="text-sm font-medium text-yellow-700 dark:text-yellow-300">إعلان مميز</span>
-                  </div>
-                )}
-
-                <div className="flex items-center justify-between mb-6">
-                  <span className="text-3xl font-bold text-brand">
-                    {ad.price.toLocaleString()} ريال
-                  </span>
-                  {ad.condition && (
-                    <span className="px-3 py-1 bg-gray-100 dark:bg-gray-800 rounded-full text-sm">
-                      {ad.condition === 'new' ? 'جديد' : 'مستعمل'}
-                    </span>
+                {/* Badges */}
+                <div className="flex gap-2 mb-6">
+                  {ad.featured && (
+                    <Badge variant="default" className="bg-yellow-500">
+                      <Star className="w-3 h-3 ml-1" />
+                      مميز
+                    </Badge>
                   )}
+                  {ad.condition && (
+                    <Badge variant="secondary">
+                      {ad.condition === 'new' ? 'جديد' : 'مستعمل'}
+                    </Badge>
+                  )}
+                  <Badge variant="outline">{ad.category}</Badge>
                 </div>
 
-                <div className="prose max-w-none">
-                  <h3 className="text-lg font-semibold mb-3">وصف الإعلان</h3>
-                  <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                {/* Description */}
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold mb-3">الوصف</h3>
+                  <p className="text-muted-foreground leading-relaxed">
                     {ad.description}
                   </p>
                 </div>
+
+                {/* Details */}
+                <div className="grid grid-cols-2 gap-4 mb-6">
+                  <div className="flex items-center gap-2 text-sm">
+                    <MapPin className="h-4 w-4 text-muted-foreground" />
+                    <span>{ad.location}</span>
+                  </div>
+                  
+                  <div className="flex items-center gap-2 text-sm">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <span>
+                      {formatDistanceToNow(new Date(ad.created_at), { 
+                        addSuffix: true, 
+                        locale: ar 
+                      })}
+                    </span>
+                  </div>
+                  
+                  <div className="flex items-center gap-2 text-sm">
+                    <Eye className="h-4 w-4 text-muted-foreground" />
+                    <span>{ad.views || 0} مشاهدة</span>
+                  </div>
+                  
+                  <div className="flex items-center gap-2 text-sm">
+                    <Heart className="h-4 w-4 text-muted-foreground" />
+                    <span>{ad.favorites_count || 0} إعجاب</span>
+                  </div>
+                </div>
               </div>
 
-              {/* Tabs */}
-              <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <TabsList>
-                  <TabsTrigger value="comments">التعليقات</TabsTrigger>
-                  <TabsTrigger value="details">تفاصيل إضافية</TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="comments" className="mt-6">
-                  <CommentsList 
-                    comments={[]}
-                    isLoading={false}
-                  />
-                </TabsContent>
-                
-                <TabsContent value="details" className="mt-6">
-                  <div className="bg-white dark:bg-dark-card rounded-lg border border-border dark:border-dark-border p-6">
-                    <h3 className="text-lg font-semibold mb-4">تفاصيل الإعلان</h3>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <span className="text-sm text-muted-foreground">التصنيف</span>
-                        <p className="font-medium">{ad.category}</p>
-                      </div>
-                      {ad.subcategory && (
-                        <div>
-                          <span className="text-sm text-muted-foreground">التصنيف الفرعي</span>
-                          <p className="font-medium">{ad.subcategory}</p>
-                        </div>
-                      )}
-                      <div>
-                        <span className="text-sm text-muted-foreground">تاريخ النشر</span>
-                        <p className="font-medium">{new Date(ad.created_at).toLocaleDateString('ar-SA')}</p>
-                      </div>
-                      <div>
-                        <span className="text-sm text-muted-foreground">رقم الإعلان</span>
-                        <p className="font-medium">{ad.id}</p>
-                      </div>
-                    </div>
-                  </div>
-                </TabsContent>
-              </Tabs>
+              {/* Comments Section */}
+              <div className="mt-8">
+                <CommentsList 
+                  comments={comments || []}
+                  listingId={adId}
+                  isLoading={commentsLoading}
+                />
+              </div>
             </div>
 
             {/* Sidebar */}
             <div className="lg:col-span-1">
-              {/* Seller info */}
-              <div className="bg-white dark:bg-dark-card rounded-lg border border-border dark:border-dark-border p-6 mb-6">
-                <h3 className="text-lg font-semibold mb-4">معلومات البائع</h3>
-                <div className="flex items-center gap-3 mb-4">
-                  <Avatar>
-                    <AvatarImage src={ad.user?.image || ad.user?.avatar} />
-                    <AvatarFallback>
-                      <User className="h-4 w-4" />
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="font-medium">
-                      {ad.user?.name || `${ad.user?.first_name} ${ad.user?.last_name}` || 'مستخدم'}
-                    </p>
-                    {ad.user?.verified && (
-                      <span className="text-sm text-green-600">موثق ✓</span>
-                    )}
+              {/* Seller Info */}
+              <div className="bg-card rounded-lg p-6 border border-border mb-6">
+                <div className="text-center">
+                  <div className="w-16 h-16 bg-muted rounded-full mx-auto mb-4 flex items-center justify-center">
+                    <span className="text-xl font-bold">
+                      {ad.user?.first_name?.[0]}{ad.user?.last_name?.[0]}
+                    </span>
                   </div>
-                </div>
-                
-                <div className="space-y-3">
-                  {ad.phone && (
-                    <Button className="w-full" asChild>
-                      <a href={`tel:${ad.phone}`}>
-                        <Phone className="h-4 w-4 ml-2" />
-                        اتصل الآن
-                      </a>
-                    </Button>
-                  )}
                   
-                  <Button variant="outline" className="w-full">
-                    <MessageSquare className="h-4 w-4 ml-2" />
-                    أرسل رسالة
-                  </Button>
+                  <h3 className="font-semibold mb-1">
+                    {ad.user?.first_name} {ad.user?.last_name}
+                  </h3>
                   
-                  {ad.whatsapp && (
-                    <Button variant="outline" className="w-full" asChild>
-                      <a href={`https://wa.me/${ad.whatsapp}`} target="_blank" rel="noopener noreferrer">
-                        واتساب
-                      </a>
+                  <div className="flex items-center justify-center gap-1 text-sm text-muted-foreground mb-4">
+                    <Verified className="h-4 w-4 text-green-500" />
+                    <span>عضو موثق</span>
+                  </div>
+
+                  <div className="space-y-3">
+                    {!showContactInfo ? (
+                      <Button 
+                        className="w-full" 
+                        onClick={() => setShowContactInfo(true)}
+                      >
+                        <Phone className="ml-2 h-4 w-4" />
+                        إظهار رقم الهاتف
+                      </Button>
+                    ) : (
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-center gap-2 p-3 bg-muted rounded-lg">
+                          <Phone className="h-4 w-4" />
+                          <span className="font-mono">{ad.phone || ad.user?.phone || '966501234567'}</span>
+                        </div>
+                        <Button variant="outline" className="w-full">
+                          <MessageCircle className="ml-2 h-4 w-4" />
+                          إرسال رسالة
+                        </Button>
+                      </div>
+                    )}
+
+                    <Button variant="outline" size="sm" className="w-full">
+                      <Flag className="ml-2 h-4 w-4" />
+                      الإبلاغ عن الإعلان
                     </Button>
-                  )}
+                  </div>
                 </div>
               </div>
 
-              {/* Location */}
-              {(ad.latitude && ad.longitude) && (
-                <div className="bg-white dark:bg-dark-card rounded-lg border border-border dark:border-dark-border p-6 mb-6">
-                  <h3 className="text-lg font-semibold mb-4">الموقع</h3>
-                  <div className="aspect-video bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center">
-                    <MapPin className="h-8 w-8 text-muted-foreground" />
-                  </div>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    {ad.address || ad.city || ad.location}
-                  </p>
-                </div>
-              )}
+              {/* Safety Tips */}
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                <h4 className="font-semibold text-amber-800 mb-2">نصائح للأمان</h4>
+                <ul className="text-sm text-amber-700 space-y-1">
+                  <li>• قابل البائع في مكان عام</li>
+                  <li>• تأكد من المنتج قبل الدفع</li>
+                  <li>• لا تشارك معلوماتك المالية</li>
+                  <li>• احذر من العروض المشبوهة</li>
+                </ul>
+              </div>
             </div>
           </div>
 
-          {/* Related ads */}
-          {relatedAdsResponse && relatedAdsResponse.length > 0 && (
+          {/* Related Ads */}
+          {relatedAds && relatedAds.length > 0 && (
             <div className="mt-12">
-              <RelatedAdsCarousel ads={relatedAdsResponse} />
+              <RelatedAdsCarousel ads={relatedAds} />
             </div>
           )}
         </div>
