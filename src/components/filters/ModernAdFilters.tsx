@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Filter, Search, MapPin, SlidersHorizontal, X, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -88,10 +87,10 @@ export function ModernAdFilters({ onFilterChange, currentFilters = {} }: ModernA
         <Label className="text-sm font-semibold text-foreground">فلاتر سريعة</Label>
         <div className="flex flex-wrap gap-2">
           <Button
-            variant={localFilters.listing_type === 'sale' ? 'default' : 'outline'}
+            variant={localFilters.listing_type === 'sell' ? 'default' : 'outline'}
             size="sm"
             onClick={() => handleFilterChange('listing_type', 
-              localFilters.listing_type === 'sale' ? undefined : 'sale')}
+              localFilters.listing_type === 'sell' ? undefined : 'sell')}
             className="text-xs"
           >
             للبيع

@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { Search, ChevronDown, X, Filter, MapPin, Grid2X2, List } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -94,8 +93,8 @@ export function AdFilters({
   const [selectedCityId, setSelectedCityId] = useState<number | undefined>(
     initialFilters?.city_id as number | undefined
   );
-  const [listingType, setListingType] = useState<'sell' | 'buy' | 'exchange' | undefined>(
-    initialFilters?.listing_type as 'sell' | 'buy' | 'exchange' | undefined
+  const [listingType, setListingType] = useState<'sell' | 'rent' | 'job' | 'service' | undefined>(
+    initialFilters?.listing_type as 'sell' | 'rent' | 'job' | 'service' | undefined
   );
   const [condition, setCondition] = useState<'new' | 'used' | undefined>(
     initialFilters?.condition as 'new' | 'used' | undefined
@@ -208,8 +207,9 @@ export function AdFilters({
     if (listingType) {
       const listingTypeMap = {
         'sell': 'للبيع',
-        'buy': 'للشراء',
-        'exchange': 'للتبديل'
+        'rent': 'للإيجار',
+        'job': 'وظائف',
+        'service': 'خدمات'
       };
       newActiveFilters.push(`نوع الإعلان: ${listingTypeMap[listingType]}`);
     }
@@ -776,7 +776,7 @@ export function AdFilters({
             {/* Listing Type */}
             <div>
               <label className="text-sm font-medium mb-1 block">نوع الإعلان</label>
-              <Select value={listingType || "all"} onValueChange={(value: 'sell' | 'buy' | 'exchange' | 'all') => {
+              <Select value={listingType || "all"} onValueChange={(value: 'sell' | 'rent' | 'job' | 'service' | 'all') => {
                 setListingType(value === 'all' ? undefined : value);
               }}>
                 <SelectTrigger>
@@ -785,8 +785,9 @@ export function AdFilters({
                 <SelectContent>
                   <SelectItem value="all">الكل</SelectItem>
                   <SelectItem value="sell">للبيع</SelectItem>
-                  <SelectItem value="buy">للشراء</SelectItem>
-                  <SelectItem value="exchange">للتبديل</SelectItem>
+                  <SelectItem value="rent">للإيجار</SelectItem>
+                  <SelectItem value="job">وظائف</SelectItem>
+                  <SelectItem value="service">خدمات</SelectItem>
                 </SelectContent>
               </Select>
             </div>

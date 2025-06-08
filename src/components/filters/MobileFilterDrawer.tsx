@@ -64,8 +64,8 @@ export function MobileFilterDrawer({
     initialFilters?.price_min || 0,
     initialFilters?.price_max || 100000
   ]);
-  const [listingType, setListingType] = useState<'sell' | 'buy' | 'exchange' | undefined>(
-    initialFilters?.listing_type as 'sell' | 'buy' | 'exchange' | undefined
+  const [listingType, setListingType] = useState<'sell' | 'rent' | 'job' | 'service' | undefined>(
+    initialFilters?.listing_type as 'sell' | 'rent' | 'job' | 'service' | undefined
   );
   const [condition, setCondition] = useState<'new' | 'used' | undefined>(
     initialFilters?.condition as 'new' | 'used' | undefined
@@ -305,7 +305,7 @@ export function MobileFilterDrawer({
           <div className="flex items-center text-xs text-muted-foreground">
             {condition === 'new' ? 'جديد' : condition === 'used' ? 'مستعمل' : ''}
             {listingType && condition ? ' • ' : ''}
-            {listingType === 'sell' ? 'للبيع' : listingType === 'buy' ? 'للشراء' : listingType === 'exchange' ? 'للتبديل' : ''}
+            {listingType === 'sell' ? 'للبيع' : listingType === 'rent' ? 'للإيجار' : listingType === 'job' ? 'وظائف' : listingType === 'service' ? 'خدمات' : ''}
             <ChevronRight className="h-4 w-4 mr-1" />
           </div>
         )}
@@ -598,7 +598,7 @@ export function MobileFilterDrawer({
         <Label className="mb-2 block">نوع الإعلان</Label>
         <Select 
           value={listingType || "all"} 
-          onValueChange={(value: 'sell' | 'buy' | 'exchange' | 'all') => {
+          onValueChange={(value: 'sell' | 'rent' | 'job' | 'service' | 'all') => {
             setListingType(value === 'all' ? undefined : value);
           }}
         >
@@ -608,8 +608,9 @@ export function MobileFilterDrawer({
           <SelectContent>
             <SelectItem value="all">الكل</SelectItem>
             <SelectItem value="sell">للبيع</SelectItem>
-            <SelectItem value="buy">للشراء</SelectItem>
-            <SelectItem value="exchange">للتبديل</SelectItem>
+            <SelectItem value="rent">للإيجار</SelectItem>
+            <SelectItem value="job">وظائف</SelectItem>
+            <SelectItem value="service">خدمات</SelectItem>
           </SelectContent>
         </Select>
       </div>
