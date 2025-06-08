@@ -16,7 +16,7 @@ export function PromoteTab() {
   const [promoteDialogOpen, setPromoteDialogOpen] = useState(false);
   
   const { data: userListings, isLoading: loadingListings } = useUserListings();
-  const { data: promotions, isLoading: loadingPromotions } = useUserPromotions();
+  const { data: promotionsResponse, isLoading: loadingPromotions } = useUserPromotions();
   const { data: packages, isLoading: loadingPackages } = usePromotionPackages();
 
   if (loadingListings || loadingPromotions || loadingPackages) {
@@ -34,7 +34,7 @@ export function PromoteTab() {
   }
 
   const listings = userListings || [];
-  const promotionsList = Array.isArray(promotions) ? promotions : [];
+  const promotionsList = promotionsResponse?.data || [];
   const packagesList = Array.isArray(packages) ? packages : [];
 
   const handlePromoteListing = (listing: any) => {
@@ -42,8 +42,9 @@ export function PromoteTab() {
     setPromoteDialogOpen(true);
   };
 
-  const activePromotions = promotionsList.filter(p => 
+  const activePromotions = promotionsList.filter((p: any) => 
     p.payment_status === 'paid' && 
+    p.expires_at && 
     new Date(p.expires_at) > new Date()
   );
 
@@ -77,15 +78,23 @@ export function PromoteTab() {
             <CardContent>
               {listings.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {listings.map((listing) => {
-                    const isPromoted = activePromotions.some(p => p.listing_id === listing.id);
+                  {listings.map((listing: any) => {
+                    const isPromoted = activePromotions.some((p: any) => p.listing?.id === listing.id);
                     
                     return (
                       <Card key={listing.id} className={`relative ${isPromoted ? 'border-brand bg-brand/5' : ''}`}>
                         <CardContent className="p-4">
                           <div className="flex items-start gap-3">
                             <div className="w-16 h-16 bg-accent rounded-lg flex items-center justify-center flex-shrink-0">
-                              <Package className="h-8 w-8 text-muted-foreground" />
+                              {listing.main_image_url ? (
+                                <img 
+                                  src={listing.main_image_url} 
+                                  alt={listing.title}
+                                  className="w-full h-full object-cover rounded-lg"
+                                />
+                              ) : (
+                                <Package className="h-8 w-8 text-muted-foreground" />
+                              )}
                             </div>
                             <div className="flex-1 min-w-0">
                               <h3 className="font-semibold truncate">{listing.title}</h3>
@@ -131,8 +140,8 @@ export function PromoteTab() {
 
         <TabsContent value="packages" className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {packagesList.map((pkg) => {
-              const IconComponent = packageIcons[pkg.type as keyof typeof packageIcons] || Star;
+            {packagesList.map((pkg: any) => {
+              const IconComponent = Star; // Default icon for all packages
               
               return (
                 <Card key={pkg.id} className="relative overflow-hidden">
@@ -154,12 +163,14 @@ export function PromoteTab() {
                       </div>
                     </div>
                     <ul className="space-y-1 text-sm">
-                      {pkg.features.map((feature, index) => (
-                        <li key={index} className="flex items-center gap-2">
-                          <div className="w-1.5 h-1.5 bg-brand rounded-full" />
-                          {feature}
-                        </li>
-                      ))}
+                      <li className="flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 bg-brand rounded-full" />
+                        عرض مميز في الصفحة الرئيسية
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 bg-brand rounded-full" />
+                        ظهور أولي في نتائج البحث
+                      </li>
                     </ul>
                   </CardContent>
                 </Card>

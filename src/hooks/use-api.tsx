@@ -44,6 +44,8 @@ const QUERY_KEYS = {
   colorSettings: ['colorSettings'],
   listingSettings: ['listingSettings'],
   userStats: ['userStats'],
+  userAnalytics: ['userAnalytics'],
+  siteIdentity: ['siteIdentity'],
 } as const;
 
 // User Authentication hooks
@@ -169,6 +171,18 @@ export const useUserListings = () => {
   });
 };
 
+export const useDeleteListing = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => userListingsAPI.deleteListing(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.listings() });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.userListings });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.ads() });
+    },
+  });
+};
+
 export const useCreateListing = () => {
   const queryClient = useQueryClient();
   return useMutation({
@@ -191,18 +205,6 @@ export const useUpdateListing = () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.userListings });
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.ads() });
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.listing(variables.id) });
-    },
-  });
-};
-
-export const useDeleteListing = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: number) => userListingsAPI.deleteListing(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.listings() });
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.userListings });
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.ads() });
     },
   });
 };
@@ -457,7 +459,16 @@ export const useUpdateProfile = () => {
   });
 };
 
-// Settings hooks
+// Settings hooks - Updated with real API data
+export const useSiteIdentity = () => {
+  return useQuery({
+    queryKey: QUERY_KEYS.siteIdentity,
+    queryFn: () => settingsAPI.getSiteIdentity(),
+    select: (data) => data.data,
+    staleTime: 60 * 60 * 1000,
+  });
+};
+
 export const useBasicSettings = () => {
   return useQuery({
     queryKey: QUERY_KEYS.basicSettings,
@@ -513,6 +524,11 @@ export const useUserStats = () => {
     enabled: TokenManager.hasToken(),
     staleTime: 5 * 60 * 1000,
   });
+};
+
+// User Analytics hook (alias for stats)
+export const useUserAnalytics = () => {
+  return useUserStats();
 };
 
 // Utility hooks

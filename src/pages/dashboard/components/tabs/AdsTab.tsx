@@ -51,7 +51,7 @@ export function AdsTab() {
   }
 
   // Handle both array and paginated response structures
-  const listings = Array.isArray(userListings) ? userListings : userListings?.data || [];
+  const listings = Array.isArray(userListings) ? userListings : userListings || [];
 
   return (
     <div className="space-y-6">
@@ -81,7 +81,7 @@ export function AdsTab() {
                   />
                 ) : (
                   <img 
-                    src={ad.image?.image_url || '/placeholder.svg'} 
+                    src={ad.image?.image_url || ad.main_image_url || '/placeholder.svg'} 
                     alt={ad.title}
                     className="w-full h-full object-cover"
                   />

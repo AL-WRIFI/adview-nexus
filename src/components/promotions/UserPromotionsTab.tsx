@@ -7,7 +7,7 @@ import { Calendar, Clock, CreditCard } from 'lucide-react';
 import { useUserPromotions } from '@/hooks/use-promotions';
 
 export function UserPromotionsTab() {
-  const { data: promotions, isLoading } = useUserPromotions();
+  const { data: promotionsResponse, isLoading } = useUserPromotions();
 
   if (isLoading) {
     return (
@@ -19,8 +19,8 @@ export function UserPromotionsTab() {
     );
   }
 
-  // Handle array response directly
-  const promotionsList = Array.isArray(promotions) ? promotions : [];
+  // Handle paginated response
+  const promotionsList = promotionsResponse?.data || [];
 
   if (!promotionsList || promotionsList.length === 0) {
     return (
@@ -61,7 +61,7 @@ export function UserPromotionsTab() {
                         <span>
                           {promotion.starts_at ? 
                             new Date(promotion.starts_at).toLocaleDateString('ar-SA') : 
-                            'غير محدد'
+                            'في الانتظار'
                           }
                         </span>
                       </div>
@@ -75,6 +75,11 @@ export function UserPromotionsTab() {
                         </span>
                       </div>
                     </div>
+                    {promotion.bank_transfer_proof_url && (
+                      <div className="text-xs text-muted-foreground">
+                        طريقة الدفع: {promotion.payment_method === 'bank_transfer' ? 'تحويل بنكي' : promotion.payment_method}
+                      </div>
+                    )}
                   </div>
                   <div className="text-left space-y-2">
                     <Badge 

@@ -47,7 +47,7 @@ export function AnalyticsTab() {
   }
 
   // Handle both array and paginated response structures  
-  const listings = Array.isArray(userListings) ? userListings : userListings?.data || [];
+  const listings = Array.isArray(userListings) ? userListings : userListings || [];
   const analyticsData = analytics || {
     totalListings: 0,
     activeListings: 0,

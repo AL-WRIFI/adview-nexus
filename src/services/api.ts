@@ -1,4 +1,3 @@
-
 import { ApiResponse, PaginatedResponse, Listing, Comment, User, SearchFilters, Favorite, Category, SubCategory, Brand, State, City } from '@/types';
 
 // Configuration
@@ -293,15 +292,138 @@ export const profileAPI = {
     ApiClient.get(`/user/listings/${listingId}/is-favorite`),
 };
 
-// Promotion API
+// Settings API - Updated with real API endpoints
+export const settingsAPI = {
+  getSiteIdentity: (): Promise<ApiResponse<{
+    site_logo: string;
+    site_white_logo: string;
+    site_favicon: string;
+  }>> => 
+    ApiClient.get('/settings/site-identity'),
+
+  getBasicSettings: (): Promise<ApiResponse<{
+    site_title: string;
+    site_tag_line: string;
+    site_footer_copyright: string;
+    user_email_verify_enable_disable: boolean | null;
+    user_otp_verify_enable_disable: boolean | null;
+  }>> => 
+    ApiClient.get('/settings/basic'),
+
+  getColorSettings: (): Promise<ApiResponse<{
+    site_main_color_one: string;
+    site_main_color_two: string;
+    site_main_color_three: string;
+    heading_color: string;
+    light_color: string;
+    extra_light_color: string;
+  }>> => 
+    ApiClient.get('/settings/colors'),
+
+  getListingSettings: (): Promise<ApiResponse<{
+    listing_create_settings: string;
+    listing_create_status_settings: string;
+    updated_at: string;
+  }>> => 
+    ApiClient.get('/settings/listing-settings'),
+
+  // Keep legacy methods for backward compatibility
+  getNavbarVariant: (): Promise<ApiResponse<any>> => 
+    ApiClient.get('/settings/navbar-variant'),
+
+  getFooterVariant: (): Promise<ApiResponse<any>> => 
+    ApiClient.get('/settings/footer-variant'),
+
+  getSeoSettings: (): Promise<ApiResponse<any>> => 
+    ApiClient.get('/settings/seo'),
+
+  getLanguages: (): Promise<ApiResponse<any>> => 
+    ApiClient.get('/settings/languages'),
+
+  getAllSettings: (): Promise<ApiResponse<any>> => 
+    ApiClient.get('/settings/all'),
+};
+
+// Promotion API - Updated with real API endpoints
 export const promotionAPI = {
-  getPromotionPackages: (): Promise<ApiResponse<any[]>> => 
+  getPromotionPackages: (): Promise<ApiResponse<{
+    id: number;
+    name: string;
+    description: string;
+    price: number;
+    duration_days: number;
+    is_active: boolean;
+    stripe_price_id: string | null;
+  }[]>> => 
     ApiClient.get('/promotion-packages'),
 
-  promoteListin: (listingId: number, packageData: any): Promise<ApiResponse<any>> => 
-    ApiClient.post(`/listings/${listingId}/promote`, packageData),
+  promoteListingWithBankTransfer: (listingId: number, data: {
+    promotion_package_id: number;
+    payment_method: 'bank_transfer';
+    bank_transfer_proof: File;
+  }): Promise<ApiResponse<{
+    id: number;
+    payment_method: string;
+    payment_status: string;
+    transaction_id: string | null;
+    bank_transfer_proof_url: string;
+    payment_confirmed_at: string | null;
+    starts_at: string | null;
+    expires_at: string | null;
+    amount_paid: number;
+    admin_notes: string | null;
+    created_at: string;
+    package: any;
+    user_id: number;
+  }>> => {
+    const formData = new FormData();
+    formData.append('promotion_package_id', data.promotion_package_id.toString());
+    formData.append('payment_method', data.payment_method);
+    formData.append('bank_transfer_proof', data.bank_transfer_proof);
+    
+    return ApiClient.post(`/user/listings/${listingId}/promote`, formData);
+  },
 
-  getUserPromotions: (): Promise<ApiResponse<any[]>> => 
+  promoteListingWithStripe: (listingId: number, data: {
+    promotion_package_id: number;
+    payment_method: 'stripe';
+  }): Promise<ApiResponse<any>> => 
+    ApiClient.post(`/user/listings/${listingId}/promote`, data),
+
+  getUserPromotions: (): Promise<ApiResponse<PaginatedResponse<{
+    id: number;
+    payment_method: string;
+    payment_status: string;
+    transaction_id: string | null;
+    bank_transfer_proof_url: string;
+    payment_confirmed_at: string | null;
+    starts_at: string | null;
+    expires_at: string | null;
+    amount_paid: number;
+    admin_notes: string | null;
+    created_at: string;
+    package: {
+      id: number;
+      name: string;
+      description: string;
+      price: number;
+      duration_days: number;
+      is_active: boolean;
+      stripe_price_id: string | null;
+    };
+    listing: {
+      id: number;
+      title: string;
+      slug: string;
+      image: {
+        image_id: string;
+        image_url: string;
+      };
+      is_currently_promoted: boolean;
+      promoted_until: string | null;
+    };
+    user_id: number;
+  }>>> => 
     ApiClient.get('/user/listing-promotions'),
 };
 
@@ -324,36 +446,6 @@ export const accountAPI = {
 
   verifyProfile: (data: FormData): Promise<ApiResponse<any>> => 
     ApiClient.post('/user/account/verify-profile', data),
-};
-
-// Settings API
-export const settingsAPI = {
-  getSiteIdentity: (): Promise<ApiResponse<any>> => 
-    ApiClient.get('/settings/site-identity'),
-
-  getBasicSettings: (): Promise<ApiResponse<any>> => 
-    ApiClient.get('/settings/basic'),
-
-  getNavbarVariant: (): Promise<ApiResponse<any>> => 
-    ApiClient.get('/settings/navbar-variant'),
-
-  getFooterVariant: (): Promise<ApiResponse<any>> => 
-    ApiClient.get('/settings/footer-variant'),
-
-  getColorSettings: (): Promise<ApiResponse<any>> => 
-    ApiClient.get('/settings/colors'),
-
-  getSeoSettings: (): Promise<ApiResponse<any>> => 
-    ApiClient.get('/settings/seo'),
-
-  getLanguages: (): Promise<ApiResponse<any>> => 
-    ApiClient.get('/settings/languages'),
-
-  getAllSettings: (): Promise<ApiResponse<any>> => 
-    ApiClient.get('/settings/all'),
-
-  getListingSettings: (): Promise<ApiResponse<any>> => 
-    ApiClient.get('/settings/listing-settings'),
 };
 
 // Export Token Manager for external use
