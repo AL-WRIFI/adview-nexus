@@ -1,15 +1,15 @@
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Grid3X3, MoreHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { useCategories } from '@/hooks/use-api';
 import { Category } from '@/types';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
+import { Grid3X3 } from 'lucide-react';
+import { ModernCategoryMegaMenu } from './ModernCategoryMegaMenu';
 import {
   Car, Home, Smartphone, Mouse, Briefcase, Wrench, Shirt, Gamepad,
   Gem, ShoppingBag, Utensils, Laptop, BookOpen, Baby, Bike, Camera, FileText,
@@ -37,7 +37,6 @@ export function ModernCategoryBar() {
   const [selectedCategory, setSelectedCategory] = useState<number | null>(categoryIdFromUrl);
   const [selectedSubcategory, setSelectedSubcategory] = useState<number | null>(subcategoryIdFromUrl);
   const [selectedChildCategory, setSelectedChildCategory] = useState<number | null>(childCategoryIdFromUrl);
-  const [showAllCategories, setShowAllCategories] = useState(false);
 
   const { data: categories, isLoading: loadingCategories } = useCategories();
 
@@ -85,10 +84,10 @@ export function ModernCategoryBar() {
     ? subcategories.find(sub => sub.id === selectedSubcategory)?.children || []
     : [];
 
-  // Main Categories Display (showing first 8 for mobile, all for desktop)
-  const displayCategories = isMobile 
-    ? categories?.slice(0, 8) || []
-    : categories || [];
+  // Don't show on mobile - it will be handled by MobileNav
+  if (isMobile) {
+    return null;
+  }
 
   const CategoryItem = ({ category, isSelected }: { category: Category; isSelected: boolean }) => {
     const iconName = category.icon || 'Car';
@@ -168,6 +167,8 @@ export function ModernCategoryBar() {
     );
   }
 
+  const displayCategories = categories?.slice(0, 8) || [];
+
   return (
     <div className="bg-background border-b border-border shadow-sm">
       {/* Main Categories */}
@@ -182,37 +183,21 @@ export function ModernCategoryBar() {
                   isSelected={selectedCategory === category.id}
                 />
               ))}
-              
-              {/* Show More Categories for Mobile */}
-              {isMobile && categories && categories.length > 8 && (
-                <Sheet open={showAllCategories} onOpenChange={setShowAllCategories}>
-                  <SheetTrigger asChild>
-                    <button className="flex flex-col items-center p-3 rounded-2xl bg-muted hover:bg-accent transition-colors min-w-[80px] border border-border">
-                      <div className="p-3 rounded-xl mb-2 bg-accent border border-border">
-                        <Grid3X3 className="h-6 w-6 text-muted-foreground" />
-                      </div>
-                      <span className="text-xs font-medium text-muted-foreground">المزيد</span>
-                    </button>
-                  </SheetTrigger>
-                  <SheetContent side="bottom" className="h-[70vh] bg-background border-border">
-                    <SheetHeader>
-                      <SheetTitle>جميع التصنيفات</SheetTitle>
-                    </SheetHeader>
-                    <div className="grid grid-cols-3 gap-4 mt-6">
-                      {categories.map((category) => (
-                        <CategoryItem
-                          key={category.id}
-                          category={category}
-                          isSelected={selectedCategory === category.id}
-                        />
-                      ))}
-                    </div>
-                  </SheetContent>
-                </Sheet>
-              )}
             </div>
             <ScrollBar orientation="horizontal" />
           </ScrollArea>
+          
+          {/* All Categories Button */}
+          <div className="mr-4">
+            <ModernCategoryMegaMenu 
+              trigger={
+                <Button variant="outline" className="flex items-center gap-2 bg-background border-border hover:border-brand/50">
+                  <Grid3X3 className="h-4 w-4" />
+                  كل التصنيفات
+                </Button>
+              }
+            />
+          </div>
         </div>
       </div>
 

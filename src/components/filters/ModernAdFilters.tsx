@@ -1,18 +1,19 @@
+
 import React, { useState } from 'react';
-import { Filter, Search, MapPin, SlidersHorizontal, X, ChevronDown } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Slider } from '@/components/ui/slider';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
+import { Slider } from '@/components/ui/slider';
+import { Filter, X, Grid, List } from 'lucide-react';
 import { useCategories, useBrands, useStates, useAllCities } from '@/hooks/use-api';
 import { SearchFilters } from '@/types';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { cn } from '@/lib/utils';
 
 interface ModernAdFiltersProps {
   onFilterChange: (filters: SearchFilters) => void;
@@ -21,281 +22,319 @@ interface ModernAdFiltersProps {
 
 export function ModernAdFilters({ onFilterChange, currentFilters = {} }: ModernAdFiltersProps) {
   const isMobile = useIsMobile();
-  const [isOpen, setIsOpen] = useState(false);
   const [localFilters, setLocalFilters] = useState<SearchFilters>(currentFilters);
-  const [priceRange, setPriceRange] = useState([
-    currentFilters.price_min || 0, 
-    currentFilters.price_max || 100000
-  ]);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   
-  const { data: categories } = useCategories();
-  const { data: brands } = useBrands();
-  const { data: states } = useStates();
-  const { data: cities } = useAllCities();
+  // View mode states for categories and brands
+  const [categoryViewMode, setCategoryViewMode] = useState<'list' | 'grid'>('list');
+  const [brandViewMode, setBrandViewMode] = useState<'list' | 'grid'>('list');
 
-  const handleFilterChange = (key: keyof SearchFilters, value: any) => {
+  const { data: categories = [] } = useCategories();
+  const { data: brands = [] } = useBrands();
+  const { data: states = [] } = useStates();
+  const { data: cities = [] } = useAllCities();
+
+  const handleFilterUpdate = (key: keyof SearchFilters, value: any) => {
     const newFilters = { ...localFilters, [key]: value };
     setLocalFilters(newFilters);
-  };
-
-  const applyFilters = () => {
-    onFilterChange({
-      ...localFilters,
-      price_min: priceRange[0],
-      price_max: priceRange[1],
-    });
-    if (isMobile) setIsOpen(false);
+    onFilterChange(newFilters);
   };
 
   const clearFilters = () => {
-    const emptyFilters = {};
-    setLocalFilters(emptyFilters);
-    setPriceRange([0, 100000]);
-    onFilterChange(emptyFilters);
-    if (isMobile) setIsOpen(false);
+    setLocalFilters({});
+    onFilterChange({});
   };
 
-  const getActiveFiltersCount = () => {
-    let count = 0;
-    if (localFilters.category_id) count++;
-    if (localFilters.sub_category_id) count++;
-    if (localFilters.brand_id) count++;
-    if (localFilters.state_id) count++;
-    if (localFilters.city_id) count++;
-    if (localFilters.condition) count++;
-    if (localFilters.listing_type) count++;
-    if (localFilters.is_negotiable) count++;
-    if (priceRange[0] > 0 || priceRange[1] < 100000) count++;
-    return count;
+  const getActiveFilterCount = () => {
+    return Object.values(localFilters).filter(value => 
+      value !== undefined && value !== null && value !== ''
+    ).length;
   };
 
   const FilterContent = () => (
     <div className="space-y-6">
-      {/* Search Bar */}
-      <div className="relative">
-        <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-        <Input
-          placeholder="البحث في الإعلانات..."
-          value={localFilters.search || ''}
-          onChange={(e) => handleFilterChange('search', e.target.value)}
-          className="pr-10 bg-background border-border focus:bg-background focus:border-brand"
-        />
-      </div>
-
-      {/* Quick Filters */}
-      <div className="space-y-3">
-        <Label className="text-sm font-semibold text-foreground">فلاتر سريعة</Label>
-        <div className="flex flex-wrap gap-2">
-          <Button
-            variant={localFilters.listing_type === 'sell' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => handleFilterChange('listing_type', 
-              localFilters.listing_type === 'sell' ? undefined : 'sell')}
-            className="text-xs"
-          >
-            للبيع
-          </Button>
-          <Button
-            variant={localFilters.listing_type === 'rent' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => handleFilterChange('listing_type', 
-              localFilters.listing_type === 'rent' ? undefined : 'rent')}
-            className="text-xs"
-          >
-            للإيجار
-          </Button>
-          <Button
-            variant={localFilters.condition === 'new' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => handleFilterChange('condition', 
-              localFilters.condition === 'new' ? undefined : 'new')}
-            className="text-xs"
-          >
-            جديد
-          </Button>
-          <Button
-            variant={localFilters.condition === 'used' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => handleFilterChange('condition', 
-              localFilters.condition === 'used' ? undefined : 'used')}
-            className="text-xs"
-          >
-            مستعمل
-          </Button>
-        </div>
-      </div>
-
-      <Separator />
-
-      {/* Category Filter */}
-      <div className="space-y-3">
-        <Label className="text-sm font-semibold text-foreground">التصنيف</Label>
-        <Select 
-          value={localFilters.category_id?.toString() || ''} 
-          onValueChange={(value) => handleFilterChange('category_id', value ? parseInt(value) : undefined)}
-        >
-          <SelectTrigger className="bg-background border-border focus:border-brand">
-            <SelectValue placeholder="اختر التصنيف" />
-          </SelectTrigger>
-          <SelectContent className="bg-background border-border">
-            {categories?.map((category) => (
-              <SelectItem key={category.id} value={category.id.toString()}>
-                {category.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Brand Filter */}
-      <div className="space-y-3">
-        <Label className="text-sm font-semibold text-foreground">الماركة</Label>
-        <Select 
-          value={localFilters.brand_id?.toString() || ''} 
-          onValueChange={(value) => handleFilterChange('brand_id', value ? parseInt(value) : undefined)}
-        >
-          <SelectTrigger className="bg-background border-border focus:border-brand">
-            <SelectValue placeholder="اختر الماركة" />
-          </SelectTrigger>
-          <SelectContent className="bg-background border-border">
-            {brands?.map((brand) => (
-              <SelectItem key={brand.id} value={brand.id.toString()}>
-                {brand.name || brand.title}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      <Separator />
-
-      {/* Location Filters */}
-      <div className="space-y-3">
-        <Label className="text-sm font-semibold text-foreground flex items-center gap-2">
-          <MapPin className="h-4 w-4" />
-          الموقع
-        </Label>
-        <div className="grid grid-cols-1 gap-3">
-          <Select 
-            value={localFilters.state_id?.toString() || ''} 
-            onValueChange={(value) => handleFilterChange('state_id', value ? parseInt(value) : undefined)}
-          >
-            <SelectTrigger className="bg-background border-border focus:border-brand">
-              <SelectValue placeholder="اختر المنطقة" />
-            </SelectTrigger>
-            <SelectContent className="bg-background border-border">
-              {states?.map((state) => (
-                <SelectItem key={state.id} value={state.id.toString()}>
-                  {state.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          
-          <Select 
-            value={localFilters.city_id?.toString() || ''} 
-            onValueChange={(value) => handleFilterChange('city_id', value ? parseInt(value) : undefined)}
-          >
-            <SelectTrigger className="bg-background border-border focus:border-brand">
-              <SelectValue placeholder="اختر المدينة" />
-            </SelectTrigger>
-            <SelectContent className="bg-background border-border">
-              {cities?.map((city) => (
-                <SelectItem key={city.id} value={city.id.toString()}>
-                  {city.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      <Separator />
-
       {/* Price Range */}
-      <div className="space-y-4">
-        <Label className="text-sm font-semibold text-foreground">نطاق السعر</Label>
-        <div className="px-2">
-          <Slider
-            value={priceRange}
-            onValueChange={setPriceRange}
-            max={100000}
-            min={0}
-            step={1000}
-            className="w-full"
-          />
-          <div className="flex justify-between text-xs text-muted-foreground mt-2">
-            <span>{priceRange[0].toLocaleString()} ريال</span>
-            <span>{priceRange[1].toLocaleString()} ريال</span>
+      <Card className="bg-background border-border">
+        <CardHeader>
+          <CardTitle className="text-lg">نطاق السعر</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="min-price">الحد الأدنى</Label>
+              <Input
+                id="min-price"
+                type="number"
+                placeholder="0"
+                value={localFilters.price_min || ''}
+                onChange={(e) => handleFilterUpdate('price_min', e.target.value ? Number(e.target.value) : undefined)}
+                className="bg-background border-border"
+              />
+            </div>
+            <div>
+              <Label htmlFor="max-price">الحد الأعلى</Label>
+              <Input
+                id="max-price"
+                type="number"
+                placeholder="بدون حد أقصى"
+                value={localFilters.price_max || ''}
+                onChange={(e) => handleFilterUpdate('price_max', e.target.value ? Number(e.target.value) : undefined)}
+                className="bg-background border-border"
+              />
+            </div>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
-      {/* Advanced Options */}
-      <div className="space-y-3">
-        <Label className="text-sm font-semibold text-foreground">خيارات متقدمة</Label>
-        <div className="space-y-2">
-          <div className="flex items-center space-x-2 space-x-reverse">
-            <Checkbox
-              id="negotiable"
-              checked={localFilters.is_negotiable || false}
-              onCheckedChange={(checked) => handleFilterChange('is_negotiable', checked)}
-            />
-            <Label htmlFor="negotiable" className="text-sm">قابل للتفاوض</Label>
+      {/* Categories */}
+      <Card className="bg-background border-border">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-lg">التصنيفات</CardTitle>
+            <div className="flex items-center gap-2">
+              <Label htmlFor="category-view" className="text-sm">العرض:</Label>
+              <Switch
+                id="category-view"
+                checked={categoryViewMode === 'grid'}
+                onCheckedChange={(checked) => setCategoryViewMode(checked ? 'grid' : 'list')}
+              />
+              <span className="text-sm text-muted-foreground">
+                {categoryViewMode === 'grid' ? 'صور' : 'قائمة'}
+              </span>
+            </div>
           </div>
-          <div className="flex items-center space-x-2 space-x-reverse">
-            <Checkbox
-              id="nearby"
-              checked={localFilters.radius ? true : false}
-              onCheckedChange={(checked) => handleFilterChange('radius', checked ? 50 : undefined)}
-            />
-            <Label htmlFor="nearby" className="text-sm">القريب مني</Label>
-          </div>
-        </div>
-      </div>
-
-      {/* Action Buttons */}
-      <div className="flex gap-3 pt-4">
-        <Button onClick={applyFilters} className="flex-1">
-          تطبيق الفلاتر
-          {getActiveFiltersCount() > 0 && (
-            <Badge variant="secondary" className="mr-2">
-              {getActiveFiltersCount()}
-            </Badge>
+        </CardHeader>
+        <CardContent>
+          {categoryViewMode === 'list' ? (
+            <Select
+              value={localFilters.category_id?.toString() || ''}
+              onValueChange={(value) => handleFilterUpdate('category_id', value ? Number(value) : undefined)}
+            >
+              <SelectTrigger className="bg-background border-border">
+                <SelectValue placeholder="اختر التصنيف" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">كل التصنيفات</SelectItem>
+                {categories.map((category) => (
+                  <SelectItem key={category.id} value={category.id.toString()}>
+                    {category.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <div className="grid grid-cols-2 gap-2">
+              {categories.slice(0, 8).map((category) => (
+                <button
+                  key={category.id}
+                  onClick={() => handleFilterUpdate('category_id', 
+                    localFilters.category_id === category.id ? undefined : category.id
+                  )}
+                  className={cn(
+                    "p-3 rounded-lg border text-center transition-all",
+                    localFilters.category_id === category.id
+                      ? "border-brand bg-brand/10 text-brand"
+                      : "border-border bg-background hover:border-brand/50"
+                  )}
+                >
+                  <div className="text-xs font-medium">{category.name}</div>
+                </button>
+              ))}
+            </div>
           )}
+        </CardContent>
+      </Card>
+
+      {/* Brands */}
+      <Card className="bg-background border-border">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-lg">العلامات التجارية</CardTitle>
+            <div className="flex items-center gap-2">
+              <Label htmlFor="brand-view" className="text-sm">العرض:</Label>
+              <Switch
+                id="brand-view"
+                checked={brandViewMode === 'grid'}
+                onCheckedChange={(checked) => setBrandViewMode(checked ? 'grid' : 'list')}
+              />
+              <span className="text-sm text-muted-foreground">
+                {brandViewMode === 'grid' ? 'صور' : 'قائمة'}
+              </span>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {brandViewMode === 'list' ? (
+            <Select
+              value={localFilters.brand_id?.toString() || ''}
+              onValueChange={(value) => handleFilterUpdate('brand_id', value ? Number(value) : undefined)}
+            >
+              <SelectTrigger className="bg-background border-border">
+                <SelectValue placeholder="اختر العلامة التجارية" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">كل العلامات التجارية</SelectItem>
+                {brands.map((brand: any) => (
+                  <SelectItem key={brand.id} value={brand.id.toString()}>
+                    {brand.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <div className="grid grid-cols-2 gap-2">
+              {brands.slice(0, 8).map((brand: any) => (
+                <button
+                  key={brand.id}
+                  onClick={() => handleFilterUpdate('brand_id', 
+                    localFilters.brand_id === brand.id ? undefined : brand.id
+                  )}
+                  className={cn(
+                    "p-3 rounded-lg border text-center transition-all",
+                    localFilters.brand_id === brand.id
+                      ? "border-brand bg-brand/10 text-brand"
+                      : "border-border bg-background hover:border-brand/50"
+                  )}
+                >
+                  <div className="text-xs font-medium">{brand.name}</div>
+                </button>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Location */}
+      <Card className="bg-background border-border">
+        <CardHeader>
+          <CardTitle className="text-lg">الموقع</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <Label htmlFor="state">المحافظة</Label>
+            <Select
+              value={localFilters.state_id?.toString() || ''}
+              onValueChange={(value) => handleFilterUpdate('state_id', value ? Number(value) : undefined)}
+            >
+              <SelectTrigger className="bg-background border-border">
+                <SelectValue placeholder="اختر المحافظة" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">كل المحافظات</SelectItem>
+                {states.map((state: any) => (
+                  <SelectItem key={state.id} value={state.id.toString()}>
+                    {state.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div>
+            <Label htmlFor="city">المدينة</Label>
+            <Select
+              value={localFilters.city_id?.toString() || ''}
+              onValueChange={(value) => handleFilterUpdate('city_id', value ? Number(value) : undefined)}
+            >
+              <SelectTrigger className="bg-background border-border">
+                <SelectValue placeholder="اختر المدينة" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">كل المدن</SelectItem>
+                {cities.map((city: any) => (
+                  <SelectItem key={city.id} value={city.id.toString()}>
+                    {city.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Condition */}
+      <Card className="bg-background border-border">
+        <CardHeader>
+          <CardTitle className="text-lg">حالة المنتج</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Select
+            value={localFilters.product_condition || ''}
+            onValueChange={(value) => handleFilterUpdate('product_condition', value || undefined)}
+          >
+            <SelectTrigger className="bg-background border-border">
+              <SelectValue placeholder="اختر الحالة" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">كل الحالات</SelectItem>
+              <SelectItem value="new">جديد</SelectItem>
+              <SelectItem value="used">مستعمل</SelectItem>
+            </SelectContent>
+          </Select>
+        </CardContent>
+      </Card>
+
+      {/* Listing Type */}
+      <Card className="bg-background border-border">
+        <CardHeader>
+          <CardTitle className="text-lg">نوع الإعلان</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Select
+            value={localFilters.listing_type || ''}
+            onValueChange={(value) => handleFilterUpdate('listing_type', value || undefined)}
+          >
+            <SelectTrigger className="bg-background border-border">
+              <SelectValue placeholder="اختر النوع" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">كل الأنواع</SelectItem>
+              <SelectItem value="sell">للبيع</SelectItem>
+              <SelectItem value="rent">للإيجار</SelectItem>
+              <SelectItem value="job">وظائف</SelectItem>
+              <SelectItem value="service">خدمات</SelectItem>
+            </SelectContent>
+          </Select>
+        </CardContent>
+      </Card>
+
+      {/* Clear Filters */}
+      {getActiveFilterCount() > 0 && (
+        <Button 
+          variant="outline" 
+          onClick={clearFilters}
+          className="w-full border-border bg-background hover:bg-accent"
+        >
+          <X className="h-4 w-4 mr-2" />
+          مسح كل الفلاتر ({getActiveFilterCount()})
         </Button>
-        <Button variant="outline" onClick={clearFilters} size="icon">
-          <X className="h-4 w-4" />
-        </Button>
-      </div>
+      )}
     </div>
   );
 
   if (isMobile) {
     return (
-      <Sheet open={isOpen} onOpenChange={setIsOpen}>
+      <Sheet open={mobileFiltersOpen} onOpenChange={setMobileFiltersOpen}>
         <SheetTrigger asChild>
-          <Button variant="outline" className="relative bg-background border-border">
-            <SlidersHorizontal className="h-4 w-4 ml-2" />
-            فلترة
-            {getActiveFiltersCount() > 0 && (
+          <Button variant="outline" size="sm" className="relative border-border bg-background">
+            <Filter className="h-4 w-4 mr-2" />
+            <span>الفلاتر</span>
+            {getActiveFilterCount() > 0 && (
               <Badge 
                 variant="destructive" 
-                className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center text-xs"
+                className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
               >
-                {getActiveFiltersCount()}
+                {getActiveFilterCount()}
               </Badge>
             )}
           </Button>
         </SheetTrigger>
-        <SheetContent side="bottom" className="h-[85vh] overflow-y-auto bg-background border-border">
-          <SheetHeader className="text-right">
-            <SheetTitle className="flex items-center justify-between">
-              <span>فلترة النتائج</span>
-              <Button variant="ghost" size="sm" onClick={() => setIsOpen(false)}>
-                <X className="h-4 w-4" />
-              </Button>
-            </SheetTitle>
+        <SheetContent 
+          side="right" 
+          className="w-full sm:w-96 bg-background border-border overflow-y-auto"
+        >
+          <SheetHeader>
+            <SheetTitle>تصفية النتائج</SheetTitle>
           </SheetHeader>
           <div className="mt-6">
             <FilterContent />
@@ -306,23 +345,16 @@ export function ModernAdFilters({ onFilterChange, currentFilters = {} }: ModernA
   }
 
   return (
-    <Card className="sticky top-4 bg-background border-border">
-      <CardHeader className="pb-4">
-        <CardTitle className="flex items-center justify-between text-lg">
-          <span className="flex items-center gap-2">
-            <Filter className="h-5 w-5" />
-            فلترة النتائج
-          </span>
-          {getActiveFiltersCount() > 0 && (
-            <Badge variant="secondary">
-              {getActiveFiltersCount()} فلاتر نشطة
-            </Badge>
-          )}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <FilterContent />
-      </CardContent>
-    </Card>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-bold">تصفية النتائج</h2>
+        {getActiveFilterCount() > 0 && (
+          <Badge variant="secondary">
+            {getActiveFilterCount()} فلتر نشط
+          </Badge>
+        )}
+      </div>
+      <FilterContent />
+    </div>
   );
 }
