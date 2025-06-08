@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -7,8 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Upload, CreditCard, Banknote, Wallet } from 'lucide-react';
-import { usePromotionPackages, usePromoteWithBankTransfer, usePromoteWithStripe, usePromoteWithWallet } from '@/hooks/use-promotions';
-import { PromotionPackage } from '@/types/promotions';
+import { usePromotionPackages, usePromoteWithBankTransfer, usePromoteWithStripe, usePromoteWithWallet, PromotionPackage } from '@/hooks/use-promotions';
 import { Listing } from '@/types';
 import { useAuth } from '@/context/auth-context';
 
@@ -65,7 +65,8 @@ export function PromoteListingDialog({ open, onOpenChange, listing }: PromoteLis
     }
   };
 
-  const selectedPackageData = packages?.find(pkg => pkg.id === selectedPackage);
+  const packagesArray = Array.isArray(packages) ? packages : [];
+  const selectedPackageData = packagesArray.find(pkg => pkg.id === selectedPackage);
   const walletBalance = user?.wallet_balance || 0;
   const canAffordWithWallet = selectedPackageData ? (walletBalance >= selectedPackageData.price * 100) : false;
 
@@ -85,9 +86,9 @@ export function PromoteListingDialog({ open, onOpenChange, listing }: PromoteLis
               </CardHeader>
               <CardContent>
                 <div className="flex items-center gap-3">
-                  {listing.image && (
+                  {listing.main_image_url && (
                     <img 
-                      src={typeof listing.image === 'string' ? listing.image : listing.image?.image_url || '/placeholder.svg'} 
+                      src={listing.main_image_url} 
                       alt={listing.title}
                       className="w-12 h-12 object-cover rounded"
                     />
@@ -108,7 +109,7 @@ export function PromoteListingDialog({ open, onOpenChange, listing }: PromoteLis
               ) : (
                 <RadioGroup value={selectedPackage?.toString()} onValueChange={(value) => setSelectedPackage(Number(value))}>
                   <div className="grid gap-3">
-                    {packages?.map((pkg: PromotionPackage) => (
+                    {packagesArray.map((pkg: PromotionPackage) => (
                       <Card key={pkg.id} className={selectedPackage === pkg.id ? 'ring-2 ring-primary' : ''}>
                         <CardContent className="p-4">
                           <div className="flex items-center space-x-2">

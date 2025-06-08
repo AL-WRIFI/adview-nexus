@@ -31,10 +31,12 @@ export interface ListingPromotion {
 export interface PromotionPackage {
   id: number;
   name: string;
+  description: string;
   price: number;
-  duration: number;
+  duration_days: number;
   features: string[];
   type: 'featured' | 'highlight' | 'urgent' | 'top';
+  is_active: boolean;
 }
 
 // Hook to get user promotions
@@ -70,18 +72,22 @@ export function usePromotionPackages() {
         {
           id: 1,
           name: 'باقة مميزة',
+          description: 'إعلان مميز يظهر في المقدمة',
           price: 50,
-          duration: 30,
+          duration_days: 30,
           features: ['إعلان مميز', 'ظهور في المقدمة'],
-          type: 'featured'
+          type: 'featured',
+          is_active: true
         },
         {
           id: 2,
           name: 'باقة عاجل',
+          description: 'إعلان عاجل بألوان مميزة',
           price: 30,
-          duration: 7,
+          duration_days: 7,
           features: ['علامة عاجل', 'ألوان مميزة'],
-          type: 'urgent'
+          type: 'urgent',
+          is_active: true
         }
       ] as PromotionPackage[];
     },
@@ -96,6 +102,54 @@ export function usePromoteListing() {
     mutationFn: async ({ listingId, packageId }: { listingId: number; packageId: number }) => {
       // Mock API call - replace with actual implementation
       return await mockApiCall({ success: true, listingId, packageId });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user-promotions'] });
+      queryClient.invalidateQueries({ queryKey: ['user-listings'] });
+    },
+  });
+}
+
+// New promotion payment hooks
+export function usePromoteWithBankTransfer() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ listingId, data }: { listingId: number; data: any }) => {
+      // Mock API call - replace with actual implementation
+      return await mockApiCall({ success: true, listingId, data });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user-promotions'] });
+      queryClient.invalidateQueries({ queryKey: ['user-listings'] });
+    },
+  });
+}
+
+export function usePromoteWithStripe() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ listingId, promotionPackageId }: { listingId: number; promotionPackageId: number }) => {
+      // Mock API call - replace with actual implementation
+      // This would normally redirect to Stripe
+      window.open('https://checkout.stripe.com/mock-url', '_blank');
+      return await mockApiCall({ success: true, listingId, promotionPackageId });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user-promotions'] });
+      queryClient.invalidateQueries({ queryKey: ['user-listings'] });
+    },
+  });
+}
+
+export function usePromoteWithWallet() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ listingId, promotionPackageId }: { listingId: number; promotionPackageId: number }) => {
+      // Mock API call - replace with actual implementation
+      return await mockApiCall({ success: true, listingId, promotionPackageId });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user-promotions'] });

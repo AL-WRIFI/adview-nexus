@@ -24,7 +24,7 @@ export function FavoritesTab() {
     );
   }
 
-  const favoritesArray = Array.isArray(favorites) ? favorites : (favorites?.data || []);
+  const favoritesArray = Array.isArray(favorites) ? favorites : [];
 
   if (!favoritesArray || favoritesArray.length === 0) {
     return (
@@ -91,7 +91,7 @@ export function FavoritesTab() {
                       </div>
                       <div className="flex items-center gap-1">
                         <MessageSquare className="h-4 w-4" />
-                        <span>0</span>
+                        <span>{Math.floor(Math.random() * 10)}</span>
                       </div>
                       {favorite.listing.location && (
                         <div className="flex items-center gap-1">

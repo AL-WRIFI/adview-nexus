@@ -19,8 +19,8 @@ export function UserPromotionsTab() {
     );
   }
 
-  // Handle both array and paginated response
-  const promotionsList = Array.isArray(promotions) ? promotions : (promotions?.data || []);
+  // Handle array response directly
+  const promotionsList = Array.isArray(promotions) ? promotions : [];
 
   if (!promotionsList || promotionsList.length === 0) {
     return (
