@@ -107,14 +107,14 @@ export function ModernAdFilters({ onFilterChange, currentFilters = {} }: ModernA
         <CardContent>
           {categoryViewMode === 'list' ? (
             <Select
-              value={localFilters.category_id?.toString() || ''}
-              onValueChange={(value) => handleFilterUpdate('category_id', value ? Number(value) : undefined)}
+              value={localFilters.category_id?.toString() || 'all'}
+              onValueChange={(value) => handleFilterUpdate('category_id', value === 'all' ? undefined : Number(value))}
             >
               <SelectTrigger className="bg-background border-border">
                 <SelectValue placeholder="اختر التصنيف" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">كل التصنيفات</SelectItem>
+                <SelectItem value="all">كل التصنيفات</SelectItem>
                 {categories.map((category) => (
                   <SelectItem key={category.id} value={category.id.toString()}>
                     {category.name}
@@ -166,14 +166,14 @@ export function ModernAdFilters({ onFilterChange, currentFilters = {} }: ModernA
         <CardContent>
           {brandViewMode === 'list' ? (
             <Select
-              value={localFilters.brand_id?.toString() || ''}
-              onValueChange={(value) => handleFilterUpdate('brand_id', value ? Number(value) : undefined)}
+              value={localFilters.brand_id?.toString() || 'all'}
+              onValueChange={(value) => handleFilterUpdate('brand_id', value === 'all' ? undefined : Number(value))}
             >
               <SelectTrigger className="bg-background border-border">
                 <SelectValue placeholder="اختر العلامة التجارية" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">كل العلامات التجارية</SelectItem>
+                <SelectItem value="all">كل العلامات التجارية</SelectItem>
                 {brands.map((brand: any) => (
                   <SelectItem key={brand.id} value={brand.id.toString()}>
                     {brand.name}
@@ -213,14 +213,14 @@ export function ModernAdFilters({ onFilterChange, currentFilters = {} }: ModernA
           <div>
             <Label htmlFor="state">المحافظة</Label>
             <Select
-              value={localFilters.state_id?.toString() || ''}
-              onValueChange={(value) => handleFilterUpdate('state_id', value ? Number(value) : undefined)}
+              value={localFilters.state_id?.toString() || 'all'}
+              onValueChange={(value) => handleFilterUpdate('state_id', value === 'all' ? undefined : Number(value))}
             >
               <SelectTrigger className="bg-background border-border">
                 <SelectValue placeholder="اختر المحافظة" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">كل المحافظات</SelectItem>
+                <SelectItem value="all">كل المحافظات</SelectItem>
                 {states.map((state: any) => (
                   <SelectItem key={state.id} value={state.id.toString()}>
                     {state.name}
@@ -233,14 +233,14 @@ export function ModernAdFilters({ onFilterChange, currentFilters = {} }: ModernA
           <div>
             <Label htmlFor="city">المدينة</Label>
             <Select
-              value={localFilters.city_id?.toString() || ''}
-              onValueChange={(value) => handleFilterUpdate('city_id', value ? Number(value) : undefined)}
+              value={localFilters.city_id?.toString() || 'all'}
+              onValueChange={(value) => handleFilterUpdate('city_id', value === 'all' ? undefined : Number(value))}
             >
               <SelectTrigger className="bg-background border-border">
                 <SelectValue placeholder="اختر المدينة" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">كل المدن</SelectItem>
+                <SelectItem value="all">كل المدن</SelectItem>
                 {cities.map((city: any) => (
                   <SelectItem key={city.id} value={city.id.toString()}>
                     {city.name}
@@ -259,14 +259,14 @@ export function ModernAdFilters({ onFilterChange, currentFilters = {} }: ModernA
         </CardHeader>
         <CardContent>
           <Select
-            value={localFilters.product_condition || ''}
-            onValueChange={(value) => handleFilterUpdate('product_condition', value || undefined)}
+            value={localFilters.product_condition || 'all'}
+            onValueChange={(value) => handleFilterUpdate('product_condition', value === 'all' ? undefined : value)}
           >
             <SelectTrigger className="bg-background border-border">
               <SelectValue placeholder="اختر الحالة" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">كل الحالات</SelectItem>
+              <SelectItem value="all">كل الحالات</SelectItem>
               <SelectItem value="new">جديد</SelectItem>
               <SelectItem value="used">مستعمل</SelectItem>
             </SelectContent>
@@ -281,14 +281,14 @@ export function ModernAdFilters({ onFilterChange, currentFilters = {} }: ModernA
         </CardHeader>
         <CardContent>
           <Select
-            value={localFilters.listing_type || ''}
-            onValueChange={(value) => handleFilterUpdate('listing_type', value || undefined)}
+            value={localFilters.listing_type || 'all'}
+            onValueChange={(value) => handleFilterUpdate('listing_type', value === 'all' ? undefined : value)}
           >
             <SelectTrigger className="bg-background border-border">
               <SelectValue placeholder="اختر النوع" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">كل الأنواع</SelectItem>
+              <SelectItem value="all">كل الأنواع</SelectItem>
               <SelectItem value="sell">للبيع</SelectItem>
               <SelectItem value="rent">للإيجار</SelectItem>
               <SelectItem value="job">وظائف</SelectItem>
