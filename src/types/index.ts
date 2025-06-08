@@ -176,7 +176,7 @@ export interface SearchFilters {
   max_price?: number;
   condition?: 'new' | 'used';
   product_condition?: 'new' | 'used';
-  listing_type?: 'sale' | 'rent' | 'sell' | 'buy' | 'exchange';
+  listing_type?: 'sell' | 'rent' | 'job' | 'service';
   is_negotiable?: boolean;
   radius?: number;
   lat?: number;

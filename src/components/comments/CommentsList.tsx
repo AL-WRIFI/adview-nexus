@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
@@ -64,7 +63,7 @@ export function CommentsList({
 
   const handleSubmitReply = (commentId: number) => {
     if (replyText.trim()) {
-      addReplyMutation.mutate({ commentId, content: replyText }, {
+      addReplyMutation.mutate({ listingId, commentId, content: replyText }, {
         onSuccess: () => {
           setReplyText('');
           setReplyingTo(null);
@@ -85,7 +84,7 @@ export function CommentsList({
 
   const handleSubmitEdit = () => {
     if (editingComment && editText.trim()) {
-      editCommentMutation.mutate({ commentId: editingComment, content: editText }, {
+      editCommentMutation.mutate({ listingId, commentId: editingComment, content: editText }, {
         onSuccess: () => {
           setEditingComment(null);
           setEditText('');
@@ -97,6 +96,7 @@ export function CommentsList({
   const handleSubmitEditReply = () => {
     if (editingReply && editText.trim()) {
       editReplyMutation.mutate({ 
+        listingId,
         commentId: editingReply.commentId, 
         replyId: editingReply.replyId, 
         content: editText 
@@ -110,11 +110,11 @@ export function CommentsList({
   };
 
   const handleDeleteComment = (commentId: number) => {
-    deleteCommentMutation.mutate(commentId);
+    deleteCommentMutation.mutate({ listingId, commentId });
   };
 
   const handleDeleteReply = (commentId: number, replyId: number) => {
-    deleteReplyMutation.mutate({ commentId, replyId });
+    deleteReplyMutation.mutate({ listingId, commentId, replyId });
   };
 
   const canModifyComment = (userId?: number) => {

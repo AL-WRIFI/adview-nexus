@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { 
   Dialog,
@@ -22,10 +23,13 @@ export function PromoteDialog({ open, setOpen }: PromoteDialogProps) {
   const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
   const [promoteDialogOpen, setPromoteDialogOpen] = useState(false);
 
-  const { data: userListings } = useUserListings();
+  const { data: userListingsResponse } = useUserListings();
   const { data: packages } = usePromotionPackages();
 
-  const userListingsData = Array.isArray(userListings?.data) ? userListings.data : [];
+  // Handle both array and paginated response structures
+  const userListings = Array.isArray(userListingsResponse) 
+    ? userListingsResponse 
+    : userListingsResponse?.data || [];
 
   const handleSelectListing = (listing: Listing) => {
     setSelectedListing(listing);
@@ -50,9 +54,9 @@ export function PromoteDialog({ open, setOpen }: PromoteDialogProps) {
                 <h3 className="font-medium">اختر الإعلان المراد ترقيته</h3>
               </div>
               <div className="p-3 max-h-60 overflow-y-auto">
-                {userListingsData && userListingsData.length > 0 ? (
+                {userListings && userListings.length > 0 ? (
                   <div className="space-y-2">
-                    {userListingsData.map((listing) => (
+                    {userListings.map((listing) => (
                       <div 
                         key={listing.id} 
                         className="flex items-center justify-between p-3 border rounded-md hover:bg-gray-50 cursor-pointer"

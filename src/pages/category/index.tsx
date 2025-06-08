@@ -5,8 +5,6 @@ import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { MobileNav } from '@/components/layout/mobile-nav';
 import { AdCard } from '@/components/ads/ad-card';
-import { ModernAdFilters } from '@/components/filters/ModernAdFilters';
-import { MobileFilterDrawer } from '@/components/filters/MobileFilterDrawer';
 import { Pagination } from '@/components/custom/pagination';
 import { Button } from '@/components/ui/button';
 import { Filter, Grid, List } from 'lucide-react';
@@ -88,13 +86,61 @@ export default function CategoryPage() {
         </div>
 
         <div className="flex gap-6">
-          {/* Desktop Filters Sidebar */}
+          {/* Desktop Filters Sidebar - Simplified for now */}
           <div className="hidden lg:block w-80 flex-shrink-0">
             <div className="sticky top-6">
-              <ModernAdFilters 
-                filters={filters}
-                onFiltersChange={handleFilterChange}
-              />
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+                <h3 className="text-lg font-semibold mb-4">الفلاتر</h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">حالة المنتج</label>
+                    <select
+                      value={filters.product_condition || ''}
+                      onChange={(e) => handleFilterChange({ product_condition: e.target.value as 'new' | 'used' || undefined })}
+                      className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    >
+                      <option value="">الكل</option>
+                      <option value="new">جديد</option>
+                      <option value="used">مستعمل</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium mb-2">نوع الإعلان</label>
+                    <select
+                      value={filters.listing_type || ''}
+                      onChange={(e) => handleFilterChange({ listing_type: e.target.value as 'sell' | 'rent' | 'job' | 'service' || undefined })}
+                      className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    >
+                      <option value="">الكل</option>
+                      <option value="sell">للبيع</option>
+                      <option value="rent">للإيجار</option>
+                      <option value="job">وظائف</option>
+                      <option value="service">خدمات</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-2">السعر</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        type="number"
+                        placeholder="الحد الأدنى"
+                        value={filters.min_price || ''}
+                        onChange={(e) => handleFilterChange({ min_price: e.target.value ? parseFloat(e.target.value) : undefined })}
+                        className="p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      />
+                      <input
+                        type="number"
+                        placeholder="الحد الأعلى"
+                        value={filters.max_price || ''}
+                        onChange={(e) => handleFilterChange({ max_price: e.target.value ? parseFloat(e.target.value) : undefined })}
+                        className="p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -171,7 +217,6 @@ export default function CategoryPage() {
                     <AdCard 
                       key={listing.id}
                       ad={listing}
-                      variant={viewMode}
                     />
                   ))}
                 </div>
@@ -197,14 +242,6 @@ export default function CategoryPage() {
           </div>
         </div>
       </main>
-
-      {/* Mobile Filter Drawer */}
-      <MobileFilterDrawer
-        isOpen={mobileFiltersOpen}
-        onClose={() => setMobileFiltersOpen(false)}
-        filters={filters}
-        onFiltersChange={handleFilterChange}
-      />
 
       <Footer />
       <MobileNav />
