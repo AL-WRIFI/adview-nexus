@@ -7,9 +7,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { UserCircle, Upload } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
+import { useUpdateProfile } from '@/hooks/use-api';
+import { useToast } from '@/hooks/use-toast';
 
 export function ProfileTab() {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
+  const updateProfile = useUpdateProfile();
+  const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     firstName: user?.first_name || '',
@@ -26,9 +30,29 @@ export function ProfileTab() {
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Update profile functionality would go here
-    // For now, just toggle edit mode
-    setIsEditing(false);
+    
+    const submitData = new FormData();
+    submitData.append('first_name', formData.firstName);
+    submitData.append('last_name', formData.lastName);
+    submitData.append('email', formData.email);
+    submitData.append('phone', formData.phone);
+    submitData.append('bio', formData.bio);
+    
+    try {
+      await updateProfile.mutateAsync(submitData);
+      await refreshUser();
+      setIsEditing(false);
+      toast({
+        title: 'تم تحديث الملف الشخصي',
+        description: 'تم حفظ التغييرات بنجاح',
+      });
+    } catch (error: any) {
+      toast({
+        title: 'خطأ في التحديث',
+        description: error.message || 'حدث خطأ، يرجى المحاولة مرة أخرى',
+        variant: 'destructive',
+      });
+    }
   };
   
   return (
@@ -119,7 +143,9 @@ export function ProfileTab() {
                   >
                     إلغاء
                   </Button>
-                  <Button type="submit">حفظ التغييرات</Button>
+                  <Button type="submit" disabled={updateProfile.isPending}>
+                    {updateProfile.isPending ? 'جاري الحفظ...' : 'حفظ التغييرات'}
+                  </Button>
                 </div>
               </form>
             ) : (

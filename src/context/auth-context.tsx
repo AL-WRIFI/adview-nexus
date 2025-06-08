@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User } from '@/types';
-import { useCurrentUser } from '@/hooks/use-api';
+import { useCurrentUser, useLogin, useRegister, useLogout } from '@/hooks/use-api';
 
 // TokenManager for token management
 export class TokenManager {
@@ -39,27 +39,40 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const { data: user, isLoading, refetch } = useCurrentUser();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const loginMutation = useLogin();
+  const registerMutation = useRegister();
+  const logoutMutation = useLogout();
 
   useEffect(() => {
     setIsAuthenticated(!!user);
   }, [user]);
 
   const login = async (email: string, password: string) => {
-    // Mock login implementation - replace with actual API call
-    console.log('Login attempt:', email);
-    throw new Error('Login not implemented yet');
+    try {
+      await loginMutation.mutateAsync({ identifier: email, password });
+    } catch (error) {
+      throw error;
+    }
   };
 
   const register = async (userData: any) => {
-    // Mock register implementation - replace with actual API call
-    console.log('Register attempt:', userData);
-    throw new Error('Register not implemented yet');
+    try {
+      await registerMutation.mutateAsync(userData);
+    } catch (error) {
+      throw error;
+    }
   };
 
   const logout = async () => {
-    TokenManager.removeToken();
-    setIsAuthenticated(false);
-    // Redirect or other logout logic
+    try {
+      await logoutMutation.mutateAsync();
+      TokenManager.removeToken();
+      setIsAuthenticated(false);
+    } catch (error) {
+      // Even if logout fails, clear local state
+      TokenManager.removeToken();
+      setIsAuthenticated(false);
+    }
   };
 
   const refreshUser = async () => {

@@ -19,7 +19,10 @@ export function UserPromotionsTab() {
     );
   }
 
-  if (!promotions || promotions.length === 0) {
+  // Handle both array and paginated response
+  const promotionsList = Array.isArray(promotions) ? promotions : (promotions?.data || []);
+
+  if (!promotionsList || promotionsList.length === 0) {
     return (
       <Card>
         <CardHeader>
@@ -44,7 +47,7 @@ export function UserPromotionsTab() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {Array.isArray(promotions) && promotions.map((promotion: any) => (
+            {promotionsList.map((promotion: any) => (
               <Card key={promotion.id} className="p-4">
                 <div className="flex items-start justify-between">
                   <div className="space-y-2">

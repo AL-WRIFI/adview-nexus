@@ -28,8 +28,11 @@ export function AnalyticsTab() {
   }
 
   const totalViews = userListings?.reduce((sum, listing) => sum + (listing.views_count || 0), 0) || 0;
-  const totalComments = userListings?.reduce((sum, listing) => sum + (listing.favorites_count || 0), 0) || 0;
-  const activePromotions = Array.isArray(promotions) ? promotions.filter(p => p.payment_status === 'paid').length : 0;
+  const totalFavorites = userListings?.reduce((sum, listing) => sum + (listing.favorites_count || 0), 0) || 0;
+  
+  // Handle both array and paginated response for promotions
+  const promotionsList = Array.isArray(promotions) ? promotions : (promotions?.data || []);
+  const activePromotions = promotionsList.filter((p: any) => p.payment_status === 'paid').length;
 
   const analyticsData = [
     {
@@ -52,13 +55,13 @@ export function AnalyticsTab() {
     },
     {
       title: "إجمالي التعليقات",
-      value: stats?.totalComments || totalComments,
+      value: stats?.totalComments || 0,
       icon: MessageSquare,
       description: "تعليقات جميع الإعلانات"
     },
     {
       title: "الإعجابات",
-      value: stats?.totalFavorites || 0,
+      value: stats?.totalFavorites || totalFavorites,
       icon: Heart,
       description: "إجمالي الإعجابات"
     },
