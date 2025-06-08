@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Star, Clock, CreditCard, TrendingUp, Package, Eye } from 'lucide-react';
 import { useUserListings } from '@/hooks/use-api';
@@ -13,7 +12,7 @@ import { PromoteListingDialog } from '@/components/promotions/PromoteListingDial
 import { UserPromotionsTab } from '@/components/promotions/UserPromotionsTab';
 
 export function PromoteTab() {
-  const [selectedListing, setSelectedListing] = useState<number | null>(null);
+  const [selectedListing, setSelectedListing] = useState<any>(null);
   const [promoteDialogOpen, setPromoteDialogOpen] = useState(false);
   
   const { data: userListings, isLoading: loadingListings } = useUserListings();
@@ -34,12 +33,12 @@ export function PromoteTab() {
     );
   }
 
-  const listings = userListings?.data || [];
+  const listings = userListings || [];
   const promotionsList = Array.isArray(promotions) ? promotions : [];
   const packagesList = Array.isArray(packages) ? packages : [];
 
-  const handlePromoteListing = (listingId: number) => {
-    setSelectedListing(listingId);
+  const handlePromoteListing = (listing: any) => {
+    setSelectedListing(listing);
     setPromoteDialogOpen(true);
   };
 
@@ -109,7 +108,7 @@ export function PromoteTab() {
                           <Button 
                             className="w-full mt-4" 
                             variant={isPromoted ? "outline" : "default"}
-                            onClick={() => handlePromoteListing(listing.id)}
+                            onClick={() => handlePromoteListing(listing)}
                             disabled={isPromoted}
                           >
                             {isPromoted ? 'مُرقَّى بالفعل' : 'ترقية الإعلان'}
@@ -177,7 +176,7 @@ export function PromoteTab() {
       <PromoteListingDialog
         open={promoteDialogOpen}
         onOpenChange={setPromoteDialogOpen}
-        listingId={selectedListing}
+        listing={selectedListing}
       />
     </div>
   );
