@@ -2,15 +2,21 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Calendar, Clock, CreditCard } from 'lucide-react';
 import { useUserPromotions } from '@/hooks/use-promotions';
-import { LoadingSkeleton } from '@/components/ui/loading-skeleton';
 
 export function UserPromotionsTab() {
   const { data: promotions, isLoading } = useUserPromotions();
 
   if (isLoading) {
-    return <LoadingSkeleton />;
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-8 w-48" />
+        <Skeleton className="h-32 w-full" />
+        <Skeleton className="h-32 w-full" />
+      </div>
+    );
   }
 
   if (!promotions || promotions.length === 0) {
@@ -38,7 +44,7 @@ export function UserPromotionsTab() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {promotions.map((promotion: any) => (
+            {Array.isArray(promotions) && promotions.map((promotion: any) => (
               <Card key={promotion.id} className="p-4">
                 <div className="flex items-start justify-between">
                   <div className="space-y-2">

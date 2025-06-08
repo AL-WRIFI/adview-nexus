@@ -9,7 +9,7 @@ import { UserCircle, Upload } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 
 export function ProfileTab() {
-  const { user, refreshUser } = useAuth();
+  const { user } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     firstName: user?.first_name || '',

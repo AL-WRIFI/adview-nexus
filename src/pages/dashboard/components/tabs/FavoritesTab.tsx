@@ -4,8 +4,8 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Heart, Eye, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useFavorites, useRemoveFromFavorites } from '@/hooks/use-api';
-import { LoadingSkeleton } from '@/components/ui/loading-skeleton';
 import { Badge } from '@/components/ui/badge';
 
 export function FavoritesTab() {
@@ -15,7 +15,13 @@ export function FavoritesTab() {
   const favorites = favoritesData?.data || [];
 
   if (isLoading) {
-    return <LoadingSkeleton />;
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-8 w-48" />
+        <Skeleton className="h-32 w-full" />
+        <Skeleton className="h-32 w-full" />
+      </div>
+    );
   }
 
   const handleRemoveFromFavorites = (listingId: number) => {
@@ -65,7 +71,7 @@ export function FavoritesTab() {
                           </div>
                           <div className="flex items-center gap-1 text-sm text-muted-foreground">
                             <MessageSquare className="h-4 w-4" />
-                            <span>{favorite.listing.comments_count || 0}</span>
+                            <span>{favorite.listing.favorites_count || 0}</span>
                           </div>
                           {favorite.listing.featured && (
                             <Badge variant="secondary">مميز</Badge>

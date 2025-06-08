@@ -28,8 +28,8 @@ export function AnalyticsTab() {
   }
 
   const totalViews = userListings?.reduce((sum, listing) => sum + (listing.views_count || 0), 0) || 0;
-  const totalComments = userListings?.reduce((sum, listing) => sum + (listing.comments_count || 0), 0) || 0;
-  const activePromotions = promotions?.filter(p => p.payment_status === 'paid').length || 0;
+  const totalComments = userListings?.reduce((sum, listing) => sum + (listing.favorites_count || 0), 0) || 0;
+  const activePromotions = Array.isArray(promotions) ? promotions.filter(p => p.payment_status === 'paid').length : 0;
 
   const analyticsData = [
     {
@@ -114,7 +114,7 @@ export function AnalyticsTab() {
                     <div>
                       <h4 className="font-medium">{listing.title}</h4>
                       <p className="text-sm text-muted-foreground">
-                        {listing.views_count || 0} مشاهدة • {listing.comments_count || 0} تعليق
+                        {listing.views_count || 0} مشاهدة • {listing.favorites_count || 0} إعجاب
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
