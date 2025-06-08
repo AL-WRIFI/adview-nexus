@@ -1,21 +1,20 @@
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { promotionsAPI } from '@/services/promotions-api';
-import { toast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/use-toast';
 
-export function usePromotionPackages() {
+export const usePromotionPackages = () => {
   return useQuery({
     queryKey: ['promotion-packages'],
-    queryFn: async () => {
-      const response = await promotionsAPI.getPromotionPackages();
-      return response.data;
-    },
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    queryFn: () => promotionsAPI.getPromotionPackages(),
+    select: (data) => data.data,
+    staleTime: 30 * 60 * 1000, // 30 minutes
   });
-}
+};
 
-export function usePromoteWithBankTransfer() {
+export const usePromoteWithBankTransfer = () => {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   return useMutation({
     mutationFn: ({ listingId, data }: { 
@@ -23,25 +22,26 @@ export function usePromoteWithBankTransfer() {
       data: { promotion_package_id: number; bank_transfer_proof: File } 
     }) => promotionsAPI.promoteListingWithBankTransfer(listingId, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['user-promotions'] });
-      queryClient.invalidateQueries({ queryKey: ['listings'] });
       toast({
-        title: "طلب الترقية مُرسل",
-        description: "تم إرسال طلب ترقية الإعلان وسيتم مراجعته قريباً",
+        title: 'تم إرسال الطلب',
+        description: 'تم إرسال طلب الترقية بنجاح، سيتم مراجعته قريباً',
       });
+      queryClient.invalidateQueries({ queryKey: ['user-promotions'] });
+      queryClient.invalidateQueries({ queryKey: ['userListings'] });
     },
-    onError: (error: Error) => {
+    onError: (error: any) => {
       toast({
-        variant: "destructive",
-        title: "خطأ في ترقية الإعلان",
-        description: error.message,
+        title: 'خطأ في إرسال الطلب',
+        description: error.message || 'حدث خطأ أثناء إرسال طلب الترقية',
+        variant: 'destructive',
       });
     },
   });
-}
+};
 
-export function usePromoteWithStripe() {
+export const usePromoteWithStripe = () => {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   return useMutation({
     mutationFn: ({ listingId, promotionPackageId }: { 
@@ -49,22 +49,28 @@ export function usePromoteWithStripe() {
       promotionPackageId: number 
     }) => promotionsAPI.promoteListingWithStripe(listingId, promotionPackageId),
     onSuccess: (data) => {
+      if (data.data?.checkout_url) {
+        window.open(data.data.checkout_url, '_blank');
+        toast({
+          title: 'تم توجيهك للدفع',
+          description: 'تم فتح صفحة الدفع في نافذة جديدة',
+        });
+      }
       queryClient.invalidateQueries({ queryKey: ['user-promotions'] });
-      // Redirect to Stripe
-      window.open(data.data.checkout_url, '_blank');
     },
-    onError: (error: Error) => {
+    onError: (error: any) => {
       toast({
-        variant: "destructive",
-        title: "خطأ في الدفع",
-        description: error.message,
+        title: 'خطأ في عملية الدفع',
+        description: error.message || 'حدث خطأ أثناء عملية الدفع',
+        variant: 'destructive',
       });
     },
   });
-}
+};
 
-export function usePromoteWithWallet() {
+export const usePromoteWithWallet = () => {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   return useMutation({
     mutationFn: ({ listingId, promotionPackageId }: { 
@@ -72,30 +78,29 @@ export function usePromoteWithWallet() {
       promotionPackageId: number 
     }) => promotionsAPI.promoteListingWithWallet(listingId, promotionPackageId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['user-promotions'] });
-      queryClient.invalidateQueries({ queryKey: ['listings'] });
-      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
       toast({
-        title: "تم ترقية الإعلان",
-        description: "تم ترقية الإعلان بنجاح باستخدام رصيد المحفظة",
+        title: 'تم الدفع بنجاح',
+        description: 'تم ترقية الإعلان باستخدام رصيد المحفظة',
       });
+      queryClient.invalidateQueries({ queryKey: ['user-promotions'] });
+      queryClient.invalidateQueries({ queryKey: ['userListings'] });
+      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
     },
-    onError: (error: Error) => {
+    onError: (error: any) => {
       toast({
-        variant: "destructive",
-        title: "خطأ في ترقية الإعلان",
-        description: error.message,
+        title: 'خطأ في الدفع',
+        description: error.message || 'حدث خطأ أثناء الدفع من المحفظة',
+        variant: 'destructive',
       });
     },
   });
-}
+};
 
-export function useUserPromotions() {
+export const useUserPromotions = () => {
   return useQuery({
     queryKey: ['user-promotions'],
-    queryFn: async () => {
-      const response = await promotionsAPI.getUserPromotions();
-      return response.data;
-    },
+    queryFn: () => promotionsAPI.getUserPromotions(),
+    select: (data) => data.data,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
-}
+};
