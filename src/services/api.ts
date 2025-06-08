@@ -78,7 +78,6 @@ class ApiClient {
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
           
-          // Handle authentication errors
           if (response.status === 401) {
             TokenManager.removeToken();
             window.location.href = '/auth/login';
@@ -101,7 +100,6 @@ class ApiClient {
           throw error;
         }
         
-        // Wait before retrying
         await new Promise(resolve => 
           setTimeout(resolve, API_CONFIG.RETRY_DELAY * attempt)
         );
@@ -217,6 +215,12 @@ export const userListingsAPI = {
   addComment: (listingId: number, content: string): Promise<ApiResponse<Comment>> => 
     ApiClient.post(`/user/listings/${listingId}/comments`, { content }),
 
+  editComment: (listingId: number, commentId: number, content: string): Promise<ApiResponse<Comment>> => 
+    ApiClient.put(`/user/listings/${listingId}/comments/${commentId}`, { content }),
+
+  deleteComment: (listingId: number, commentId: number): Promise<ApiResponse<void>> => 
+    ApiClient.delete(`/user/listings/${listingId}/comments/${commentId}`),
+
   addReply: (listingId: number, commentId: number, content: string): Promise<ApiResponse<Comment>> => 
     ApiClient.post(`/user/listings/${listingId}/comments/${commentId}/replies`, { content }),
 
@@ -273,6 +277,9 @@ export const profileAPI = {
   updateProfile: (data: FormData): Promise<ApiResponse<User>> => 
     ApiClient.post('/user/profile', data),
 
+  getUserStats: (): Promise<ApiResponse<any>> => 
+    ApiClient.get('/user/stats'),
+
   getFavorites: (): Promise<ApiResponse<PaginatedResponse<Favorite>>> => 
     ApiClient.get('/user/favorites'),
 
@@ -292,7 +299,7 @@ export const promotionAPI = {
     ApiClient.get('/promotion-packages'),
 
   promoteListin: (listingId: number, packageData: any): Promise<ApiResponse<any>> => 
-    ApiClient.post(`/user/listings/${listingId}/promote`, packageData),
+    ApiClient.post(`/listings/${listingId}/promote`, packageData),
 
   getUserPromotions: (): Promise<ApiResponse<any[]>> => 
     ApiClient.get('/user/listing-promotions'),

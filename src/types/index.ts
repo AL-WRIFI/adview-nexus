@@ -1,12 +1,15 @@
+
 export interface User {
   id: number;
   first_name: string;
   last_name: string;
   name?: string;
+  username?: string;
   email: string;
   phone?: string;
   image?: string;
   avatar?: string;
+  avatar_url?: string;
   wallet_balance?: number;
   verified?: boolean;
   created_at?: string;
@@ -19,6 +22,8 @@ export interface Category {
   id: number;
   name: string;
   icon?: string;
+  image?: string;
+  image_url?: string;
   subcategories?: SubCategory[];
   color?: string;
   slug?: string;
@@ -29,6 +34,8 @@ export interface SubCategory {
   name: string;
   category_id: number;
   icon?: string;
+  image?: string;
+  image_url?: string;
   subcategories?: SubCategory[];
   children?: SubCategory[];
   slug?: string;
@@ -40,6 +47,8 @@ export interface Brand {
   title?: string;
   category_id?: number;
   logo?: string;
+  image?: string;
+  image_url?: string;
 }
 
 export interface State {
@@ -64,6 +73,7 @@ export interface Ad {
   condition?: string;
   image?: string | null | { image_url: string };
   images?: string[] | { url: string }[];
+  main_image_url?: string;
   user_id: number;
   user?: User;
   created_at: string;
@@ -97,6 +107,7 @@ export interface Listing {
   condition?: string;
   image?: string | null | { image_url: string };
   images?: string[] | { url: string }[];
+  main_image_url?: string;
   user_id: number;
   user?: User;
   created_at: string;
@@ -161,7 +172,10 @@ export interface SearchFilters {
   city_id?: number;
   price_min?: number;
   price_max?: number;
+  min_price?: number;
+  max_price?: number;
   condition?: 'new' | 'used';
+  product_condition?: 'new' | 'used';
   listing_type?: 'sale' | 'rent' | 'sell' | 'buy' | 'exchange';
   is_negotiable?: boolean;
   radius?: number;
@@ -171,10 +185,12 @@ export interface SearchFilters {
   page?: number;
   per_page?: number;
   sort?: string;
+  sort_by?: 'newest' | 'oldest' | 'price_asc' | 'price_desc';
 }
 
 export interface ApiResponse<T> {
   success: boolean;
+  status?: string;
   data: T;
   message?: string;
   errors?: Record<string, string[]>;

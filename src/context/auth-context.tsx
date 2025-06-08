@@ -11,6 +11,7 @@ interface AuthContextType {
   login: (identifier: string, password: string) => Promise<void>;
   register: (userData: any) => Promise<void>;
   logout: () => Promise<void>;
+  refreshUser: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -20,7 +21,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   // Use API hooks
-  const { data: currentUserData, isLoading: isLoadingUser, error: userError } = useCurrentUser();
+  const { data: currentUserData, isLoading: isLoadingUser, error: userError, refetch } = useCurrentUser();
   const loginMutation = useLogin();
   const logoutMutation = useLogout();
   const registerMutation = useRegister();
@@ -66,10 +67,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(null);
     } catch (error) {
       console.error('Logout error:', error);
-      // Even if logout fails on server, clear local state
       setUser(null);
       TokenManager.removeToken();
     }
+  };
+
+  const refreshUser = () => {
+    refetch();
   };
 
   const value: AuthContextType = {
@@ -79,6 +83,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     login,
     register,
     logout,
+    refreshUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

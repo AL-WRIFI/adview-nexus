@@ -43,6 +43,7 @@ const QUERY_KEYS = {
   basicSettings: ['basicSettings'],
   colorSettings: ['colorSettings'],
   listingSettings: ['listingSettings'],
+  userStats: ['userStats'],
 } as const;
 
 // User Authentication hooks
@@ -51,7 +52,6 @@ export const useCurrentUser = () => {
     queryKey: QUERY_KEYS.currentUser,
     queryFn: () => profileAPI.getProfile(),
     retry: (failureCount, error: any) => {
-      // Don't retry on 401 errors
       if (error?.message?.includes('401') || error?.message?.includes('Authentication')) {
         return false;
       }
@@ -112,7 +112,6 @@ export const useLogout = () => {
       queryClient.clear();
     },
     onError: () => {
-      // Even if logout fails on server, clear local state
       TokenManager.removeToken();
       queryClient.clear();
     },
@@ -125,7 +124,7 @@ export const useAds = (filters?: SearchFilters) => {
     queryKey: QUERY_KEYS.ads(filters),
     queryFn: () => listingsAPI.getListings(filters),
     select: (data) => data.data,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000,
   });
 };
 
@@ -148,7 +147,7 @@ export const useListing = (id: number) => {
 };
 
 export const useAd = (id: number) => {
-  return useListing(id); // Alias for useListing
+  return useListing(id);
 };
 
 export const useRelatedAds = (listingId: number, limit: number = 4) => {
@@ -157,7 +156,7 @@ export const useRelatedAds = (listingId: number, limit: number = 4) => {
     queryFn: () => listingsAPI.getRelatedListings(listingId, limit),
     select: (data) => data.data,
     enabled: !!listingId,
-    staleTime: 10 * 60 * 1000, // 10 minutes
+    staleTime: 10 * 60 * 1000,
   });
 };
 
@@ -214,7 +213,7 @@ export const useCategories = () => {
     queryKey: QUERY_KEYS.categories,
     queryFn: () => categoriesAPI.getCategories(),
     select: (data) => data.data,
-    staleTime: 30 * 60 * 1000, // 30 minutes
+    staleTime: 30 * 60 * 1000,
   });
 };
 
@@ -280,7 +279,7 @@ export const useStates = () => {
     queryKey: QUERY_KEYS.states,
     queryFn: () => locationAPI.getStates(),
     select: (data) => data.data,
-    staleTime: 60 * 60 * 1000, // 1 hour
+    staleTime: 60 * 60 * 1000,
   });
 };
 
@@ -326,7 +325,7 @@ export const useCurrentLocation = () => {
       });
     },
     retry: false,
-    staleTime: 300000, // 5 minutes
+    staleTime: 300000,
   });
 };
 
@@ -392,6 +391,28 @@ export const useAddComment = () => {
   });
 };
 
+export const useEditComment = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ listingId, commentId, content }: { listingId: number; commentId: number; content: string }) =>
+      userListingsAPI.editComment(listingId, commentId, content),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.comments(variables.listingId) });
+    },
+  });
+};
+
+export const useDeleteComment = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ listingId, commentId }: { listingId: number; commentId: number }) =>
+      userListingsAPI.deleteComment(listingId, commentId),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.comments(variables.listingId) });
+    },
+  });
+};
+
 export const useAddReply = () => {
   const queryClient = useQueryClient();
   return useMutation({
@@ -442,7 +463,7 @@ export const useBasicSettings = () => {
     queryKey: QUERY_KEYS.basicSettings,
     queryFn: () => settingsAPI.getBasicSettings(),
     select: (data) => data.data,
-    staleTime: 60 * 60 * 1000, // 1 hour
+    staleTime: 60 * 60 * 1000,
   });
 };
 
@@ -480,6 +501,17 @@ export const useUserPromotions = () => {
     queryFn: () => promotionAPI.getUserPromotions(),
     select: (data) => data.data,
     enabled: TokenManager.hasToken(),
+  });
+};
+
+// User Stats hook
+export const useUserStats = () => {
+  return useQuery({
+    queryKey: QUERY_KEYS.userStats,
+    queryFn: () => profileAPI.getUserStats(),
+    select: (data) => data.data,
+    enabled: TokenManager.hasToken(),
+    staleTime: 5 * 60 * 1000,
   });
 };
 
