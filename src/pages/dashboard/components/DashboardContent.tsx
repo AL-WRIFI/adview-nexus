@@ -4,6 +4,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AdsTab } from './tabs/AdsTab';
 import { PromoteTab } from './tabs/PromoteTab';
 import { AnalyticsTab } from './tabs/AnalyticsTab';
+import { FavoritesTab } from './tabs/FavoritesTab';
+import { ProfileTab } from './tabs/ProfileTab';
+import { Card } from '@/components/ui/card';
 
 interface DashboardContentProps {
   activePage: string;
@@ -33,27 +36,51 @@ export function DashboardContent({
     setSelectedAd(id.toString());
   };
 
-  return (
-    <div>
-      <Tabs defaultValue={activePage} className="w-full">
-        <TabsList>
-          <TabsTrigger value="ads">إعلاناتي</TabsTrigger>
-          <TabsTrigger value="promote">الترويج</TabsTrigger>
-          <TabsTrigger value="analytics">إحصائيات</TabsTrigger>
-        </TabsList>
-        <TabsContent value="ads" className="space-y-4">
+  // Render content based on active page from sidebar
+  const renderPageContent = () => {
+    switch (activePage) {
+      case 'ads':
+        return (
           <AdsTab 
             setSelectedAd={handleSetSelectedAdNumber}
             setPromoteDialogOpen={setPromoteDialogOpen}
           />
-        </TabsContent>
-        <TabsContent value="promote" className="space-y-4">
-          <PromoteTab />
-        </TabsContent>
-        <TabsContent value="analytics" className="space-y-4">
-          <AnalyticsTab />
-        </TabsContent>
-      </Tabs>
+        );
+      case 'favorites':
+        return <FavoritesTab />;
+      case 'promote':
+        return <PromoteTab />;
+      case 'analytics':
+        return <AnalyticsTab />;
+      case 'settings':
+        return <ProfileTab />;
+      case 'messages':
+        return (
+          <Card className="p-6 bg-card border-border">
+            <h2 className="text-xl font-bold text-card-foreground mb-4">الرسائل</h2>
+            <p className="text-muted-foreground">سيتم تطوير هذه الصفحة قريباً</p>
+          </Card>
+        );
+      case 'notifications':
+        return (
+          <Card className="p-6 bg-card border-border">
+            <h2 className="text-xl font-bold text-card-foreground mb-4">الإشعارات</h2>
+            <p className="text-muted-foreground">سيتم تطوير هذه الصفحة قريباً</p>
+          </Card>
+        );
+      default:
+        return (
+          <AdsTab 
+            setSelectedAd={handleSetSelectedAdNumber}
+            setPromoteDialogOpen={setPromoteDialogOpen}
+          />
+        );
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      {renderPageContent()}
     </div>
   );
 }
