@@ -7,7 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Star, Clock, CreditCard, TrendingUp, Package, Eye } from 'lucide-react';
 import { useUserListings } from '@/hooks/use-api';
-import { useUserPromotions, usePromotionPackages, ListingPromotion } from '@/hooks/use-promotions';
+import { useUserPromotions, usePromotionPackages } from '@/hooks/use-promotions';
 import { PromoteListingDialog } from '@/components/promotions/PromoteListingDialog';
 import { UserPromotionsTab } from '@/components/promotions/UserPromotionsTab';
 
@@ -15,7 +15,7 @@ export function PromoteTab() {
   const [selectedListing, setSelectedListing] = useState<any>(null);
   const [promoteDialogOpen, setPromoteDialogOpen] = useState(false);
   
-  const { data: userListingsResponse, isLoading: loadingListings } = useUserListings();
+  const { data: userListings, isLoading: loadingListings } = useUserListings();
   const { data: promotionsResponse, isLoading: loadingPromotions } = useUserPromotions();
   const { data: packages, isLoading: loadingPackages } = usePromotionPackages();
 
@@ -33,25 +33,8 @@ export function PromoteTab() {
     );
   }
 
-  // Handle both array and paginated response structures
-  let listings: any[] = [];
-  if (userListingsResponse) {
-    if (Array.isArray(userListingsResponse)) {
-      listings = userListingsResponse;
-    } else if (typeof userListingsResponse === 'object' && 'data' in userListingsResponse) {
-      listings = Array.isArray((userListingsResponse as any).data) ? (userListingsResponse as any).data : [];
-    }
-  }
-
-  let promotionsList: ListingPromotion[] = [];
-  if (promotionsResponse) {
-    if (Array.isArray(promotionsResponse)) {
-      promotionsList = promotionsResponse;
-    } else if (typeof promotionsResponse === 'object' && 'data' in promotionsResponse) {
-      promotionsList = Array.isArray((promotionsResponse as any).data) ? (promotionsResponse as any).data : [];
-    }
-  }
-
+  const listings = userListings || [];
+  const promotionsList = promotionsResponse?.data || [];
   const packagesList = Array.isArray(packages) ? packages : [];
 
   const handlePromoteListing = (listing: any) => {
@@ -59,7 +42,7 @@ export function PromoteTab() {
     setPromoteDialogOpen(true);
   };
 
-  const activePromotions = promotionsList.filter((p: ListingPromotion) => 
+  const activePromotions = promotionsList.filter((p: any) => 
     p.payment_status === 'paid' && 
     p.expires_at && 
     new Date(p.expires_at) > new Date()
@@ -96,7 +79,7 @@ export function PromoteTab() {
               {listings.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {listings.map((listing: any) => {
-                    const isPromoted = activePromotions.some((p: ListingPromotion) => p.listing?.id === listing.id);
+                    const isPromoted = activePromotions.some((p: any) => p.listing?.id === listing.id);
                     
                     return (
                       <Card key={listing.id} className={`relative ${isPromoted ? 'border-brand bg-brand/5' : ''}`}>

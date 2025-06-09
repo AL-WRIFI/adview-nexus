@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Header } from '@/components/layout/header';
 import { ModernCategoryBar } from '@/components/layout/category/ModernCategoryBar';
@@ -32,9 +33,7 @@ export default function Home() {
     page,
     per_page: itemsPerPage,
     ...filters,
-    ...(locationLoaded && locationData && typeof locationData === 'object' && 'lat' in locationData && 'lon' in locationData 
-      ? { lat: (locationData as any).lat, lon: (locationData as any).lon, radius: 50 } 
-      : {})
+    ...(locationLoaded && locationData ? { lat: locationData.lat, lon: locationData.lon, radius: 50 } : {})
   });
   
   const handleFilterChange = (newFilters: SearchFilters) => {

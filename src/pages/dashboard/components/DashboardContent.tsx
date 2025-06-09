@@ -41,7 +41,10 @@ export function DashboardContent({
     switch (activePage) {
       case 'ads':
         return (
-          <AdsTab />
+          <AdsTab 
+            setSelectedAd={handleSetSelectedAdNumber}
+            setPromoteDialogOpen={setPromoteDialogOpen}
+          />
         );
       case 'favorites':
         return <FavoritesTab />;
@@ -67,7 +70,10 @@ export function DashboardContent({
         );
       default:
         return (
-          <AdsTab />
+          <AdsTab 
+            setSelectedAd={handleSetSelectedAdNumber}
+            setPromoteDialogOpen={setPromoteDialogOpen}
+          />
         );
     }
   };

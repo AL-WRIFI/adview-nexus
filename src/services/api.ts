@@ -1,4 +1,3 @@
-
 import { ApiResponse, PaginatedResponse, Listing, Comment, User, SearchFilters, Favorite, Category, SubCategory, Brand, State, City } from '@/types';
 
 // Configuration
@@ -57,8 +56,6 @@ class ApiClient {
 
     const requestOptions: RequestInit = {
       ...options,
-      mode: 'cors',
-      credentials: 'include',
       headers: {
         ...defaultHeaders,
         ...(options.headers || {}),
@@ -67,8 +64,6 @@ class ApiClient {
 
     for (let attempt = 1; attempt <= API_CONFIG.RETRY_ATTEMPTS; attempt++) {
       try {
-        console.log(`API Request: ${options.method || 'GET'} ${url} (attempt ${attempt})`);
-        
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), API_CONFIG.TIMEOUT);
 
@@ -78,8 +73,6 @@ class ApiClient {
         });
 
         clearTimeout(timeoutId);
-
-        console.log(`API Response: ${response.status} ${response.statusText}`);
 
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
@@ -97,7 +90,6 @@ class ApiClient {
         }
 
         const data = await response.json();
-        console.log('API Success:', data);
         return data as T;
 
       } catch (error) {
@@ -300,7 +292,7 @@ export const profileAPI = {
     ApiClient.get(`/user/listings/${listingId}/is-favorite`),
 };
 
-// Settings API
+// Settings API - Updated with real API endpoints
 export const settingsAPI = {
   getSiteIdentity: (): Promise<ApiResponse<{
     site_logo: string;
@@ -352,7 +344,7 @@ export const settingsAPI = {
     ApiClient.get('/settings/all'),
 };
 
-// Promotion API
+// Promotion API - Updated with real API endpoints
 export const promotionAPI = {
   getPromotionPackages: (): Promise<ApiResponse<{
     id: number;

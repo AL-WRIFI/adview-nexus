@@ -63,7 +63,7 @@ export function CommentsList({
 
   const handleSubmitReply = (commentId: number) => {
     if (replyText.trim()) {
-      addReplyMutation.mutate({ listingId, commentId, content: replyText }, {
+      addReplyMutation.mutate({ commentId, content: replyText }, {
         onSuccess: () => {
           setReplyText('');
           setReplyingTo(null);
@@ -84,7 +84,7 @@ export function CommentsList({
 
   const handleSubmitEdit = () => {
     if (editingComment && editText.trim()) {
-      editCommentMutation.mutate({ listingId, commentId: editingComment, content: editText }, {
+      editCommentMutation.mutate({ commentId: editingComment, content: editText }, {
         onSuccess: () => {
           setEditingComment(null);
           setEditText('');
@@ -96,8 +96,6 @@ export function CommentsList({
   const handleSubmitEditReply = () => {
     if (editingReply && editText.trim()) {
       editReplyMutation.mutate({ 
-        listingId,
-        commentId: editingReply.commentId,
         replyId: editingReply.replyId, 
         content: editText 
       }, {
@@ -110,11 +108,11 @@ export function CommentsList({
   };
 
   const handleDeleteComment = (commentId: number) => {
-    deleteCommentMutation.mutate({ listingId, commentId });
+    deleteCommentMutation.mutate(commentId);
   };
 
-  const handleDeleteReply = (commentId: number, replyId: number) => {
-    deleteReplyMutation.mutate({ listingId, commentId, replyId });
+  const handleDeleteReply = (replyId: number) => {
+    deleteReplyMutation.mutate(replyId);
   };
 
   const canModifyComment = (userId?: number) => {
@@ -365,7 +363,7 @@ export function CommentsList({
                                   </DropdownMenuItem>
                                   <DropdownMenuItem 
                                     className="text-red-500 focus:text-red-500"
-                                    onClick={() => handleDeleteReply(comment.id, reply.id)}
+                                    onClick={() => handleDeleteReply(reply.id)}
                                   >
                                     <Trash className="mr-2 h-3 w-3" />
                                     حذف الرد
