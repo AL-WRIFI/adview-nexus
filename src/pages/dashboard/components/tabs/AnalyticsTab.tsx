@@ -1,223 +1,147 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer,
-  LineChart,
-  Line,
-  PieChart,
-  Pie,
-  Cell
-} from 'recharts';
-import { 
-  TrendingUp, 
-  Eye, 
-  MessageSquare, 
-  Heart,
-  ShoppingBag,
-  Calendar
-} from 'lucide-react';
-import { useUserListings, useUserAnalytics } from '@/hooks/use-api';
+import { Eye, Heart, MessageCircle, TrendingUp, Package } from 'lucide-react';
+import { useUserListings } from '@/hooks/use-api';
+import { Listing } from '@/types';
 
 export function AnalyticsTab() {
-  const { data: userListings, isLoading: loadingListings } = useUserListings();
-  const { data: analytics, isLoading: loadingAnalytics } = useUserAnalytics();
+  const { data: userListings, isLoading } = useUserListings();
 
-  if (loadingListings || loadingAnalytics) {
+  if (isLoading) {
     return (
       <div className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {[...Array(4)].map((_, i) => (
-            <Skeleton key={i} className="h-32" />
+            <Skeleton key={i} className="h-24" />
           ))}
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Skeleton className="h-80" />
-          <Skeleton className="h-80" />
-        </div>
+        <Skeleton className="h-64" />
       </div>
     );
   }
 
-  // Handle both array and paginated response structures  
-  const listings = Array.isArray(userListings) ? userListings : userListings || [];
-  const analyticsData = analytics || {
-    totalListings: 0,
-    activeListings: 0,
-    totalViews: 0,
-    totalComments: 0,
-    totalFavorites: 0
-  };
+  const listings = Array.isArray(userListings) ? userListings : userListings?.data || [];
+  
+  // Calculate analytics
+  const totalViews = listings.reduce((sum: number, listing: Listing) => sum + (listing.views_count || 0), 0);
+  const totalListings = listings.length;
+  const activeListings = listings.filter((listing: Listing) => listing.status === 'active').length;
+  const featuredListings = listings.filter((listing: Listing) => listing.featured).length;
 
-  const statCards = [
-    {
-      title: 'إجمالي الإعلانات',
-      value: analyticsData.totalListings || listings.length,
-      icon: ShoppingBag,
-      color: 'text-blue-600'
-    },
-    {
-      title: 'الإعلانات النشطة',
-      value: analyticsData.activeListings || listings.filter(ad => ad.status === 'active').length,
-      icon: TrendingUp,
-      color: 'text-green-600'
-    },
-    {
-      title: 'إجمالي المشاهدات',
-      value: analyticsData.totalViews || listings.reduce((sum, ad) => sum + (ad.views_count || 0), 0),
-      icon: Eye,
-      color: 'text-purple-600'
-    },
-    {
-      title: 'إجمالي التعليقات',
-      value: analyticsData.totalComments || listings.reduce((sum, ad) => sum + (ad.comments_count || 0), 0),
-      icon: MessageSquare,
-      color: 'text-orange-600'
-    }
-  ];
-
-  // Mock data for charts - in real app this would come from API
-  const viewsData = [
-    { name: 'الاثنين', views: 120 },
-    { name: 'الثلاثاء', views: 190 },
-    { name: 'الأربعاء', views: 300 },
-    { name: 'الخميس', views: 250 },
-    { name: 'الجمعة', views: 180 },
-    { name: 'السبت', views: 220 },
-    { name: 'الأحد', views: 160 }
-  ];
-
-  const categoryData = [
-    { name: 'إلكترونيات', value: 35, color: '#8884d8' },
-    { name: 'سيارات', value: 25, color: '#82ca9d' },
-    { name: 'عقارات', value: 20, color: '#ffc658' },
-    { name: 'أخرى', value: 20, color: '#ff7300' }
-  ];
+  // Get top performing listings
+  const topListings = [...listings]
+    .sort((a: Listing, b: Listing) => (b.views_count || 0) - (a.views_count || 0))
+    .slice(0, 5);
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold mb-2">الإحصائيات والتحليلات</h2>
-        <p className="text-muted-foreground">تتبع أداء إعلاناتك وإحصائيات المشاهدة</p>
-      </div>
-
-      {/* Stats Cards */}
+      {/* Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {statCards.map((stat, index) => (
-          <Card key={index}>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">
-                    {stat.title}
-                  </p>
-                  <p className="text-2xl font-bold">{stat.value}</p>
-                </div>
-                <stat.icon className={`h-8 w-8 ${stat.color}`} />
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">إجمالي الإعلانات</p>
+                <p className="text-2xl font-bold">{totalListings}</p>
               </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Views Chart */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Eye className="h-5 w-5" />
-              المشاهدات الأسبوعية
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={viewsData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Line 
-                  type="monotone" 
-                  dataKey="views" 
-                  stroke="#8884d8" 
-                  strokeWidth={2}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+              <Package className="h-8 w-8 text-brand" />
+            </div>
           </CardContent>
         </Card>
 
-        {/* Category Distribution */}
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BarChart className="h-5 w-5" />
-              توزيع التصنيفات
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={categoryData}
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                >
-                  {categoryData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">الإعلانات النشطة</p>
+                <p className="text-2xl font-bold">{activeListings}</p>
+              </div>
+              <TrendingUp className="h-8 w-8 text-green-500" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">إجمالي المشاهدات</p>
+                <p className="text-2xl font-bold">{totalViews}</p>
+              </div>
+              <Eye className="h-8 w-8 text-blue-500" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">الإعلانات المميزة</p>
+                <p className="text-2xl font-bold">{featuredListings}</p>
+              </div>
+              <Heart className="h-8 w-8 text-red-500" />
+            </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Recent Activity */}
+      {/* Top Performing Listings */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5" />
-            النشاط الأخير
-          </CardTitle>
+          <CardTitle>أفضل الإعلانات أداءً</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {listings.slice(0, 5).map((ad) => (
-              <div key={ad.id} className="flex items-center justify-between p-3 border rounded-lg">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-accent rounded-lg flex items-center justify-center">
-                    <ShoppingBag className="h-6 w-6 text-muted-foreground" />
+          {topListings.length > 0 ? (
+            <div className="space-y-4">
+              {topListings.map((listing: Listing, index: number) => (
+                <div key={listing.id} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex items-center gap-4">
+                    <div className="w-8 h-8 bg-brand text-white rounded-full flex items-center justify-center font-bold">
+                      {index + 1}
+                    </div>
+                    <div className="flex items-center gap-3">
+                      {listing.main_image_url ? (
+                        <img 
+                          src={listing.main_image_url} 
+                          alt={listing.title}
+                          className="w-12 h-12 object-cover rounded"
+                        />
+                      ) : (
+                        <div className="w-12 h-12 bg-gray-200 rounded flex items-center justify-center">
+                          <Package className="h-6 w-6 text-gray-400" />
+                        </div>
+                      )}
+                      <div>
+                        <h4 className="font-medium">{listing.title}</h4>
+                        <p className="text-sm text-brand font-semibold">{listing.price} ريال</p>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-medium">{ad.title}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {ad.views_count || 0} مشاهدة • {ad.favorites_count || 0} إعجاب
-                    </p>
+                  
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                      <Eye className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">{listing.views_count || 0}</span>
+                    </div>
+                    
+                    {listing.featured && (
+                      <Badge className="bg-brand text-white">
+                        مميز
+                      </Badge>
+                    )}
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="font-medium">{ad.price} ريال</p>
-                  <p className="text-sm text-muted-foreground">
-                    {new Date(ad.created_at || Date.now()).toLocaleDateString('ar-SA')}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              لا توجد إعلانات لعرض الإحصائيات
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

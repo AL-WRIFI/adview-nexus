@@ -4,163 +4,189 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Edit2, Eye, Trash2, TrendingUp, MessageSquare, Heart, Plus } from 'lucide-react';
-import { useUserListings } from '@/hooks/use-api';
-import { DeleteConfirmDialog } from '@/pages/dashboard/dialogs/DeleteConfirmDialog';
-import { useAdsDialog } from '@/pages/dashboard/hooks/useAdsDialog';
 import { Link } from 'react-router-dom';
+import { 
+  Eye, 
+  Edit, 
+  Trash2, 
+  Plus, 
+  TrendingUp,
+  AlertCircle,
+  Package,
+  MoreHorizontal
+} from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useUserListings, useDeleteListing } from '@/hooks/use-api';
+import { Listing } from '@/types';
+import { PromoteListingDialog } from '@/components/promotions/PromoteListingDialog';
+import { toast } from 'sonner';
 
 export function AdsTab() {
-  const [selectedAdId, setSelectedAdId] = useState<number | null>(null);
-  const { data: userListings, isLoading: loadingListings, refetch } = useUserListings();
-  const {
-    deleteDialogOpen,
-    setDeleteDialogOpen,
-    selectedAd,
-    handleDelete,
-    isDeleting
-  } = useAdsDialog();
+  const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
+  const [promoteDialogOpen, setPromoteDialogOpen] = useState(false);
+  
+  const { data: userListings, isLoading } = useUserListings();
+  const deleteListingMutation = useDeleteListing();
 
-  const handleDeleteClick = (ad: any) => {
-    setSelectedAdId(ad.id);
-    setDeleteDialogOpen(true);
+  const handlePromote = (listing: Listing) => {
+    setSelectedListing(listing);
+    setPromoteDialogOpen(true);
   };
 
-  const handleDeleteConfirm = async () => {
-    if (selectedAdId) {
-      await handleDelete(selectedAdId);
-      setSelectedAdId(null);
-      refetch();
+  const handleDelete = async (listingId: number) => {
+    if (window.confirm('هل أنت متأكد من حذف هذا الإعلان؟')) {
+      try {
+        await deleteListingMutation.mutateAsync(listingId);
+        toast.success('تم حذف الإعلان بنجاح');
+      } catch (error) {
+        console.error('خطأ في حذف الإعلان:', error);
+        toast.error('حدث خطأ أثناء حذف الإعلان');
+      }
     }
   };
 
-  if (loadingListings) {
+  if (isLoading) {
     return (
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <Skeleton className="h-8 w-32" />
-          <Skeleton className="h-10 w-32" />
-        </div>
+      <div className="space-y-4">
+        <Skeleton className="h-8 w-48" />
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {[...Array(6)].map((_, i) => (
-            <Skeleton key={i} className="h-64" />
+            <Skeleton key={i} className="h-48" />
           ))}
         </div>
       </div>
     );
   }
 
-  // Handle both array and paginated response structures
-  const listings = Array.isArray(userListings) ? userListings : userListings || [];
+  const listings = Array.isArray(userListings) ? userListings : userListings?.data || [];
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold">إعلاناتي</h2>
-          <p className="text-muted-foreground">إدارة إعلاناتك المنشورة</p>
-        </div>
-        <Button asChild>
-          <Link to="/add-ad">
-            <Plus className="h-4 w-4 mr-2" />
-            إضافة إعلان جديد
-          </Link>
-        </Button>
-      </div>
-
-      {listings.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {listings.map((ad) => (
-            <Card key={ad.id} className="overflow-hidden">
-              <div className="aspect-video relative bg-gray-100">
-                {typeof ad.image === 'string' ? (
-                  <img 
-                    src={ad.image} 
-                    alt={ad.title}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <img 
-                    src={ad.image?.image_url || ad.main_image_url || '/placeholder.svg'} 
-                    alt={ad.title}
-                    className="w-full h-full object-cover"
-                  />
-                )}
-                <div className="absolute top-2 right-2">
-                  <Badge variant={ad.status === 'active' ? 'default' : 'secondary'}>
-                    {ad.status === 'active' ? 'نشط' : 'غير نشط'}
-                  </Badge>
-                </div>
-              </div>
-              
-              <CardHeader>
-                <CardTitle className="line-clamp-2">{ad.title}</CardTitle>
-                <div className="text-lg font-bold text-brand">{ad.price} ريال</div>
-              </CardHeader>
-              
-              <CardContent>
-                <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
-                  <div className="flex items-center gap-1">
-                    <Eye className="h-4 w-4" />
-                    <span>{ad.views_count || 0}</span>
+    <>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <Package className="h-5 w-5" />
+            إعلاناتي ({listings.length})
+          </CardTitle>
+          <Button asChild>
+            <Link to="/add-ad">
+              <Plus className="h-4 w-4 mr-2" />
+              إضافة إعلان جديد
+            </Link>
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {listings.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {listings.map((listing: Listing) => (
+                <Card key={listing.id} className="relative overflow-hidden">
+                  <div className="aspect-video bg-gray-100 relative">
+                    {listing.main_image_url ? (
+                      <img 
+                        src={listing.main_image_url} 
+                        alt={listing.title}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-gray-200">
+                        <Package className="h-8 w-8 text-gray-400" />
+                      </div>
+                    )}
+                    
+                    {listing.featured && (
+                      <Badge className="absolute top-2 right-2 bg-brand text-white">
+                        مميز
+                      </Badge>
+                    )}
+                    
+                    <div className="absolute top-2 left-2">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="secondary" size="sm">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem asChild>
+                            <Link to={`/ad/${listing.id}`}>
+                              <Eye className="mr-2 h-4 w-4" />
+                              عرض الإعلان
+                            </Link>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem asChild>
+                            <Link to={`/edit-ad/${listing.id}`}>
+                              <Edit className="mr-2 h-4 w-4" />
+                              تعديل
+                            </Link>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handlePromote(listing)}>
+                            <TrendingUp className="mr-2 h-4 w-4" />
+                            ترقية الإعلان
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            className="text-red-500 focus:text-red-500"
+                            onClick={() => handleDelete(listing.id)}
+                            disabled={deleteListingMutation.isPending}
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            حذف
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <MessageSquare className="h-4 w-4" />
-                    <span>{ad.comments_count || 0}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Heart className="h-4 w-4" />
-                    <span>{ad.favorites_count || 0}</span>
-                  </div>
-                </div>
-                
-                <div className="flex gap-2">
-                  <Button size="sm" variant="outline" asChild className="flex-1">
-                    <Link to={`/edit-ad/${ad.id}`}>
-                      <Edit2 className="h-4 w-4 mr-1" />
-                      تعديل
-                    </Link>
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    variant="outline" 
-                    onClick={() => handleDeleteClick(ad)}
-                    className="flex-1 hover:bg-destructive hover:text-destructive-foreground"
-                  >
-                    <Trash2 className="h-4 w-4 mr-1" />
-                    حذف
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      ) : (
-        <Card>
-          <CardContent className="text-center py-12">
-            <div className="text-muted-foreground mb-4">
-              <TrendingUp className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>لا توجد إعلانات منشورة بعد</p>
-              <p className="text-sm">ابدأ بإضافة إعلانك الأول</p>
+                  
+                  <CardContent className="p-4">
+                    <h3 className="font-semibold mb-2 line-clamp-2">{listing.title}</h3>
+                    <p className="text-brand font-bold mb-2">{listing.price} ريال</p>
+                    
+                    <div className="flex items-center justify-between text-sm text-muted-foreground">
+                      <div className="flex items-center gap-1">
+                        <Eye className="h-4 w-4" />
+                        <span>{listing.views_count || 0}</span>
+                      </div>
+                      
+                      <Badge 
+                        variant={listing.status === 'active' ? 'default' : 
+                                listing.status === 'pending' ? 'secondary' : 'destructive'}
+                      >
+                        {listing.status === 'active' ? 'نشط' :
+                         listing.status === 'pending' ? 'قيد المراجعة' :
+                         listing.status === 'sold' ? 'مباع' : 'متوقف'}
+                      </Badge>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
-            <Button asChild>
-              <Link to="/add-ad">
-                <Plus className="h-4 w-4 mr-2" />
-                إضافة إعلان جديد
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
-      )}
+          ) : (
+            <div className="text-center py-12">
+              <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium mb-2">لا توجد إعلانات</h3>
+              <p className="text-muted-foreground mb-4">
+                لم تقم بإنشاء أي إعلان حتى الآن
+              </p>
+              <Button asChild>
+                <Link to="/add-ad">
+                  <Plus className="h-4 w-4 mr-2" />
+                  إضافة إعلان جديد
+                </Link>
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
-      <DeleteConfirmDialog
-        open={deleteDialogOpen}
-        onOpenChange={setDeleteDialogOpen}
-        onConfirm={handleDeleteConfirm}
-        isLoading={isDeleting}
-        title="حذف الإعلان"
-        description="هل أنت متأكد من حذف هذا الإعلان؟ لا يمكن التراجع عن هذا الإجراء."
+      <PromoteListingDialog
+        open={promoteDialogOpen}
+        onOpenChange={setPromoteDialogOpen}
+        listing={selectedListing}
       />
-    </div>
+    </>
   );
 }

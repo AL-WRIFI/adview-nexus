@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Calendar, Clock, CreditCard } from 'lucide-react';
-import { useUserPromotions } from '@/hooks/use-promotions';
+import { useUserPromotions, ListingPromotion } from '@/hooks/use-promotions';
 
 export function UserPromotionsTab() {
   const { data: promotionsResponse, isLoading } = useUserPromotions();
@@ -19,8 +19,10 @@ export function UserPromotionsTab() {
     );
   }
 
-  // Handle paginated response
-  const promotionsList = promotionsResponse?.data || [];
+  // Handle paginated response structure
+  const promotionsList = Array.isArray(promotionsResponse) 
+    ? promotionsResponse 
+    : promotionsResponse?.data || [];
 
   if (!promotionsList || promotionsList.length === 0) {
     return (
@@ -47,7 +49,7 @@ export function UserPromotionsTab() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {promotionsList.map((promotion: any) => (
+            {promotionsList.map((promotion: ListingPromotion) => (
               <Card key={promotion.id} className="p-4">
                 <div className="flex items-start justify-between">
                   <div className="space-y-2">

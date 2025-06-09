@@ -7,7 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Star, Clock, CreditCard, TrendingUp, Package, Eye } from 'lucide-react';
 import { useUserListings } from '@/hooks/use-api';
-import { useUserPromotions, usePromotionPackages } from '@/hooks/use-promotions';
+import { useUserPromotions, usePromotionPackages, ListingPromotion } from '@/hooks/use-promotions';
 import { PromoteListingDialog } from '@/components/promotions/PromoteListingDialog';
 import { UserPromotionsTab } from '@/components/promotions/UserPromotionsTab';
 
@@ -33,8 +33,8 @@ export function PromoteTab() {
     );
   }
 
-  const listings = userListings || [];
-  const promotionsList = promotionsResponse?.data || [];
+  const listings = Array.isArray(userListings) ? userListings : userListings?.data || [];
+  const promotionsList = Array.isArray(promotionsResponse) ? promotionsResponse : promotionsResponse?.data || [];
   const packagesList = Array.isArray(packages) ? packages : [];
 
   const handlePromoteListing = (listing: any) => {
@@ -42,11 +42,11 @@ export function PromoteTab() {
     setPromoteDialogOpen(true);
   };
 
-  const activePromotions = promotionsList.filter((p: any) => 
+  const activePromotions = Array.isArray(promotionsList) ? promotionsList.filter((p: ListingPromotion) => 
     p.payment_status === 'paid' && 
     p.expires_at && 
     new Date(p.expires_at) > new Date()
-  );
+  ) : [];
 
   const packageIcons = {
     featured: Star,
@@ -79,7 +79,7 @@ export function PromoteTab() {
               {listings.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {listings.map((listing: any) => {
-                    const isPromoted = activePromotions.some((p: any) => p.listing?.id === listing.id);
+                    const isPromoted = activePromotions.some((p: ListingPromotion) => p.listing?.id === listing.id);
                     
                     return (
                       <Card key={listing.id} className={`relative ${isPromoted ? 'border-brand bg-brand/5' : ''}`}>
