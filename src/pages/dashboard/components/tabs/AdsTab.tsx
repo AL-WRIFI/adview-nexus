@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -34,20 +33,15 @@ export function AdsTab({ setSelectedAd, setPromoteDialogOpen }: AdsTabProps) {
   const userListings = React.useMemo(() => {
     if (!userListingsResponse) return [];
     
-    // Handle different response formats
+    // Handle direct array response
     if (Array.isArray(userListingsResponse)) {
       return userListingsResponse;
     }
     
+    // Handle paginated response structure
     if (userListingsResponse && typeof userListingsResponse === 'object') {
-      // Check if it's a paginated response
       if ('data' in userListingsResponse && Array.isArray(userListingsResponse.data)) {
         return userListingsResponse.data;
-      }
-      
-      // Check if it's an API response wrapper
-      if ('data' in userListingsResponse && userListingsResponse.data && Array.isArray(userListingsResponse.data.data)) {
-        return userListingsResponse.data.data;
       }
     }
     

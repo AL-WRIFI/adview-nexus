@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { usePromotionPackages, usePromoteWithBankTransfer, usePromoteWithStripe } from '@/hooks/use-promotions';
 import { Button } from '@/components/ui/button';
@@ -41,10 +40,12 @@ export function PromoteDialog({ open, onOpenChange, adId }: PromoteDialogProps) 
   const promotionPackages = React.useMemo(() => {
     if (!promotionPackagesResponse) return [];
     
+    // Handle direct array response
     if (Array.isArray(promotionPackagesResponse)) {
       return promotionPackagesResponse;
     }
     
+    // Handle object response with data property
     if (promotionPackagesResponse && typeof promotionPackagesResponse === 'object') {
       if ('data' in promotionPackagesResponse && Array.isArray(promotionPackagesResponse.data)) {
         return promotionPackagesResponse.data;

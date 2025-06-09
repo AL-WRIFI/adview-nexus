@@ -35,10 +35,6 @@ export function RelatedAndSuggestedAds({
       if ('data' in suggestedAdsResponse && Array.isArray(suggestedAdsResponse.data)) {
         return suggestedAdsResponse.data;
       }
-      
-      if ('data' in suggestedAdsResponse && suggestedAdsResponse.data && Array.isArray(suggestedAdsResponse.data.data)) {
-        return suggestedAdsResponse.data.data;
-      }
     }
     
     return [];
