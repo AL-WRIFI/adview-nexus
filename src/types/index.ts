@@ -1,4 +1,3 @@
-
 export interface User {
   id: number;
   first_name: string;
@@ -94,6 +93,7 @@ export interface Ad {
   neighborhood?: string;
   favorites_count?: number;
   is_favorited?: boolean;
+  comments_count?: number;
 }
 
 export interface Listing {
@@ -139,6 +139,7 @@ export interface Listing {
   phone_hidden?: boolean;
   lat?: number;
   lon?: number;
+  comments_count?: number;
 }
 
 export interface Comment {
