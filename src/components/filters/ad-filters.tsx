@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -27,8 +28,9 @@ export function AdFilters({ onFiltersChange, currentFilters = {} }: AdFiltersPro
 
   const { data: categories } = useCategories();
   const { data: states } = useStates();
-  const { data: cities } = useCities(filters.state_id);
-  const { data: brands } = useBrands(filters.category_id);
+  // Fix: useCities should be called without parameters based on the error
+  const { data: cities } = useCities();
+  const { data: brands } = useBrands();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;

@@ -40,7 +40,7 @@ export function MobileFilterBar({
         <span className="text-sm">القريب</span>
       </Button>
       
-      <MobileFilterDrawer onFilterChange={onFilterChange} />
+      <MobileFilterDrawer onFiltersChange={onFilterChange} />
     </div>
   );
 }

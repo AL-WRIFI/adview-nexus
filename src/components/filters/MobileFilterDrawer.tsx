@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import {
   Drawer,
@@ -15,32 +16,24 @@ import { Slider } from "@/components/ui/slider"
 import { Switch } from "@/components/ui/switch"
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select"
 import { Category, State, City, Brand, SearchFilters } from '@/types';
-import { useCurrentLocation } from '@/hooks/use-api';
+import { useCurrentLocation, useCategories, useStates, useCities, useBrands } from '@/hooks/use-api';
 
 interface MobileFilterDrawerProps {
-  filters: SearchFilters;
   onFiltersChange: (filters: SearchFilters) => void;
-  categories: Category[];
-  states: State[];
-  cities: City[];
-  brands: Brand[];
 }
 
 export function MobileFilterDrawer({
-  filters,
-  onFiltersChange,
-  categories,
-  states,
-  cities,
-  brands
+  onFiltersChange
 }: MobileFilterDrawerProps) {
   const [open, setOpen] = useState(false);
-  const [localFilters, setLocalFilters] = useState<SearchFilters>(filters);
+  const [localFilters, setLocalFilters] = useState<SearchFilters>({});
   const { data: locationData } = useCurrentLocation();
-
-  useEffect(() => {
-    setLocalFilters(filters);
-  }, [filters]);
+  
+  // Fetch data using API hooks
+  const { data: categories } = useCategories();
+  const { data: states } = useStates();
+  const { data: cities } = useCities();
+  const { data: brands } = useBrands();
 
   const handleApplyFilters = () => {
     onFiltersChange(localFilters);
@@ -147,7 +140,7 @@ export function MobileFilterDrawer({
                   <SelectValue placeholder="اختر الفئة" />
                 </SelectTrigger>
                 <SelectContent>
-                  {categories.map((category) => (
+                  {categories?.map((category: Category) => (
                     <SelectItem key={category.id} value={category.id.toString()}>
                       {category.name}
                     </SelectItem>
@@ -200,7 +193,7 @@ export function MobileFilterDrawer({
                   <SelectValue placeholder="اختر الولاية" />
                 </SelectTrigger>
                 <SelectContent>
-                  {states.map((state) => (
+                  {states?.map((state: State) => (
                     <SelectItem key={state.id} value={state.id.toString()}>
                       {state.name}
                     </SelectItem>
@@ -217,7 +210,7 @@ export function MobileFilterDrawer({
                   <SelectValue placeholder="اختر المدينة" />
                 </SelectTrigger>
                 <SelectContent>
-                  {cities.map((city) => (
+                  {cities?.map((city: City) => (
                     <SelectItem key={city.id} value={city.id.toString()}>
                       {city.name}
                     </SelectItem>
@@ -234,7 +227,7 @@ export function MobileFilterDrawer({
                   <SelectValue placeholder="اختر العلامة التجارية" />
                 </SelectTrigger>
                 <SelectContent>
-                  {brands.map((brand) => (
+                  {brands?.map((brand: Brand) => (
                     <SelectItem key={brand.id} value={brand.id.toString()}>
                       {brand.title || brand.name}
                     </SelectItem>

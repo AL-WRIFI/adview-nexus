@@ -35,17 +35,21 @@ export function PromoteTab() {
 
   // Handle both array and paginated response structures
   let listings: any[] = [];
-  if (Array.isArray(userListingsResponse)) {
-    listings = userListingsResponse;
-  } else if (userListingsResponse && typeof userListingsResponse === 'object' && 'data' in userListingsResponse) {
-    listings = Array.isArray(userListingsResponse.data) ? userListingsResponse.data : [];
+  if (userListingsResponse) {
+    if (Array.isArray(userListingsResponse)) {
+      listings = userListingsResponse;
+    } else if (typeof userListingsResponse === 'object' && 'data' in userListingsResponse) {
+      listings = Array.isArray((userListingsResponse as any).data) ? (userListingsResponse as any).data : [];
+    }
   }
 
   let promotionsList: ListingPromotion[] = [];
-  if (Array.isArray(promotionsResponse)) {
-    promotionsList = promotionsResponse;
-  } else if (promotionsResponse && typeof promotionsResponse === 'object' && 'data' in promotionsResponse) {
-    promotionsList = Array.isArray(promotionsResponse.data) ? promotionsResponse.data : [];
+  if (promotionsResponse) {
+    if (Array.isArray(promotionsResponse)) {
+      promotionsList = promotionsResponse;
+    } else if (typeof promotionsResponse === 'object' && 'data' in promotionsResponse) {
+      promotionsList = Array.isArray((promotionsResponse as any).data) ? (promotionsResponse as any).data : [];
+    }
   }
 
   const packagesList = Array.isArray(packages) ? packages : [];

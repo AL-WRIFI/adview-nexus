@@ -25,10 +25,12 @@ export function AnalyticsTab() {
 
   // Handle both array and paginated response structures
   let listings: Listing[] = [];
-  if (Array.isArray(userListingsResponse)) {
-    listings = userListingsResponse;
-  } else if (userListingsResponse && typeof userListingsResponse === 'object' && 'data' in userListingsResponse) {
-    listings = Array.isArray(userListingsResponse.data) ? userListingsResponse.data : [];
+  if (userListingsResponse) {
+    if (Array.isArray(userListingsResponse)) {
+      listings = userListingsResponse;
+    } else if (typeof userListingsResponse === 'object' && 'data' in userListingsResponse) {
+      listings = Array.isArray((userListingsResponse as any).data) ? (userListingsResponse as any).data : [];
+    }
   }
   
   // Calculate analytics
