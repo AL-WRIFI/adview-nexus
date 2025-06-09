@@ -30,10 +30,29 @@ export function AdsTab({ setSelectedAd, setPromoteDialogOpen }: AdsTabProps) {
   
   const { data: userListingsResponse, isLoading, error } = useUserListings();
 
-  // Handle both array and paginated response structures
-  const userListings = Array.isArray(userListingsResponse) 
-    ? userListingsResponse 
-    : userListingsResponse?.data || [];
+  // Handle both array and paginated response structures with proper error handling
+  const userListings = React.useMemo(() => {
+    if (!userListingsResponse) return [];
+    
+    // Handle different response formats
+    if (Array.isArray(userListingsResponse)) {
+      return userListingsResponse;
+    }
+    
+    if (userListingsResponse && typeof userListingsResponse === 'object') {
+      // Check if it's a paginated response
+      if ('data' in userListingsResponse && Array.isArray(userListingsResponse.data)) {
+        return userListingsResponse.data;
+      }
+      
+      // Check if it's an API response wrapper
+      if ('data' in userListingsResponse && userListingsResponse.data && Array.isArray(userListingsResponse.data.data)) {
+        return userListingsResponse.data.data;
+      }
+    }
+    
+    return [];
+  }, [userListingsResponse]);
 
   if (isLoading) {
     return (
@@ -165,7 +184,7 @@ export function AdsTab({ setSelectedAd, setPromoteDialogOpen }: AdsTabProps) {
                   <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
                     <div className="flex items-center gap-1">
                       <Eye className="h-4 w-4" />
-                      <span>{listing.views_count || 0}</span>
+                      <span>{listing.views_count || listing.views || 0}</span>
                     </div>
                     <div className="flex items-center gap-1">
                       <Heart className="h-4 w-4" />
@@ -173,7 +192,7 @@ export function AdsTab({ setSelectedAd, setPromoteDialogOpen }: AdsTabProps) {
                     </div>
                     <div className="flex items-center gap-1">
                       <MessageCircle className="h-4 w-4" />
-                      <span>0</span>
+                      <span>{listing.comments_count || 0}</span>
                     </div>
                     <div className="mr-auto">
                       {formatDistanceToNow(new Date(listing.created_at), { 

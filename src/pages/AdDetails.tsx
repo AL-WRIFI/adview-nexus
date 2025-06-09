@@ -4,7 +4,7 @@ import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { MobileNav } from '@/components/layout/mobile-nav';
 import { AdImageGallery } from '@/components/image-gallery/AdImageGallery';
-import { RelatedAdsCarousel } from '@/components/ads/related-ads-carousel';
+import { RelatedAndSuggestedAds } from '@/components/ads/RelatedAndSuggestedAds';
 import { CommentsList } from '@/components/comments/CommentsList';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -24,7 +24,6 @@ import {
 } from 'lucide-react';
 import {
   useAd,
-  useRelatedAds,
   useComments,
   useIsFavorite,
   useAddToFavorites,
@@ -49,7 +48,6 @@ export default function AdDetails() {
   
   // API hooks
   const { data: ad, isLoading: adLoading } = useAd(id || '');
-  const { data: relatedAds } = useRelatedAds(ad?.category_id || 0);
   const { data: comments, isLoading: commentsLoading } = useComments(adId);
   const { data: isFavorited } = useIsFavorite(adId);
   const addToFavoritesMutation = useAddToFavorites();
@@ -62,7 +60,6 @@ export default function AdDetails() {
   const deleteReplyMutation = useDeleteReply();
   
   // Local state
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showContactInfo, setShowContactInfo] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
 
@@ -239,7 +236,7 @@ export default function AdDetails() {
 
   if (adLoading) {
     return (
-      <div className="min-h-screen flex flex-col">
+      <div className="min-h-screen flex flex-col pt-16">
         <Header />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
@@ -257,7 +254,7 @@ export default function AdDetails() {
 
   if (!ad) {
     return (
-      <div className="min-h-screen flex flex-col">
+      <div className="min-h-screen flex flex-col pt-16">
         <Header />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
@@ -280,10 +277,10 @@ export default function AdDetails() {
       : ['https://placehold.co/600x400'];
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col pt-16">
       <Header />
       
-      <main className="flex-1 pb-20 md:pb-0">
+      <main className="flex-1 pb-20 md:pb-8">
         {/* Ad Images */}
         <div className="container px-4 mx-auto py-6">
           <AdImageGallery images={adImages} title={ad?.title} />
@@ -364,7 +361,7 @@ export default function AdDetails() {
                   
                   <div className="flex items-center gap-2 text-sm">
                     <Eye className="h-4 w-4 text-muted-foreground" />
-                    <span>{ad.views || 0} مشاهدة</span>
+                    <span>{ad.views || ad.views_count || ad.viewCount || 0} مشاهدة</span>
                   </div>
                   
                   <div className="flex items-center gap-2 text-sm">
@@ -447,12 +444,12 @@ export default function AdDetails() {
             </div>
           </div>
 
-          {/* Related Ads */}
-          {relatedAds && relatedAds.length > 0 && (
-            <div className="mt-12">
-              <RelatedAdsCarousel ads={relatedAds} />
-            </div>
-          )}
+          {/* Related and Suggested Ads */}
+          <RelatedAndSuggestedAds 
+            categoryId={ad.category_id} 
+            excludeId={ad.id}
+            currentAd={ad}
+          />
         </div>
       </main>
       

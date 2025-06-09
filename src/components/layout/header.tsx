@@ -1,12 +1,6 @@
+
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from 'react-router-dom';
-import {
-  NavigationMenu,
-  NavigationMenuContent,
-  NavigationMenuItem,
-  NavigationMenuList,
-  NavigationMenuTrigger,
-} from "@/components/ui/navigation-menu";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
@@ -64,23 +58,46 @@ export function Header({ isLoggedIn }: HeaderProps = {}) {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      navigate(`/search?query=${encodeURIComponent(searchQuery.trim())}`);
+      navigate(`/search?search=${encodeURIComponent(searchQuery.trim())}`);
     }
   };
+
   // Get user initial for avatar fallback
   const getNameInitial = () => {
-    if (!user || !user.name) return "؟";
-    return user.name.charAt(0).toUpperCase();
+    if (!user) return "؟";
+    if (user.first_name && user.last_name) {
+      return user.first_name.charAt(0) + user.last_name.charAt(0);
+    }
+    if (user.name) {
+      return user.name.charAt(0).toUpperCase();
+    }
+    if (user.username) {
+      return user.username.charAt(0).toUpperCase();
+    }
+    return "؟";
+  };
+
+  const getUserDisplayName = () => {
+    if (!user) return "مستخدم";
+    if (user.first_name && user.last_name) {
+      return `${user.first_name} ${user.last_name}`;
+    }
+    if (user.name) {
+      return user.name;
+    }
+    if (user.username) {
+      return user.username;
+    }
+    return "مستخدم";
   };
 
   return (
     <header
-      className={`sticky top-0 z-50 bg-white dark:bg-dark-background transition-shadow duration-300 ${
-        isScrolled ? "shadow-md dark:bg-neutral-900 border-t border-border dark:border-neutral-900" : ""
+      className={`fixed top-0 left-0 right-0 z-50 bg-white/95 dark:bg-dark-background/95 backdrop-blur-sm transition-all duration-300 border-b border-border dark:border-neutral-800 ${
+        isScrolled ? "shadow-md" : ""
       }`}
     >
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
@@ -99,18 +116,18 @@ export function Header({ isLoggedIn }: HeaderProps = {}) {
                     <div className="bg-brand p-6">
                       {isAuthenticated ? (
                         <div className="flex items-center gap-3">
-                          <Avatar>
+                          <Avatar className="h-12 w-12">
                             <AvatarImage
-                              src={user?.avatar || ""}
-                              alt={user?.name || ""}
+                              src={user?.avatar || user?.avatar_url || user?.image || ""}
+                              alt={getUserDisplayName()}
                             />
-                            <AvatarFallback className="bg-white/20 text-white">
+                            <AvatarFallback className="bg-white/20 text-white text-lg">
                               {getNameInitial()}
                             </AvatarFallback>
                           </Avatar>
                           <div>
-                            <h3 className="text-white font-bold">
-                              {user?.name || "مستخدم"}
+                            <h3 className="text-white font-bold text-lg">
+                              {getUserDisplayName()}
                             </h3>
                             <p className="text-white/80 text-sm">
                               {user?.email || ""}
@@ -146,7 +163,7 @@ export function Header({ isLoggedIn }: HeaderProps = {}) {
                       )}
                     </div>
 
-                    <div className="flex flex-col p-2">
+                    <div className="flex flex-col p-2 flex-1">
                       <Link
                         to="/"
                         className="flex items-center gap-2 p-3 hover:bg-gray-100 dark:hover:bg-dark-surface rounded-md"
@@ -216,11 +233,11 @@ export function Header({ isLoggedIn }: HeaderProps = {}) {
                             <ThemeToggle />
                             
                             <Button
-                              variant="secondary"
-                              className="text-destructive"
+                              variant="destructive"
+                              size="sm"
                               onClick={logout}
                             >
-                              <LogOut className="h-5 w-5 ml-2" />
+                              <LogOut className="h-4 w-4 ml-2" />
                               تسجيل الخروج
                             </Button>
                           </div>
@@ -228,9 +245,9 @@ export function Header({ isLoggedIn }: HeaderProps = {}) {
                       ) : (
                         <div className="flex items-center justify-between mt-auto p-3">
                           <ThemeToggle />
-                          <Button variant="default" asChild>
+                          <Button variant="default" size="sm" asChild>
                             <Link to="/auth/login">
-                              <LogIn className="h-5 w-5 ml-2" />
+                              <LogIn className="h-4 w-4 ml-2" />
                               تسجيل الدخول
                             </Link>
                           </Button>
@@ -243,7 +260,6 @@ export function Header({ isLoggedIn }: HeaderProps = {}) {
             </div>
 
             <Link to="/" className="flex items-center">
-              {/* Fixed the logo size prop issue */}
               <Logo />
             </Link>
 
@@ -251,16 +267,30 @@ export function Header({ isLoggedIn }: HeaderProps = {}) {
               <ThemeToggle size="sm" />
               
               {isAuthenticated ? (
-                <Link to="/add-ad">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-brand"
-                    aria-label="إضافة إعلان"
-                  >
-                    <Plus className="h-5 w-5" />
-                  </Button>
-                </Link>
+                <>
+                  <Link to="/notifications">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="relative"
+                      aria-label="الإشعارات"
+                    >
+                      <Bell className="h-5 w-5" />
+                      <span className="absolute top-0.5 right-0.5 w-2.5 h-2.5 bg-brand rounded-full" />
+                    </Button>
+                  </Link>
+
+                  <Link to="/add-ad">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-brand"
+                      aria-label="إضافة إعلان"
+                    >
+                      <Plus className="h-5 w-5" />
+                    </Button>
+                  </Link>
+                </>
               ) : (
                 <Link to="/auth/login">
                   <Button
@@ -282,103 +312,30 @@ export function Header({ isLoggedIn }: HeaderProps = {}) {
               <Link to="/" className="flex items-center">
                 <Logo />
               </Link>
-
-              {/* <NavigationMenu>
-                <NavigationMenuList>
-                  <NavigationMenuItem>
-                    <NavigationMenuTrigger className="bg-transparent">
-                      التصنيفات
-                    </NavigationMenuTrigger>
-                    <NavigationMenuContent>
-                      <div className="grid grid-cols-2 gap-3 p-4 w-[400px]">
-                        <Link
-                          to="/category/1"
-                          className="block p-2 hover:bg-gray-50 dark:hover:bg-dark-surface rounded"
-                        >
-                          سيارات
-                        </Link>
-                        <Link
-                          to="/category/2"
-                          className="block p-2 hover:bg-gray-50 dark:hover:bg-dark-surface rounded"
-                        >
-                          عقارات
-                        </Link>
-                        <Link
-                          to="/category/3"
-                          className="block p-2 hover:bg-gray-50 dark:hover:bg-dark-surface rounded"
-                        >
-                          إلكترونيات
-                        </Link>
-                        <Link
-                          to="/category/4"
-                          className="block p-2 hover:bg-gray-50 dark:hover:bg-dark-surface rounded"
-                        >
-                          أثاث
-                        </Link>
-                        <Link
-                          to="/category/5"
-                          className="block p-2 hover:bg-gray-50 dark:hover:bg-dark-surface rounded"
-                        >
-                          وظائف
-                        </Link>
-                        <Link
-                          to="/category/6"
-                          className="block p-2 hover:bg-gray-50 dark:hover:bg-dark-surface rounded"
-                        >
-                          خدمات
-                        </Link>
-                      </div>
-                    </NavigationMenuContent>
-                  </NavigationMenuItem>
-
-                  <NavigationMenuItem>
-                    <Link to="/search" className="nav-link">
-                      البحث
-                    </Link>
-                  </NavigationMenuItem>
-
-                  <NavigationMenuItem>
-                    <Link to="/add-ad" className="nav-link">
-                      أضف إعلانك
-                    </Link>
-                  </NavigationMenuItem>
-                </NavigationMenuList>
-              </NavigationMenu> */}
             </div>
+
             <div className="hidden md:flex flex-1 mx-4">
-            <form onSubmit={handleSearch} className="w-full">
-              <div className="relative w-full">
-                <Input
-                  type="text"
-                  placeholder="ابحث عن منتجات، خدمات، وظائف..."
-                  className="w-full h-10 pr-10 rounded-lg border border-input bg-background"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-                <button type="submit" className="absolute top-0 right-0 h-full px-3 flex items-center">
-                  <Search className="h-5 w-5 text-muted-foreground" />
-                </button>
-              </div>
-            </form>
-          </div>
+              <form onSubmit={handleSearch} className="w-full">
+                <div className="relative w-full">
+                  <Input
+                    type="text"
+                    placeholder="ابحث عن منتجات، خدمات، وظائف..."
+                    className="w-full h-10 pr-10 rounded-lg border border-input bg-background"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                  <button type="submit" className="absolute top-0 right-0 h-full px-3 flex items-center">
+                    <Search className="h-5 w-5 text-muted-foreground" />
+                  </button>
+                </div>
+              </form>
+            </div>
 
             <div className="flex items-center gap-2">
               <ThemeToggle />
               
               {isAuthenticated ? (
                 <>
-                  {/* <Link to="/messages">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="relative"
-                      aria-label="الرسائل"
-                    >
-                      <MessageCircle className="h-5 w-5" />
-                      <span className="absolute top-0.5 right-0.5 w-2.5 h-2.5 bg-brand rounded-full" />
-                    </Button>
-                  </Link> */}
-
                   <Link to="/notifications">
                     <Button
                       variant="ghost"
@@ -391,27 +348,34 @@ export function Header({ isLoggedIn }: HeaderProps = {}) {
                     </Button>
                   </Link>
 
-                  <Link to="/favorites">
-                    <Button variant="ghost" size="icon" aria-label="المفضلة">
-                      <Heart className="h-5 w-5" />
+                  <Link to="/add-ad">
+                    <Button className="hidden sm:flex">
+                      <Plus className="h-4 w-4 ml-2" />
+                      إضافة إعلان
                     </Button>
                   </Link>
 
-                  {/* <DropdownMenu>
+                  <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        className="relative h-8 w-8 rounded-full"
-                      >
+                      <Button variant="ghost" className="flex items-center gap-2 h-auto p-2">
                         <Avatar className="h-8 w-8">
                           <AvatarImage
-                            src={user?.avatar || ""}
-                            alt={user?.name || ""}
+                            src={user?.avatar || user?.avatar_url || user?.image || ""}
+                            alt={getUserDisplayName()}
                           />
-                          <AvatarFallback>
+                          <AvatarFallback className="text-sm">
                             {getNameInitial()}
                           </AvatarFallback>
                         </Avatar>
+                        <div className="hidden lg:block text-right">
+                          <div className="text-sm font-medium">
+                            {getUserDisplayName()}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {user?.email || ""}
+                          </div>
+                        </div>
+                        <ChevronDown className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent className="w-56" align="end">
@@ -419,93 +383,52 @@ export function Header({ isLoggedIn }: HeaderProps = {}) {
                       <DropdownMenuSeparator />
                       <DropdownMenuGroup>
                         <DropdownMenuItem asChild>
-                          <Link to="/dashboard">
+                          <Link to="/dashboard" className="cursor-pointer">
                             <LayoutDashboard className="ml-2 h-4 w-4" />
                             <span>لوحة التحكم</span>
                           </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem asChild>
-                          <Link to="/profile">
-                            <User className="ml-2 h-4 w-4" />
-                            <span>الملف الشخصي</span>
+                          <Link to="/favorites" className="cursor-pointer">
+                            <Heart className="ml-2 h-4 w-4" />
+                            <span>المفضلة</span>
                           </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem asChild>
-                          <Link to="/add-ad">
-                            <PenSquare className="ml-2 h-4 w-4" />
-                            <span>إضافة إعلان</span>
-                          </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem asChild>
-                          <Link to="/settings">
-                            <Settings className="ml-2 h-4 w-4" />
-                            <span>الإعدادات</span>
+                          <Link to="/messages" className="cursor-pointer">
+                            <MessageCircle className="ml-2 h-4 w-4" />
+                            <span>الرسائل</span>
                           </Link>
                         </DropdownMenuItem>
                       </DropdownMenuGroup>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem asChild>
-                        <Link to="/help">
-                          <HelpCircle className="ml-2 h-4 w-4" />
-                          <span>المساعدة</span>
+                        <Link to="/settings" className="cursor-pointer">
+                          <Settings className="ml-2 h-4 w-4" />
+                          <span>الإعدادات</span>
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={logout}>
+                      <DropdownMenuItem
+                        className="text-red-600 cursor-pointer"
+                        onClick={logout}
+                      >
                         <LogOut className="ml-2 h-4 w-4" />
                         <span>تسجيل الخروج</span>
                       </DropdownMenuItem>
                     </DropdownMenuContent>
-                  </DropdownMenu> */}
-                  <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm" className="flex items-center gap-2">
-                      <span>{user.first_name}</span>
-                      <ChevronDown className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56 dark:bg-neutral-800  border-t border-border dark:border-neutral-700">
-                    <DropdownMenuLabel className="font-normal">
-                      <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-medium leading-none">{`${user.first_name} ${user.last_name}`}</p>
-                        <p className="text-xs leading-none text-muted-foreground">{user.phone}</p>
-                      </div>
-                    </DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild>
-                      <Link to="/dashboard" className="w-full flex items-center">
-                        <Settings className="mr-2 h-4 w-4" />
-                        <span>لوحة التحكم</span>
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link to="/profile" className="w-full flex items-center">
-                        <User className="mr-2 h-4 w-4" />
-                        <span>الملف الشخصي</span>
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={logout} className="flex items-center">
-                      <LogOut className="mr-2 h-4 w-4" />
-                      <span>تسجيل الخروج</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                  </DropdownMenu>
                 </>
               ) : (
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" asChild>
-                <Link to="/auth/login" className="flex items-center gap-2">
-                  <LogIn className="h-4 w-4" />
-                  <span>تسجيل الدخول</span>
-                </Link>
-              </Button>
+                <div className="flex items-center gap-2">
+                  <Button variant="ghost" asChild>
+                    <Link to="/auth/login">تسجيل الدخول</Link>
+                  </Button>
+                  <Button asChild>
+                    <Link to="/auth/register">إنشاء حساب</Link>
+                  </Button>
                 </div>
-                
               )}
-              <Button asChild className="dark:bg-neutral-700 border-t border-border dark:border-neutral-900">
-                  <Link to="/add-ad">إضافة إعلان</Link>
-              </Button>
             </div>
           </>
         )}
