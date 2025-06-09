@@ -30,7 +30,7 @@ interface PromoteDialogProps {
 
 export function PromoteDialog({ open, onOpenChange, adId }: PromoteDialogProps) {
   const [selectedPackage, setSelectedPackage] = useState<number | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState<'bank_transfer' | 'stripe' | 'wallet'>('bank_transfer');
+  const [paymentMethod, setPaymentMethod] = useState<'bank_transfer' | 'stripe'>('bank_transfer');
   const [bankTransferProof, setBankTransferProof] = useState<File | null>(null);
 
   const { toast } = useToast();

@@ -69,8 +69,7 @@ function HorizontalAdsSection({ title, ads, sectionId }: HorizontalAdsSectionPro
           className="flex gap-4 overflow-x-auto scrollbar-hide scroll-smooth pb-4"
           style={{ 
             scrollbarWidth: 'none',
-            msOverflowStyle: 'none',
-            WebkitScrollbar: { display: 'none' }
+            msOverflowStyle: 'none'
           }}
         >
           {ads.map((ad) => (
@@ -83,21 +82,25 @@ function HorizontalAdsSection({ title, ads, sectionId }: HorizontalAdsSectionPro
 
       {/* Mobile Grid */}
       <div className="md:hidden">
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-3 gap-3">
           {ads.slice(0, 6).map((ad) => (
             <div key={ad.id} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-border overflow-hidden">
               <div className="aspect-square overflow-hidden">
                 <img
-                  src={ad.main_image_url || ad.image || 'https://placehold.co/200x200'}
+                  src={
+                    typeof ad.main_image_url === 'string' 
+                      ? ad.main_image_url 
+                      : (ad.main_image_url?.image_url || ad.image || 'https://placehold.co/200x200')
+                  }
                   alt={ad.title}
                   className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                 />
               </div>
-              <div className="p-3">
-                <h3 className="font-semibold text-sm line-clamp-2 mb-2 text-foreground">
+              <div className="p-2">
+                <h3 className="font-semibold text-xs line-clamp-2 mb-1 text-foreground">
                   {ad.title}
                 </h3>
-                <p className="text-brand font-bold text-sm">
+                <p className="text-brand font-bold text-xs">
                   {ad.price.toLocaleString()} ريال
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
