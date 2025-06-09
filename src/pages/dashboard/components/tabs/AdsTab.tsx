@@ -29,7 +29,7 @@ export function AdsTab({ setSelectedAd, setPromoteDialogOpen }: AdsTabProps) {
   
   const { data: userListingsResponse, isLoading, error } = useUserListings();
 
-  // Handle both array and paginated response structures with proper error handling
+  // Handle API response properly
   const userListings = React.useMemo(() => {
     if (!userListingsResponse) return [];
     
@@ -39,10 +39,8 @@ export function AdsTab({ setSelectedAd, setPromoteDialogOpen }: AdsTabProps) {
     }
     
     // Handle paginated response structure
-    if (userListingsResponse && typeof userListingsResponse === 'object') {
-      if ('data' in userListingsResponse && Array.isArray(userListingsResponse.data)) {
-        return userListingsResponse.data;
-      }
+    if (userListingsResponse && typeof userListingsResponse === 'object' && 'data' in userListingsResponse) {
+      return Array.isArray(userListingsResponse.data) ? userListingsResponse.data : [];
     }
     
     return [];
@@ -166,8 +164,8 @@ export function AdsTab({ setSelectedAd, setPromoteDialogOpen }: AdsTabProps) {
                   <div className="flex justify-between items-start mb-2">
                     <h3 className="font-semibold text-lg truncate">{listing.title}</h3>
                     <div className="flex items-center gap-2">
-                      {getStatusIcon(listing.status)}
-                      <span className="text-sm">{getStatusText(listing.status)}</span>
+                      <CheckCircle className="h-4 w-4 text-green-500" />
+                      <span className="text-sm">نشط</span>
                     </div>
                   </div>
 

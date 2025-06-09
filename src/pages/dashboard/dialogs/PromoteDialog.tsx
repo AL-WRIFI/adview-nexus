@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { usePromotionPackages, usePromoteWithBankTransfer, usePromoteWithStripe } from '@/hooks/use-promotions';
 import { Button } from '@/components/ui/button';
@@ -34,9 +35,9 @@ export function PromoteDialog({ open, onOpenChange, adId }: PromoteDialogProps) 
 
   const { toast } = useToast();
   
-  // Use proper error handling for promotion packages
   const { data: promotionPackagesResponse, isLoading: packagesLoading } = usePromotionPackages();
   
+  // Handle API response properly
   const promotionPackages = React.useMemo(() => {
     if (!promotionPackagesResponse) return [];
     
@@ -46,10 +47,8 @@ export function PromoteDialog({ open, onOpenChange, adId }: PromoteDialogProps) 
     }
     
     // Handle object response with data property
-    if (promotionPackagesResponse && typeof promotionPackagesResponse === 'object') {
-      if ('data' in promotionPackagesResponse && Array.isArray(promotionPackagesResponse.data)) {
-        return promotionPackagesResponse.data;
-      }
+    if (promotionPackagesResponse && typeof promotionPackagesResponse === 'object' && 'data' in promotionPackagesResponse) {
+      return Array.isArray(promotionPackagesResponse.data) ? promotionPackagesResponse.data : [];
     }
     
     return [];

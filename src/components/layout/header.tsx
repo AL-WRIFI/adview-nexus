@@ -16,9 +16,9 @@ import {
   LogOut,
   LogIn,
   Home,
-  PenSquare,
   LayoutDashboard,
-  HelpCircle,
+  Moon,
+  Sun,
   ChevronDown,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -34,8 +34,8 @@ import {
 import { Logo } from "@/components/ui/logo";
 import { useAuth } from "@/context/auth-context";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Input } from "../ui/input";
+import { useTheme } from "next-themes";
 
 interface HeaderProps {
   isLoggedIn?: boolean;
@@ -43,12 +43,13 @@ interface HeaderProps {
 
 export function Header({ isLoggedIn }: HeaderProps = {}) {
   const { isAuthenticated, user, logout } = useAuth();
+  const { theme, setTheme } = useTheme();
   const isMobile = useIsMobile();
   const [isScrolled, setIsScrolled] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
   
-  // Handle scrolling effect for sticky header
+  // Handle scrolling effect for header background
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 10);
@@ -63,6 +64,10 @@ export function Header({ isLoggedIn }: HeaderProps = {}) {
     if (searchQuery.trim()) {
       navigate(`/search?search=${encodeURIComponent(searchQuery.trim())}`);
     }
+  };
+
+  const toggleTheme = () => {
+    setTheme(theme === 'dark' ? 'light' : 'dark');
   };
 
   // Get user initial for avatar fallback
@@ -96,22 +101,22 @@ export function Header({ isLoggedIn }: HeaderProps = {}) {
 
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-50 bg-white/95 dark:bg-dark-background/95 backdrop-blur-sm transition-all duration-300 border-b border-border dark:border-neutral-800 ${
-        isScrolled ? "shadow-md" : ""
+      className={`fixed top-0 left-0 right-0 z-50 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm transition-all duration-300 border-b border-border ${
+        isScrolled ? "shadow-lg" : "shadow-sm"
       }`}
     >
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         {isMobile ? (
           <div className="flex items-center justify-between w-full">
             {/* Mobile Header */}
-            <div className="flex items-center">
+            <div className="flex items-center gap-3">
               <Sheet>
                 <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" aria-label="القائمة" className="dark:text-white">
+                  <Button variant="ghost" size="icon" aria-label="القائمة">
                     <Menu className="h-5 w-5" />
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="right" className="w-[80%] max-w-md p-0 dark:bg-dark-background dark:border-dark-border">
+                <SheetContent side="right" className="w-[80%] max-w-md p-0">
                   <div className="flex flex-col h-full">
                     <div className="bg-brand p-6">
                       {isAuthenticated ? (
@@ -147,7 +152,7 @@ export function Header({ isLoggedIn }: HeaderProps = {}) {
                               asChild
                               size="sm"
                               variant="outline"
-                              className="border-white/30 text-white hover:text-white hover:bg-white/20 hover:border-white/30"
+                              className="border-white/30 text-white hover:text-white hover:bg-white/20"
                             >
                               <Link to="/auth/login">تسجيل الدخول</Link>
                             </Button>
@@ -166,76 +171,87 @@ export function Header({ isLoggedIn }: HeaderProps = {}) {
                     <div className="flex flex-col p-2 flex-1">
                       <Link
                         to="/"
-                        className="flex items-center gap-2 p-3 hover:bg-gray-100 dark:hover:bg-dark-surface rounded-md"
+                        className="flex items-center gap-2 p-3 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md"
                       >
                         <Home className="h-5 w-5 text-brand" />
                         <span>الرئيسية</span>
                       </Link>
                       <Link
                         to="/add-ad"
-                        className="flex items-center gap-2 p-3 hover:bg-gray-100 dark:hover:bg-dark-surface rounded-md"
+                        className="flex items-center gap-2 p-3 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md"
                       >
                         <Plus className="h-5 w-5 text-brand" />
                         <span>إضافة إعلان</span>
                       </Link>
                       <Link
                         to="/search"
-                        className="flex items-center gap-2 p-3 hover:bg-gray-100 dark:hover:bg-dark-surface rounded-md"
+                        className="flex items-center gap-2 p-3 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md"
                       >
                         <Search className="h-5 w-5 text-brand" />
                         <span>البحث</span>
                       </Link>
 
-                      <Separator className="my-2 dark:bg-dark-border" />
+                      <Separator className="my-2" />
 
                       {isAuthenticated ? (
                         <>
                           <Link
                             to="/dashboard"
-                            className="flex items-center gap-2 p-3 hover:bg-gray-100 dark:hover:bg-dark-surface rounded-md"
+                            className="flex items-center gap-2 p-3 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md"
                           >
                             <LayoutDashboard className="h-5 w-5 text-brand" />
                             <span>لوحة التحكم</span>
                           </Link>
                           <Link
                             to="/favorites"
-                            className="flex items-center gap-2 p-3 hover:bg-gray-100 dark:hover:bg-dark-surface rounded-md"
+                            className="flex items-center gap-2 p-3 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md"
                           >
                             <Heart className="h-5 w-5 text-brand" />
                             <span>المفضلة</span>
                           </Link>
                           <Link
                             to="/messages"
-                            className="flex items-center gap-2 p-3 hover:bg-gray-100 dark:hover:bg-dark-surface rounded-md"
+                            className="flex items-center gap-2 p-3 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md"
                           >
                             <MessageCircle className="h-5 w-5 text-brand" />
                             <span>الرسائل</span>
                           </Link>
                           <Link
                             to="/notifications"
-                            className="flex items-center gap-2 p-3 hover:bg-gray-100 dark:hover:bg-dark-surface rounded-md"
+                            className="flex items-center gap-2 p-3 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md"
                           >
                             <Bell className="h-5 w-5 text-brand" />
                             <span>الإشعارات</span>
                           </Link>
 
-                          <Separator className="my-2 dark:bg-dark-border" />
+                          <Separator className="my-2" />
 
                           <Link
                             to="/settings"
-                            className="flex items-center gap-2 p-3 hover:bg-gray-100 dark:hover:bg-dark-surface rounded-md"
+                            className="flex items-center gap-2 p-3 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md"
                           >
                             <Settings className="h-5 w-5 text-brand" />
                             <span>الإعدادات</span>
                           </Link>
 
                           <div className="flex items-center justify-between mt-auto p-3">
-                            <ThemeToggle />
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={toggleTheme}
+                              className="h-8 w-8"
+                            >
+                              {theme === 'dark' ? (
+                                <Sun className="h-4 w-4" />
+                              ) : (
+                                <Moon className="h-4 w-4" />
+                              )}
+                            </Button>
                             
                             <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={logout}
+                              variant="ghost"
+                              onClick={() => logout()}
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
                             >
                               <LogOut className="h-4 w-4 ml-2" />
                               تسجيل الخروج
@@ -243,13 +259,18 @@ export function Header({ isLoggedIn }: HeaderProps = {}) {
                           </div>
                         </>
                       ) : (
-                        <div className="flex items-center justify-between mt-auto p-3">
-                          <ThemeToggle />
-                          <Button variant="default" size="sm" asChild>
-                            <Link to="/auth/login">
-                              <LogIn className="h-4 w-4 ml-2" />
-                              تسجيل الدخول
-                            </Link>
+                        <div className="mt-auto p-3">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={toggleTheme}
+                            className="h-8 w-8"
+                          >
+                            {theme === 'dark' ? (
+                              <Sun className="h-4 w-4" />
+                            ) : (
+                              <Moon className="h-4 w-4" />
+                            )}
                           </Button>
                         </div>
                       )}
@@ -257,172 +278,196 @@ export function Header({ isLoggedIn }: HeaderProps = {}) {
                   </div>
                 </SheetContent>
               </Sheet>
+              
+              <Logo />
             </div>
 
-            <Link to="/" className="flex items-center">
-              <Logo />
-            </Link>
-
             <div className="flex items-center gap-2">
-              <ThemeToggle size="sm" />
-              
-              {isAuthenticated ? (
-                <>
-                  <Link to="/notifications">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="relative"
-                      aria-label="الإشعارات"
-                    >
-                      <Bell className="h-5 w-5" />
-                      <span className="absolute top-0.5 right-0.5 w-2.5 h-2.5 bg-brand rounded-full" />
-                    </Button>
-                  </Link>
+              {/* Theme Toggle */}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleTheme}
+                className="h-8 w-8"
+              >
+                {theme === 'dark' ? (
+                  <Sun className="h-4 w-4" />
+                ) : (
+                  <Moon className="h-4 w-4" />
+                )}
+              </Button>
 
-                  <Link to="/add-ad">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="text-brand"
-                      aria-label="إضافة إعلان"
-                    >
-                      <Plus className="h-5 w-5" />
+              {/* Notifications */}
+              {isAuthenticated && (
+                <Button variant="ghost" size="icon" className="h-8 w-8 relative">
+                  <Bell className="h-4 w-4" />
+                  <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full text-xs"></span>
+                </Button>
+              )}
+
+              {/* User Avatar/Login */}
+              {isAuthenticated ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="h-8 w-8 rounded-full">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage
+                          src={user?.avatar || user?.avatar_url || ""}
+                          alt={getUserDisplayName()}
+                        />
+                        <AvatarFallback>
+                          {getNameInitial()}
+                        </AvatarFallback>
+                      </Avatar>
                     </Button>
-                  </Link>
-                </>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56" align="end">
+                    <DropdownMenuLabel>{getUserDisplayName()}</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuGroup>
+                      <DropdownMenuItem asChild>
+                        <Link to="/dashboard">
+                          <LayoutDashboard className="mr-2 h-4 w-4" />
+                          لوحة التحكم
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link to="/favorites">
+                          <Heart className="mr-2 h-4 w-4" />
+                          المفضلة
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link to="/settings">
+                          <Settings className="mr-2 h-4 w-4" />
+                          الإعدادات
+                        </Link>
+                      </DropdownMenuItem>
+                    </DropdownMenuGroup>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => logout()}>
+                      <LogOut className="mr-2 h-4 w-4" />
+                      تسجيل الخروج
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               ) : (
-                <Link to="/auth/login">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-brand"
-                    aria-label="تسجيل الدخول"
-                  >
-                    <User className="h-5 w-5" />
-                  </Button>
-                </Link>
+                <Button size="sm" asChild>
+                  <Link to="/auth/login">دخول</Link>
+                </Button>
               )}
             </div>
           </div>
         ) : (
+          // Desktop Header
           <>
-            {/* Desktop Header */}
-            <div className="flex items-center gap-8">
-              <Link to="/" className="flex items-center">
-                <Logo />
-              </Link>
-            </div>
-
-            <div className="hidden md:flex flex-1 mx-4">
-              <form onSubmit={handleSearch} className="w-full">
-                <div className="relative w-full">
-                  <Input
-                    type="text"
-                    placeholder="ابحث عن منتجات، خدمات، وظائف..."
-                    className="w-full h-10 pr-10 rounded-lg border border-input bg-background"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                  <button type="submit" className="absolute top-0 right-0 h-full px-3 flex items-center">
-                    <Search className="h-5 w-5 text-muted-foreground" />
-                  </button>
-                </div>
+            <div className="flex items-center gap-6">
+              <Logo />
+              
+              {/* Search Bar */}
+              <form onSubmit={handleSearch} className="relative flex-1 max-w-md">
+                <Input
+                  type="text"
+                  placeholder="ابحث عن أي شيء..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 pr-4"
+                />
+                <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               </form>
             </div>
 
-            <div className="flex items-center gap-2">
-              <ThemeToggle />
-              
+            <div className="flex items-center gap-4">
+              {/* Add Ad Button */}
+              <Button asChild>
+                <Link to="/add-ad">
+                  <Plus className="h-4 w-4 mr-2" />
+                  إضافة إعلان
+                </Link>
+              </Button>
+
+              {/* Theme Toggle */}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleTheme}
+              >
+                {theme === 'dark' ? (
+                  <Sun className="h-4 w-4" />
+                ) : (
+                  <Moon className="h-4 w-4" />
+                )}
+              </Button>
+
+              {/* Notifications */}
+              {isAuthenticated && (
+                <Button variant="ghost" size="icon" className="relative">
+                  <Bell className="h-4 w-4" />
+                  <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full text-xs"></span>
+                </Button>
+              )}
+
+              {/* User Menu */}
               {isAuthenticated ? (
-                <>
-                  <Link to="/notifications">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="relative"
-                      aria-label="الإشعارات"
-                    >
-                      <Bell className="h-5 w-5" />
-                      <span className="absolute top-0.5 right-0.5 w-2.5 h-2.5 bg-brand rounded-full" />
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="flex items-center gap-2">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage
+                          src={user?.avatar || user?.avatar_url || ""}
+                          alt={getUserDisplayName()}
+                        />
+                        <AvatarFallback>
+                          {getNameInitial()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="font-medium">{getUserDisplayName()}</span>
+                      <ChevronDown className="h-4 w-4" />
                     </Button>
-                  </Link>
-
-                  <Link to="/add-ad">
-                    <Button className="hidden sm:flex">
-                      <Plus className="h-4 w-4 ml-2" />
-                      إضافة إعلان
-                    </Button>
-                  </Link>
-
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="flex items-center gap-2 h-auto p-2">
-                        <Avatar className="h-8 w-8">
-                          <AvatarImage
-                            src={user?.avatar || user?.avatar_url || user?.image || ""}
-                            alt={getUserDisplayName()}
-                          />
-                          <AvatarFallback className="text-sm">
-                            {getNameInitial()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="hidden lg:block text-right">
-                          <div className="text-sm font-medium">
-                            {getUserDisplayName()}
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            {user?.email || ""}
-                          </div>
-                        </div>
-                        <ChevronDown className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent className="w-56" align="end">
-                      <DropdownMenuLabel>حسابي</DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuGroup>
-                        <DropdownMenuItem asChild>
-                          <Link to="/dashboard" className="cursor-pointer">
-                            <LayoutDashboard className="ml-2 h-4 w-4" />
-                            <span>لوحة التحكم</span>
-                          </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem asChild>
-                          <Link to="/favorites" className="cursor-pointer">
-                            <Heart className="ml-2 h-4 w-4" />
-                            <span>المفضلة</span>
-                          </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem asChild>
-                          <Link to="/messages" className="cursor-pointer">
-                            <MessageCircle className="ml-2 h-4 w-4" />
-                            <span>الرسائل</span>
-                          </Link>
-                        </DropdownMenuItem>
-                      </DropdownMenuGroup>
-                      <DropdownMenuSeparator />
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56" align="end">
+                    <DropdownMenuLabel>حسابي</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuGroup>
                       <DropdownMenuItem asChild>
-                        <Link to="/settings" className="cursor-pointer">
-                          <Settings className="ml-2 h-4 w-4" />
-                          <span>الإعدادات</span>
+                        <Link to="/dashboard">
+                          <LayoutDashboard className="mr-2 h-4 w-4" />
+                          لوحة التحكم
                         </Link>
                       </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        className="text-red-600 cursor-pointer"
-                        onClick={logout}
-                      >
-                        <LogOut className="ml-2 h-4 w-4" />
-                        <span>تسجيل الخروج</span>
+                      <DropdownMenuItem asChild>
+                        <Link to="/favorites">
+                          <Heart className="mr-2 h-4 w-4" />
+                          المفضلة
+                        </Link>
                       </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </>
+                      <DropdownMenuItem asChild>
+                        <Link to="/messages">
+                          <MessageCircle className="mr-2 h-4 w-4" />
+                          الرسائل
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link to="/settings">
+                          <Settings className="mr-2 h-4 w-4" />
+                          الإعدادات
+                        </Link>
+                      </DropdownMenuItem>
+                    </DropdownMenuGroup>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => logout()}>
+                      <LogOut className="mr-2 h-4 w-4" />
+                      تسجيل الخروج
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               ) : (
                 <div className="flex items-center gap-2">
-                  <Button variant="ghost" asChild>
-                    <Link to="/auth/login">تسجيل الدخول</Link>
+                  <Button variant="outline" asChild>
+                    <Link to="/auth/login">
+                      <LogIn className="h-4 w-4 mr-2" />
+                      تسجيل الدخول
+                    </Link>
                   </Button>
                   <Button asChild>
                     <Link to="/auth/register">إنشاء حساب</Link>
