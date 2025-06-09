@@ -19,10 +19,16 @@ export function UserPromotionsTab() {
     );
   }
 
-  // Handle paginated response structure
-  const promotionsList = Array.isArray(promotionsResponse) 
-    ? promotionsResponse 
-    : promotionsResponse?.data || [];
+  // Handle different response structures properly
+  let promotionsList: ListingPromotion[] = [];
+  
+  if (Array.isArray(promotionsResponse)) {
+    promotionsList = promotionsResponse;
+  } else if (promotionsResponse && typeof promotionsResponse === 'object') {
+    if ('data' in promotionsResponse && Array.isArray(promotionsResponse.data)) {
+      promotionsList = promotionsResponse.data;
+    }
+  }
 
   if (!promotionsList || promotionsList.length === 0) {
     return (

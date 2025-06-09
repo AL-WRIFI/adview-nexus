@@ -27,9 +27,12 @@ export function PromoteDialog({ open, setOpen }: PromoteDialogProps) {
   const { data: packages } = usePromotionPackages();
 
   // Handle both array and paginated response structures
-  const userListings = Array.isArray(userListingsResponse) 
-    ? userListingsResponse 
-    : userListingsResponse?.data || [];
+  let userListings: Listing[] = [];
+  if (Array.isArray(userListingsResponse)) {
+    userListings = userListingsResponse;
+  } else if (userListingsResponse && typeof userListingsResponse === 'object' && 'data' in userListingsResponse) {
+    userListings = Array.isArray(userListingsResponse.data) ? userListingsResponse.data : [];
+  }
 
   const handleSelectListing = (listing: Listing) => {
     setSelectedListing(listing);

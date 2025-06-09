@@ -8,7 +8,7 @@ import { useUserListings } from '@/hooks/use-api';
 import { Listing } from '@/types';
 
 export function AnalyticsTab() {
-  const { data: userListings, isLoading } = useUserListings();
+  const { data: userListingsResponse, isLoading } = useUserListings();
 
   if (isLoading) {
     return (
@@ -23,7 +23,13 @@ export function AnalyticsTab() {
     );
   }
 
-  const listings = Array.isArray(userListings) ? userListings : userListings?.data || [];
+  // Handle both array and paginated response structures
+  let listings: Listing[] = [];
+  if (Array.isArray(userListingsResponse)) {
+    listings = userListingsResponse;
+  } else if (userListingsResponse && typeof userListingsResponse === 'object' && 'data' in userListingsResponse) {
+    listings = Array.isArray(userListingsResponse.data) ? userListingsResponse.data : [];
+  }
   
   // Calculate analytics
   const totalViews = listings.reduce((sum: number, listing: Listing) => sum + (listing.views_count || 0), 0);

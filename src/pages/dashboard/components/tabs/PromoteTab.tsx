@@ -15,7 +15,7 @@ export function PromoteTab() {
   const [selectedListing, setSelectedListing] = useState<any>(null);
   const [promoteDialogOpen, setPromoteDialogOpen] = useState(false);
   
-  const { data: userListings, isLoading: loadingListings } = useUserListings();
+  const { data: userListingsResponse, isLoading: loadingListings } = useUserListings();
   const { data: promotionsResponse, isLoading: loadingPromotions } = useUserPromotions();
   const { data: packages, isLoading: loadingPackages } = usePromotionPackages();
 
@@ -33,8 +33,21 @@ export function PromoteTab() {
     );
   }
 
-  const listings = Array.isArray(userListings) ? userListings : userListings?.data || [];
-  const promotionsList = Array.isArray(promotionsResponse) ? promotionsResponse : promotionsResponse?.data || [];
+  // Handle both array and paginated response structures
+  let listings: any[] = [];
+  if (Array.isArray(userListingsResponse)) {
+    listings = userListingsResponse;
+  } else if (userListingsResponse && typeof userListingsResponse === 'object' && 'data' in userListingsResponse) {
+    listings = Array.isArray(userListingsResponse.data) ? userListingsResponse.data : [];
+  }
+
+  let promotionsList: ListingPromotion[] = [];
+  if (Array.isArray(promotionsResponse)) {
+    promotionsList = promotionsResponse;
+  } else if (promotionsResponse && typeof promotionsResponse === 'object' && 'data' in promotionsResponse) {
+    promotionsList = Array.isArray(promotionsResponse.data) ? promotionsResponse.data : [];
+  }
+
   const packagesList = Array.isArray(packages) ? packages : [];
 
   const handlePromoteListing = (listing: any) => {
@@ -42,11 +55,11 @@ export function PromoteTab() {
     setPromoteDialogOpen(true);
   };
 
-  const activePromotions = Array.isArray(promotionsList) ? promotionsList.filter((p: ListingPromotion) => 
+  const activePromotions = promotionsList.filter((p: ListingPromotion) => 
     p.payment_status === 'paid' && 
     p.expires_at && 
     new Date(p.expires_at) > new Date()
-  ) : [];
+  );
 
   const packageIcons = {
     featured: Star,

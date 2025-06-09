@@ -150,7 +150,7 @@ export default function AdDetails() {
 
   const handleEditComment = async (commentId: number, content: string) => {
     try {
-      await editCommentMutation.mutateAsync({ commentId, content });
+      await editCommentMutation.mutateAsync({ listingId: adId, commentId, content });
       toast({
         title: "تم تحديث التعليق",
         description: "تم تحديث تعليقك بنجاح"
@@ -166,7 +166,7 @@ export default function AdDetails() {
 
   const handleDeleteComment = async (commentId: number) => {
     try {
-      await deleteCommentMutation.mutateAsync(commentId);
+      await deleteCommentMutation.mutateAsync({ listingId: adId, commentId });
       toast({
         title: "تم حذف التعليق",
         description: "تم حذف التعليق بنجاح"
@@ -191,7 +191,7 @@ export default function AdDetails() {
     }
 
     try {
-      await addReplyMutation.mutateAsync({ commentId, content });
+      await addReplyMutation.mutateAsync({ listingId: adId, commentId, content });
       toast({
         title: "تم إضافة الرد",
         description: "تم إضافة ردك بنجاح"
@@ -207,7 +207,7 @@ export default function AdDetails() {
 
   const handleEditReply = async (commentId: number, replyId: number, content: string) => {
     try {
-      await editReplyMutation.mutateAsync({ replyId, content });
+      await editReplyMutation.mutateAsync({ listingId: adId, commentId, replyId, content });
       toast({
         title: "تم تحديث الرد",
         description: "تم تحديث ردك بنجاح"
@@ -223,7 +223,7 @@ export default function AdDetails() {
 
   const handleDeleteReply = async (commentId: number, replyId: number) => {
     try {
-      await deleteReplyMutation.mutateAsync(replyId);
+      await deleteReplyMutation.mutateAsync({ listingId: adId, commentId, replyId });
       toast({
         title: "تم حذف الرد",
         description: "تم حذف الرد بنجاح"

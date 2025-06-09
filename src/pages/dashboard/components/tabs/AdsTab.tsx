@@ -30,7 +30,7 @@ export function AdsTab() {
   const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
   const [promoteDialogOpen, setPromoteDialogOpen] = useState(false);
   
-  const { data: userListings, isLoading } = useUserListings();
+  const { data: userListingsResponse, isLoading } = useUserListings();
   const deleteListingMutation = useDeleteListing();
 
   const handlePromote = (listing: Listing) => {
@@ -63,7 +63,13 @@ export function AdsTab() {
     );
   }
 
-  const listings = Array.isArray(userListings) ? userListings : userListings?.data || [];
+  // Handle both array and paginated response structures
+  let listings: Listing[] = [];
+  if (Array.isArray(userListingsResponse)) {
+    listings = userListingsResponse;
+  } else if (userListingsResponse && typeof userListingsResponse === 'object' && 'data' in userListingsResponse) {
+    listings = Array.isArray(userListingsResponse.data) ? userListingsResponse.data : [];
+  }
 
   return (
     <>
@@ -153,11 +159,10 @@ export function AdsTab() {
                       
                       <Badge 
                         variant={listing.status === 'active' ? 'default' : 
-                                listing.status === 'pending' ? 'secondary' : 'destructive'}
+                                listing.status === 'inactive' ? 'secondary' : 'destructive'}
                       >
                         {listing.status === 'active' ? 'نشط' :
-                         listing.status === 'pending' ? 'قيد المراجعة' :
-                         listing.status === 'sold' ? 'مباع' : 'متوقف'}
+                         listing.status === 'inactive' ? 'متوقف' : 'مباع'}
                       </Badge>
                     </div>
                   </CardContent>
