@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { promotionAPI } from '@/services/api';
 
@@ -44,8 +45,19 @@ export function useUserPromotions() {
   return useQuery({
     queryKey: ['user-promotions'],
     queryFn: async () => {
-      const response = await promotionAPI.getUserPromotions();
-      return response.data;
+      try {
+        const response = await promotionAPI.getUserPromotions();
+        return response.data;
+      } catch (error) {
+        console.error('Error fetching user promotions:', error);
+        return {
+          data: [],
+          current_page: 1,
+          last_page: 1,
+          per_page: 10,
+          total: 0
+        };
+      }
     },
   });
 }
@@ -55,8 +67,13 @@ export function usePromotionPackages() {
   return useQuery({
     queryKey: ['promotion-packages'],
     queryFn: async () => {
-      const response = await promotionAPI.getPromotionPackages();
-      return response.data;
+      try {
+        const response = await promotionAPI.getPromotionPackages();
+        return response.data;
+      } catch (error) {
+        console.error('Error fetching promotion packages:', error);
+        return [];
+      }
     },
   });
 }
@@ -73,10 +90,11 @@ export function usePromoteWithBankTransfer() {
         bank_transfer_proof: File;
       } 
     }) => {
-      return await promotionAPI.promoteListingWithBankTransfer(listingId, {
+      const response = await promotionAPI.promoteListingWithBankTransfer(listingId, {
         ...data,
         payment_method: 'bank_transfer'
       });
+      return response.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user-promotions'] });
@@ -94,10 +112,11 @@ export function usePromoteWithStripe() {
       listingId: number; 
       promotionPackageId: number;
     }) => {
-      return await promotionAPI.promoteListingWithStripe(listingId, {
+      const response = await promotionAPI.promoteListingWithStripe(listingId, {
         promotion_package_id: promotionPackageId,
         payment_method: 'stripe'
       });
+      return response.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user-promotions'] });

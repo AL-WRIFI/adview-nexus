@@ -1,8 +1,9 @@
+
 import { ApiResponse, PaginatedResponse, Listing, Comment, User, SearchFilters, Favorite, Category, SubCategory, Brand, State, City } from '@/types';
 
-// Configuration
+// Configuration - Update to use the correct API URL
 const API_CONFIG = {
-  BASE_URL: import.meta.env.VITE_API_BASE_URL || 'https://admin2.mixsyria.com/api/v1',
+  BASE_URL: 'https://haraj-syria.test/api/v1',
   TIMEOUT: 30000,
   RETRY_ATTEMPTS: 3,
   RETRY_DELAY: 1000,
@@ -46,6 +47,8 @@ class ApiClient {
     const url = `${API_CONFIG.BASE_URL}${endpoint}`;
     const token = TokenManager.getToken();
     
+    console.log(`API Request: ${options.method || 'GET'} ${url} (attempt 1)`);
+    
     const isFormData = options.body instanceof FormData;
     
     const defaultHeaders: Record<string, string> = {
@@ -60,10 +63,16 @@ class ApiClient {
         ...defaultHeaders,
         ...(options.headers || {}),
       },
+      mode: 'cors', // Enable CORS
+      credentials: 'include', // Include credentials
     };
 
     for (let attempt = 1; attempt <= API_CONFIG.RETRY_ATTEMPTS; attempt++) {
       try {
+        if (attempt > 1) {
+          console.log(`API Request: ${options.method || 'GET'} ${url} (attempt ${attempt})`);
+        }
+
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), API_CONFIG.TIMEOUT);
 
