@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { promotionAPI } from '@/services/api';
 
@@ -44,9 +45,13 @@ export function useUserPromotions() {
   return useQuery({
     queryKey: ['user-promotions'],
     queryFn: async () => {
+      console.log('Fetching user promotions...');
       const response = await promotionAPI.getUserPromotions();
-      return response.data;
+      console.log('User promotions response:', response);
+      return response;
     },
+    retry: 3,
+    retryDelay: 1000,
   });
 }
 
@@ -55,9 +60,13 @@ export function usePromotionPackages() {
   return useQuery({
     queryKey: ['promotion-packages'],
     queryFn: async () => {
+      console.log('Fetching promotion packages...');
       const response = await promotionAPI.getPromotionPackages();
+      console.log('Promotion packages response:', response);
       return response.data;
     },
+    retry: 3,
+    retryDelay: 1000,
   });
 }
 
@@ -73,14 +82,19 @@ export function usePromoteWithBankTransfer() {
         bank_transfer_proof: File;
       } 
     }) => {
+      console.log('Promoting with bank transfer:', { listingId, data });
       return await promotionAPI.promoteListingWithBankTransfer(listingId, {
         ...data,
         payment_method: 'bank_transfer'
       });
     },
-    onSuccess: () => {
+    onSuccess: (response) => {
+      console.log('Bank transfer promotion success:', response);
       queryClient.invalidateQueries({ queryKey: ['user-promotions'] });
       queryClient.invalidateQueries({ queryKey: ['user-listings'] });
+    },
+    onError: (error) => {
+      console.error('Bank transfer promotion error:', error);
     },
   });
 }
@@ -94,14 +108,23 @@ export function usePromoteWithStripe() {
       listingId: number; 
       promotionPackageId: number;
     }) => {
+      console.log('Promoting with Stripe:', { listingId, promotionPackageId });
       return await promotionAPI.promoteListingWithStripe(listingId, {
         promotion_package_id: promotionPackageId,
         payment_method: 'stripe'
       });
     },
-    onSuccess: () => {
+    onSuccess: (response) => {
+      console.log('Stripe promotion success:', response);
+      // For Stripe, we might get a checkout URL to redirect to
+      if (response.data?.checkout_url) {
+        window.open(response.data.checkout_url, '_blank');
+      }
       queryClient.invalidateQueries({ queryKey: ['user-promotions'] });
       queryClient.invalidateQueries({ queryKey: ['user-listings'] });
+    },
+    onError: (error) => {
+      console.error('Stripe promotion error:', error);
     },
   });
 }
@@ -115,12 +138,17 @@ export function usePromoteWithWallet() {
       listingId: number; 
       promotionPackageId: number;
     }) => {
+      console.log('Promoting with wallet:', { listingId, promotionPackageId });
       // This would be implemented when wallet API is available
       throw new Error('Wallet payment not yet implemented');
     },
-    onSuccess: () => {
+    onSuccess: (response) => {
+      console.log('Wallet promotion success:', response);
       queryClient.invalidateQueries({ queryKey: ['user-promotions'] });
       queryClient.invalidateQueries({ queryKey: ['user-listings'] });
+    },
+    onError: (error) => {
+      console.error('Wallet promotion error:', error);
     },
   });
 }
