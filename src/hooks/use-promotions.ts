@@ -1,6 +1,6 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { promotionAPI } from '@/services/api';
+import { promotionAPI } from '@/services/promotions-api';
 
 export function usePromotionPackages() {
   return useQuery({
