@@ -42,7 +42,7 @@ async function fetchAPI<T>(endpoint: string, options?: RequestInit): Promise<T> 
   }
 }
 
-export const promotionsAPI = {
+export const promotionAPI = {
   // Get available promotion packages
   getPromotionPackages: async (): Promise<ApiResponse<PromotionPackage[]>> => {
     return fetchAPI('/promotion-packages');
@@ -51,7 +51,7 @@ export const promotionsAPI = {
   // Promote a listing
   promoteListingWithBankTransfer: async (
     listingId: number,
-    data: { promotion_package_id: number; bank_transfer_proof: File }
+    data: { promotion_package_id: number; bank_transfer_proof: File; payment_method: 'bank_transfer' }
   ): Promise<ApiResponse<ListingPromotion>> => {
     const formData = new FormData();
     formData.append('promotion_package_id', data.promotion_package_id.toString());

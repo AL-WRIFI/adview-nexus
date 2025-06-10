@@ -45,7 +45,8 @@ export function AdsTab() {
     
     // If it's an object with data property
     if (userListingsResponse && typeof userListingsResponse === 'object' && 'data' in userListingsResponse) {
-      return Array.isArray(userListingsResponse.data) ? userListingsResponse.data : [];
+      const responseData = (userListingsResponse as any).data;
+      return Array.isArray(responseData) ? responseData : [];
     }
     
     return [];

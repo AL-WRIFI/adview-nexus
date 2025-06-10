@@ -48,7 +48,8 @@ export function PromoteDialog({ open, onOpenChange, adId }: PromoteDialogProps) 
     
     // Handle object response with data property
     if (promotionPackagesResponse && typeof promotionPackagesResponse === 'object' && 'data' in promotionPackagesResponse) {
-      return Array.isArray(promotionPackagesResponse.data) ? promotionPackagesResponse.data : [];
+      const responseData = (promotionPackagesResponse as any).data;
+      return Array.isArray(responseData) ? responseData : [];
     }
     
     return [];

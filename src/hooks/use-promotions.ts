@@ -41,7 +41,8 @@ export function usePromoteWithBankTransfer() {
     }) => {
       const response = await promotionAPI.promoteListingWithBankTransfer(listingId, {
         promotion_package_id: data.promotion_package_id,
-        bank_transfer_proof: data.bank_transfer_proof
+        bank_transfer_proof: data.bank_transfer_proof,
+        payment_method: 'bank_transfer'
       });
       return response.data;
     },

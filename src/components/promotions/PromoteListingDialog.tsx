@@ -42,17 +42,24 @@ export function PromoteListingDialog({ open, onOpenChange, listing }: PromoteLis
           data: {
             promotion_package_id: selectedPackage,
             bank_transfer_proof: transferProof,
+            payment_method: 'bank_transfer',
           },
         });
       } else if (paymentMethod === 'stripe') {
         await promoteWithStripe.mutateAsync({
           listingId: listing.id,
-          promotionPackageId: selectedPackage,
+          data: {
+            promotion_package_id: selectedPackage,
+            payment_method: 'stripe',
+          },
         });
       } else if (paymentMethod === 'wallet') {
         await promoteWithWallet.mutateAsync({
           listingId: listing.id,
-          promotionPackageId: selectedPackage,
+          data: {
+            promotion_package_id: selectedPackage,
+            payment_method: 'wallet',
+          },
         });
       }
 

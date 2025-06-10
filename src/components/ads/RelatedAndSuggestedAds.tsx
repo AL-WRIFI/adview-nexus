@@ -83,35 +83,49 @@ function HorizontalAdsSection({ title, ads, sectionId }: HorizontalAdsSectionPro
       {/* Mobile Grid */}
       <div className="md:hidden">
         <div className="grid grid-cols-3 gap-3">
-          {ads.slice(0, 6).map((ad) => (
-            <div key={ad.id} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-border overflow-hidden">
-              <div className="aspect-square overflow-hidden">
-                <img
-                  src={
-                    typeof ad.main_image_url === 'string' 
-                      ? ad.main_image_url 
-                      : (ad.main_image_url && typeof ad.main_image_url === 'object' && 'image_url' in ad.main_image_url 
-                          ? ad.main_image_url.image_url 
-                          : ad.image || 'https://placehold.co/200x200'
-                        )
-                  }
-                  alt={ad.title}
-                  className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                />
+          {ads.slice(0, 6).map((ad) => {
+            // Get the image URL with proper type handling
+            const getImageUrl = (ad: Listing): string => {
+              if (typeof ad.main_image_url === 'string') {
+                return ad.main_image_url;
+              }
+              if (ad.main_image_url && typeof ad.main_image_url === 'object' && 'image_url' in ad.main_image_url) {
+                return (ad.main_image_url as any).image_url;
+              }
+              if (ad.image) {
+                if (typeof ad.image === 'string') {
+                  return ad.image;
+                }
+                if (typeof ad.image === 'object' && ad.image !== null && 'image_url' in ad.image) {
+                  return (ad.image as any).image_url;
+                }
+              }
+              return 'https://placehold.co/200x200';
+            };
+
+            return (
+              <div key={ad.id} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-border overflow-hidden">
+                <div className="aspect-square overflow-hidden">
+                  <img
+                    src={getImageUrl(ad)}
+                    alt={ad.title}
+                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                  />
+                </div>
+                <div className="p-2">
+                  <h3 className="font-semibold text-xs line-clamp-2 mb-1 text-foreground">
+                    {ad.title}
+                  </h3>
+                  <p className="text-brand font-bold text-xs">
+                    {ad.price.toLocaleString()} ريال
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {ad.location}
+                  </p>
+                </div>
               </div>
-              <div className="p-2">
-                <h3 className="font-semibold text-xs line-clamp-2 mb-1 text-foreground">
-                  {ad.title}
-                </h3>
-                <p className="text-brand font-bold text-xs">
-                  {ad.price.toLocaleString()} ريال
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {ad.location}
-                </p>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>
