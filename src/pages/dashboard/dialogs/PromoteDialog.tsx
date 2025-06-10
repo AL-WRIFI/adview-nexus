@@ -82,7 +82,8 @@ export function PromoteDialog({ open, onOpenChange, adId }: PromoteDialogProps) 
           listingId: adId,
           data: {
             promotion_package_id: selectedPackage,
-            bank_transfer_proof: bankTransferProof
+            bank_transfer_proof: bankTransferProof,
+            payment_method: 'bank_transfer'
           }
         });
 
@@ -93,7 +94,10 @@ export function PromoteDialog({ open, onOpenChange, adId }: PromoteDialogProps) 
       } else if (paymentMethod === 'stripe') {
         await promoteWithStripeMutation.mutateAsync({
           listingId: adId,
-          promotionPackageId: selectedPackage
+          data: {
+            promotion_package_id: selectedPackage,
+            payment_method: 'stripe'
+          }
         });
 
         toast({

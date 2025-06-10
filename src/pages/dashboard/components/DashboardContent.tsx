@@ -40,12 +40,7 @@ export function DashboardContent({
   const renderPageContent = () => {
     switch (activePage) {
       case 'ads':
-        return (
-          <AdsTab 
-            setSelectedAd={handleSetSelectedAdNumber}
-            setPromoteDialogOpen={setPromoteDialogOpen}
-          />
-        );
+        return <AdsTab />;
       case 'favorites':
         return <FavoritesTab />;
       case 'promote':
@@ -69,12 +64,7 @@ export function DashboardContent({
           </Card>
         );
       default:
-        return (
-          <AdsTab 
-            setSelectedAd={handleSetSelectedAdNumber}
-            setPromoteDialogOpen={setPromoteDialogOpen}
-          />
-        );
+        return <AdsTab />;
     }
   };
 

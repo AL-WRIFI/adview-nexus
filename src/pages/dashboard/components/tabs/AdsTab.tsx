@@ -20,7 +20,8 @@ export function AdsTab() {
     adToDelete,
     handleDeleteClick,
     handleDeleteConfirm,
-    handleDeleteCancel
+    handleDeleteCancel,
+    isDeleting
   } = useAdsDialog();
 
   if (isLoading) {
@@ -150,8 +151,11 @@ export function AdsTab() {
 
       <DeleteConfirmDialog
         open={deleteDialogOpen}
+        onOpenChange={(open) => !open && handleDeleteCancel()}
         onConfirm={handleDeleteConfirm}
-        onCancel={handleDeleteCancel}
+        isLoading={isDeleting}
+        title="حذف الإعلان"
+        description="هل أنت متأكد من أنك تريد حذف هذا الإعلان؟ لا يمكن التراجع عن هذا الإجراء."
       />
 
       <PromoteDialog

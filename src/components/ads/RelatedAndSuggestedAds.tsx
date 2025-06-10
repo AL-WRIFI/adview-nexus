@@ -90,7 +90,10 @@ function HorizontalAdsSection({ title, ads, sectionId }: HorizontalAdsSectionPro
                   src={
                     typeof ad.main_image_url === 'string' 
                       ? ad.main_image_url 
-                      : (ad.main_image_url?.image_url || ad.image || 'https://placehold.co/200x200')
+                      : (ad.main_image_url && typeof ad.main_image_url === 'object' && 'image_url' in ad.main_image_url 
+                          ? ad.main_image_url.image_url 
+                          : ad.image || 'https://placehold.co/200x200'
+                        )
                   }
                   alt={ad.title}
                   className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"

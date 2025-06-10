@@ -35,8 +35,14 @@ export function useUserPromotions() {
 export function usePromoteWithBankTransfer() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ listingId, data }: { listingId: number; data: { promotion_package_id: number; bank_transfer_proof: File } }) => {
-      const response = await promotionAPI.promoteListingWithBankTransfer(listingId, data);
+    mutationFn: async ({ listingId, data }: { 
+      listingId: number; 
+      data: { promotion_package_id: number; bank_transfer_proof: File; payment_method: 'bank_transfer' } 
+    }) => {
+      const response = await promotionAPI.promoteListingWithBankTransfer(listingId, {
+        promotion_package_id: data.promotion_package_id,
+        bank_transfer_proof: data.bank_transfer_proof
+      });
       return response.data;
     },
     onSuccess: () => {
@@ -49,8 +55,11 @@ export function usePromoteWithBankTransfer() {
 export function usePromoteWithStripe() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ listingId, promotionPackageId }: { listingId: number; promotionPackageId: number }) => {
-      const response = await promotionAPI.promoteListingWithStripe(listingId, promotionPackageId);
+    mutationFn: async ({ listingId, data }: { 
+      listingId: number; 
+      data: { promotion_package_id: number; payment_method: 'stripe' } 
+    }) => {
+      const response = await promotionAPI.promoteListingWithStripe(listingId, data.promotion_package_id);
       return response.data;
     },
     onSuccess: () => {
@@ -63,8 +72,11 @@ export function usePromoteWithStripe() {
 export function usePromoteWithWallet() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ listingId, promotionPackageId }: { listingId: number; promotionPackageId: number }) => {
-      const response = await promotionAPI.promoteListingWithStripe(listingId, promotionPackageId);
+    mutationFn: async ({ listingId, data }: { 
+      listingId: number; 
+      data: { promotion_package_id: number; payment_method: 'wallet' } 
+    }) => {
+      const response = await promotionAPI.promoteListingWithWallet(listingId, data.promotion_package_id);
       return response.data;
     },
     onSuccess: () => {

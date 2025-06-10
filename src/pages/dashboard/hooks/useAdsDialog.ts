@@ -8,18 +8,27 @@ export function useAdsDialog() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [promoteDialogOpen, setPromoteDialogOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [adToDelete, setAdToDelete] = useState<number | null>(null);
   
   const { toast } = useToast();
   const deleteMutation = useDeleteListing();
 
-  const handleDelete = async (adId: number) => {
+  const handleDeleteClick = (adId: number) => {
+    setAdToDelete(adId);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!adToDelete) return;
+    
     try {
-      await deleteMutation.mutateAsync(adId);
+      await deleteMutation.mutateAsync(adToDelete);
       toast({
         title: "تم حذف الإعلان",
         description: "تم حذف الإعلان بنجاح"
       });
       setDeleteDialogOpen(false);
+      setAdToDelete(null);
       setSelectedAd(null);
     } catch (error) {
       toast({
@@ -28,6 +37,11 @@ export function useAdsDialog() {
         variant: "destructive"
       });
     }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteDialogOpen(false);
+    setAdToDelete(null);
   };
 
   return {
@@ -39,7 +53,10 @@ export function useAdsDialog() {
     setPromoteDialogOpen,
     deleteConfirmOpen,
     setDeleteConfirmOpen,
-    handleDelete,
+    adToDelete,
+    handleDeleteClick,
+    handleDeleteConfirm,
+    handleDeleteCancel,
     isDeleting: deleteMutation.isPending
   };
 }
