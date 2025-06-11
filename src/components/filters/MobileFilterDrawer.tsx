@@ -44,7 +44,7 @@ export function MobileFilterDrawer({
   
   // Filter states
   const [open, setOpen] = useState(false);
-  const [searchText, setSearchText] = useState(initialFilters?.query || '');
+  const [searchText, setSearchText] = useState(initialFilters?.search || '');
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | undefined>(
     selectedCategory?.id || initialFilters?.category_id as number | undefined
   );
@@ -146,7 +146,7 @@ export function MobileFilterDrawer({
     // Build filters object
     const filters: SearchFilters = {};
     
-    if (searchText) filters.query = searchText;
+    if (searchText) filters.search = searchText;
     if (selectedCategoryId) filters.category_id = selectedCategoryId;
     if (selectedSubCategoryId) filters.sub_category_id = selectedSubCategoryId;
     if (selectedBrandId) filters.brand_id = selectedBrandId;

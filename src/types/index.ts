@@ -164,7 +164,6 @@ export interface Conversation {
 
 export interface SearchFilters {
   search?: string;
-  query?: string;
   category_id?: number;
   sub_category_id?: number;
   child_category_id?: number;

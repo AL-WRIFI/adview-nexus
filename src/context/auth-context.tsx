@@ -5,24 +5,33 @@ import { useCurrentUser, useLogin, useRegister, useLogout } from '@/hooks/use-ap
 
 // TokenManager for token management
 export class TokenManager {
-  private static readonly TOKEN_KEY = 'auth_token';
-  
-  static hasToken(): boolean {
-    return !!localStorage.getItem(TokenManager.TOKEN_KEY);
-  }
-  
+  private static readonly TOKEN_KEY = 'authToken';
+  private static readonly SESSION_TOKEN_KEY = 'sessionAuthToken';
+
   static getToken(): string | null {
-    return localStorage.getItem(TokenManager.TOKEN_KEY);
+    return localStorage.getItem(this.TOKEN_KEY) || sessionStorage.getItem(this.SESSION_TOKEN_KEY);
   }
-  
-  static setToken(token: string): void {
-    localStorage.setItem(TokenManager.TOKEN_KEY, token);
+
+  static setToken(token: string, remember: boolean = true): void {
+    if (remember) {
+      localStorage.setItem(this.TOKEN_KEY, token);
+      sessionStorage.removeItem(this.SESSION_TOKEN_KEY);
+    } else {
+      sessionStorage.setItem(this.SESSION_TOKEN_KEY, token);
+      localStorage.removeItem(this.TOKEN_KEY);
+    }
   }
-  
+
   static removeToken(): void {
-    localStorage.removeItem(TokenManager.TOKEN_KEY);
+    localStorage.removeItem(this.TOKEN_KEY);
+    sessionStorage.removeItem(this.SESSION_TOKEN_KEY);
+  }
+
+  static hasToken(): boolean {
+    return !!this.getToken();
   }
 }
+
 
 interface AuthContextType {
   user: User | null;
@@ -48,11 +57,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [user]);
 
   const login = async (email: string, password: string) => {
-    try {
-      await loginMutation.mutateAsync({ identifier: email, password });
-    } catch (error) {
-      throw error;
-    }
+    const authData = await loginMutation.mutateAsync({ identifier: email, password });
+
+    TokenManager.setToken(authData.token, true);
+    // Optionally, you can refetch the user data after login
+    await refetch();
   };
 
   const register = async (userData: any) => {

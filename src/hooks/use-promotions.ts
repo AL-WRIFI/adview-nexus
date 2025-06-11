@@ -23,7 +23,7 @@ export function useUserPromotions() {
     queryFn: async () => {
       try {
         const response = await promotionAPI.getUserPromotions();
-        return response.data;
+        return response;
       } catch (error) {
         console.error('Error fetching user promotions:', error);
         return { data: [] };

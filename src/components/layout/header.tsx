@@ -101,7 +101,7 @@ export function Header({ isLoggedIn }: HeaderProps = {}) {
 
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-50 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm transition-all duration-300 border-b border-border ${
+      className={` top-0 left-0 right-0 z-50 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm transition-all duration-300 border-b border-border ${
         isScrolled ? "shadow-lg" : "shadow-sm"
       }`}
     >

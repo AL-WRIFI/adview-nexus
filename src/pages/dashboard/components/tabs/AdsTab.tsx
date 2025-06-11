@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState , useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -24,6 +24,18 @@ export function AdsTab() {
     isDeleting
   } = useAdsDialog();
 
+  // Handle different response formats from the API
+  const userListings = useMemo(() => {
+    if (!userListingsResponse) return [];
+    if (Array.isArray(userListingsResponse)) {
+      return userListingsResponse;
+    }
+    if (Array.isArray(userListingsResponse)) {
+      return userListingsResponse;
+    }
+    return [];
+  }, [userListingsResponse]);
+
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -33,24 +45,6 @@ export function AdsTab() {
       </div>
     );
   }
-
-  // Handle different response formats from the API
-  const userListings = React.useMemo(() => {
-    if (!userListingsResponse) return [];
-    
-    // If it's a direct array
-    if (Array.isArray(userListingsResponse)) {
-      return userListingsResponse;
-    }
-    
-    // If it's an object with data property
-    if (userListingsResponse && typeof userListingsResponse === 'object' && 'data' in userListingsResponse) {
-      const responseData = (userListingsResponse as any).data;
-      return Array.isArray(responseData) ? responseData : [];
-    }
-    
-    return [];
-  }, [userListingsResponse]);
 
   const handlePromoteClick = (adId: number) => {
     setSelectedAd(adId);

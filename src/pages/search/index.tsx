@@ -93,7 +93,7 @@ export default function SearchPage() {
   };
 
   // Get listings and pagination from API response
-  const listings = adsResponse?.data || [];
+  const listings = adsResponse || [];
   const totalPages = adsResponse?.last_page || 1;
   const totalResults = adsResponse?.total || 0;
   

@@ -152,7 +152,7 @@ export function AdFilters({
     // Build filters object
     const filters: SearchFilters = {};
     
-    if (searchText) filters.query = searchText;
+    if (searchText) filters.search = searchText;
     if (selectedCategoryId) filters.category_id = selectedCategoryId;
     if (selectedSubCategoryId) filters.sub_category_id = selectedSubCategoryId;
     if (selectedBrandId) filters.brand_id = selectedBrandId;
@@ -267,7 +267,7 @@ export function AdFilters({
         ]);
       }
       
-      if (initialFilters.query) setSearchText(initialFilters.query);
+      if (initialFilters.search) setSearchText(initialFilters.search);
       if (initialFilters.category_id) setSelectedCategoryId(initialFilters.category_id as number);
       if (initialFilters.sub_category_id) setSelectedSubCategoryId(initialFilters.sub_category_id as number);
       if (initialFilters.brand_id) setSelectedBrandId(initialFilters.brand_id as number);

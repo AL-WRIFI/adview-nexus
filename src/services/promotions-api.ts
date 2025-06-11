@@ -2,7 +2,7 @@
 import { ApiResponse, PaginatedResponse } from '@/types';
 import { PromotionPackage, ListingPromotion, PromoteListingRequest, StripePromotionResponse } from '@/types/promotions';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://admin2.mixsyria.com/api/v1';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://haraj-syria.test/api/v1';
 
 const getAuthToken = () => {
   return localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
@@ -58,7 +58,7 @@ export const promotionAPI = {
     formData.append('payment_method', 'bank_transfer');
     formData.append('bank_transfer_proof', data.bank_transfer_proof);
 
-    return fetchAPI(`/listings/${listingId}/promote`, {
+    return fetchAPI(`/user/listings/${listingId}/promote`, {
       method: 'POST',
       body: formData,
     });
@@ -68,7 +68,7 @@ export const promotionAPI = {
     listingId: number,
     promotionPackageId: number
   ): Promise<ApiResponse<StripePromotionResponse>> => {
-    return fetchAPI(`/listings/${listingId}/promote`, {
+    return fetchAPI(`/user/listings/${listingId}/promote`, {
       method: 'POST',
       body: JSON.stringify({
         promotion_package_id: promotionPackageId,

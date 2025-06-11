@@ -3,7 +3,7 @@ import { ApiResponse, PaginatedResponse, Listing, Comment, User, SearchFilters, 
 
 // Configuration - Update to use the correct API URL
 const API_CONFIG = {
-  BASE_URL: 'https://haraj-syria.test/api/v1',
+  BASE_URL: 'http://haraj-syria.test/api/v1',
   TIMEOUT: 30000,
   RETRY_ATTEMPTS: 3,
   RETRY_DELAY: 1000,
@@ -188,7 +188,7 @@ export const listingsAPI = {
     ApiClient.get(`/listing/${id}`),
 
   getRelatedListings: (listingId: number, limit: number = 4): Promise<ApiResponse<Listing[]>> => 
-    ApiClient.get(`/listing/${listingId}/related?limit=${limit}`),
+    ApiClient.get(`/listings/${listingId}/related`),
 
   incrementViews: (listingId: number): Promise<ApiResponse<void>> => 
     ApiClient.get(`/listing/${listingId}/increment-views`),

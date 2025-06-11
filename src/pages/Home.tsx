@@ -42,7 +42,7 @@ export default function Home() {
   };
   
   // Extract data - ensure we have access to the right structure
-  const adData = adsResponse?.data || [];
+  const adData = adsResponse || [];
   const totalPages = adsResponse?.last_page || 1;
   
   // Split into featured and regular ads
