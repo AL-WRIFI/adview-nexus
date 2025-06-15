@@ -4,16 +4,19 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Edit, Trash2, Eye, MessageCircle, TrendingUp, Package } from 'lucide-react';
 import { useUserListings } from '@/hooks/use-api';
 import { DeleteConfirmDialog } from '../../dialogs/DeleteConfirmDialog';
 import { PromoteDialog } from '../../dialogs/PromoteDialog';
 import { useAdsDialog } from '../../hooks/useAdsDialog';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export function AdsTab() {
   const [selectedAd, setSelectedAd] = useState<number | null>(null);
   const [promoteDialogOpen, setPromoteDialogOpen] = useState(false);
+  const isMobile = useIsMobile();
   
   const { data: userListingsResponse, isLoading } = useUserListings();
   const {
@@ -81,94 +84,101 @@ export function AdsTab() {
         <CardHeader>
           <CardTitle>إعلاناتي ({userListings.length})</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="text-right">الصورة</TableHead>
-                  <TableHead className="text-right">العنوان</TableHead>
-                  <TableHead className="text-right">السعر</TableHead>
-                  <TableHead className="text-right">الحالة</TableHead>
-                  <TableHead className="text-right">المشاهدات</TableHead>
-                  <TableHead className="text-right">التعليقات</TableHead>
-                  <TableHead className="text-right">الإجراءات</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {userListings.map((ad: any) => (
-                  <TableRow key={ad.id}>
-                    <TableCell>
-                      <div className="w-16 h-16 bg-accent rounded-lg flex items-center justify-center flex-shrink-0">
-                        {ad.main_image_url ? (
-                          <img 
-                            src={ad.main_image_url} 
-                            alt={ad.title}
-                            className="w-full h-full object-cover rounded-lg"
-                          />
-                        ) : (
-                          <Package className="h-6 w-6 text-muted-foreground" />
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="space-y-1">
-                        <h3 className="font-semibold text-sm max-w-[200px] truncate" title={ad.title}>
-                          {ad.title}
-                        </h3>
-                        <p className="text-xs text-muted-foreground line-clamp-2 max-w-[200px]">
-                          {ad.description}
-                        </p>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm font-bold text-brand">
-                        {ad.price} ريال
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={ad.status === 'active' ? 'default' : 'secondary'}>
-                        {ad.status === 'active' ? 'نشط' : 'غير نشط'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                        <Eye className="h-4 w-4" />
-                        <span>{ad.views_count || 0}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                        <MessageCircle className="h-4 w-4" />
-                        <span>{ad.comments_count || 0}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-1">
-                        <Button size="sm" variant="outline">
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          onClick={() => handlePromoteClick(ad.id)}
-                        >
-                          <TrendingUp className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          onClick={() => handleDeleteClick(ad.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
+        <CardContent className="p-0 md:p-6">
+          <ScrollArea className="w-full">
+            <div className="min-w-[800px]">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-right w-20">الصورة</TableHead>
+                    <TableHead className="text-right min-w-[200px]">العنوان</TableHead>
+                    <TableHead className="text-right w-24">السعر</TableHead>
+                    <TableHead className="text-right w-20">الحالة</TableHead>
+                    <TableHead className="text-right w-20">المشاهدات</TableHead>
+                    <TableHead className="text-right w-20">التعليقات</TableHead>
+                    <TableHead className="text-right w-32">الإجراءات</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                </TableHeader>
+                <TableBody>
+                  {userListings.map((ad: any) => (
+                    <TableRow key={ad.id}>
+                      <TableCell className="p-2">
+                        <div className="w-12 h-12 md:w-16 md:h-16 bg-accent rounded-lg flex items-center justify-center flex-shrink-0">
+                          {ad.main_image_url ? (
+                            <img 
+                              src={ad.main_image_url} 
+                              alt={ad.title}
+                              className="w-full h-full object-cover rounded-lg"
+                            />
+                          ) : (
+                            <Package className="h-4 w-4 md:h-6 md:w-6 text-muted-foreground" />
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="p-2">
+                        <div className="space-y-1 min-w-0">
+                          <h3 className="font-semibold text-xs md:text-sm truncate" title={ad.title}>
+                            {ad.title}
+                          </h3>
+                          <p className="text-xs text-muted-foreground line-clamp-2 hidden md:block">
+                            {ad.description}
+                          </p>
+                        </div>
+                      </TableCell>
+                      <TableCell className="p-2">
+                        <div className="text-xs md:text-sm font-bold text-brand whitespace-nowrap">
+                          {ad.price} ريال
+                        </div>
+                      </TableCell>
+                      <TableCell className="p-2">
+                        <Badge 
+                          variant={ad.status === 'active' ? 'default' : 'secondary'}
+                          className="text-xs whitespace-nowrap"
+                        >
+                          {ad.status === 'active' ? 'نشط' : 'غير نشط'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="p-2">
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground whitespace-nowrap">
+                          <Eye className="h-3 w-3 md:h-4 md:w-4" />
+                          <span>{ad.views_count || 0}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="p-2">
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground whitespace-nowrap">
+                          <MessageCircle className="h-3 w-3 md:h-4 md:w-4" />
+                          <span>{ad.comments_count || 0}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="p-2">
+                        <div className="flex gap-1 flex-nowrap">
+                          <Button size="sm" variant="outline" className="h-8 w-8 p-0 flex-shrink-0">
+                            <Edit className="h-3 w-3 md:h-4 md:w-4" />
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            className="h-8 w-8 p-0 flex-shrink-0"
+                            onClick={() => handlePromoteClick(ad.id)}
+                          >
+                            <TrendingUp className="h-3 w-3 md:h-4 md:w-4" />
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            className="h-8 w-8 p-0 flex-shrink-0"
+                            onClick={() => handleDeleteClick(ad.id)}
+                          >
+                            <Trash2 className="h-3 w-3 md:h-4 md:w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </ScrollArea>
         </CardContent>
       </Card>
 
