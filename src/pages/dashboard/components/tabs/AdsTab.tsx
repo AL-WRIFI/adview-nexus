@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Edit, Trash2, Eye, MessageCircle, TrendingUp, Package } from 'lucide-react';
 import { useUserListings } from '@/hooks/use-api';
 import { DeleteConfirmDialog } from '../../dialogs/DeleteConfirmDialog';
@@ -81,13 +82,24 @@ export function AdsTab() {
           <CardTitle>إعلاناتي ({userListings.length})</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {userListings.map((ad: any) => (
-              <Card key={ad.id}>
-                <CardContent className="p-6">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-start gap-4">
-                      <div className="w-20 h-20 bg-accent rounded-lg flex items-center justify-center flex-shrink-0">
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="text-right">الصورة</TableHead>
+                  <TableHead className="text-right">العنوان</TableHead>
+                  <TableHead className="text-right">السعر</TableHead>
+                  <TableHead className="text-right">الحالة</TableHead>
+                  <TableHead className="text-right">المشاهدات</TableHead>
+                  <TableHead className="text-right">التعليقات</TableHead>
+                  <TableHead className="text-right">الإجراءات</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {userListings.map((ad: any) => (
+                  <TableRow key={ad.id}>
+                    <TableCell>
+                      <div className="w-16 h-16 bg-accent rounded-lg flex items-center justify-center flex-shrink-0">
                         {ad.main_image_url ? (
                           <img 
                             src={ad.main_image_url} 
@@ -95,34 +107,44 @@ export function AdsTab() {
                             className="w-full h-full object-cover rounded-lg"
                           />
                         ) : (
-                          <Package className="h-8 w-8 text-muted-foreground" />
+                          <Package className="h-6 w-6 text-muted-foreground" />
                         )}
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-lg font-semibold mb-2">{ad.title}</h3>
-                        <p className="text-sm text-muted-foreground mb-2 line-clamp-2">
+                    </TableCell>
+                    <TableCell>
+                      <div className="space-y-1">
+                        <h3 className="font-semibold text-sm max-w-[200px] truncate" title={ad.title}>
+                          {ad.title}
+                        </h3>
+                        <p className="text-xs text-muted-foreground line-clamp-2 max-w-[200px]">
                           {ad.description}
                         </p>
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          <div className="flex items-center gap-1">
-                            <Eye className="h-4 w-4" />
-                            <span>{ad.views_count || 0}</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <MessageCircle className="h-4 w-4" />
-                            <span>{ad.comments_count || 0}</span>
-                          </div>
-                        </div>
                       </div>
-                    </div>
-                    <div className="flex flex-col items-end gap-2">
-                      <div className="text-lg font-bold text-brand">
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-sm font-bold text-brand">
                         {ad.price} ريال
                       </div>
+                    </TableCell>
+                    <TableCell>
                       <Badge variant={ad.status === 'active' ? 'default' : 'secondary'}>
                         {ad.status === 'active' ? 'نشط' : 'غير نشط'}
                       </Badge>
-                      <div className="flex gap-2">
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                        <Eye className="h-4 w-4" />
+                        <span>{ad.views_count || 0}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                        <MessageCircle className="h-4 w-4" />
+                        <span>{ad.comments_count || 0}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-1">
                         <Button size="sm" variant="outline">
                           <Edit className="h-4 w-4" />
                         </Button>
@@ -141,11 +163,11 @@ export function AdsTab() {
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </div>
         </CardContent>
       </Card>
