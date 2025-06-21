@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -50,7 +49,6 @@ export function AdsTab({ onPromote, onDelete }: AdsTabProps) {
   const { data: userListingsResponse, isLoading, error, refetch } = useQuery({
     queryKey: ['userListings', currentUser?.id, currentPage, selectedStatus, searchQuery, sortBy],
     queryFn: () => listingsAPI.getListings({ 
-      user_id: currentUser!.id,
       page: currentPage,
       per_page: itemsPerPage,
       search: searchQuery || undefined,
@@ -59,8 +57,16 @@ export function AdsTab({ onPromote, onDelete }: AdsTabProps) {
     enabled: !!currentUser?.id,
   });
 
-  const listings = userListingsResponse?.data || [];
-  const totalPages = Math.ceil((userListingsResponse?.total || 0) / itemsPerPage);
+  // Properly extract the listings data and handle both array and paginated response
+  const listings = Array.isArray(userListingsResponse) 
+    ? userListingsResponse 
+    : userListingsResponse?.data || [];
+  
+  const totalResults = Array.isArray(userListingsResponse) 
+    ? userListingsResponse.length 
+    : userListingsResponse?.total || 0;
+  
+  const totalPages = Math.ceil(totalResults / itemsPerPage);
 
   const handleRefreshAd = async (adId: number) => {
     try {
