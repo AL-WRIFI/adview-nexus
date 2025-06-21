@@ -12,6 +12,25 @@ export interface Listing {
   images?: ListingImage[];
   location?: string;
   condition?: string;
+  // Additional properties used in components
+  image?: string | { image_url: string; url: string };
+  featured?: boolean;
+  city?: string;
+  city_name?: string;
+  views_count?: number;
+  viewCount?: number;
+  negotiable?: boolean;
+  is_negotiable?: boolean;
+  main_image_url?: string;
+  listing_type?: string;
+  sub_category_id?: number;
+  child_category_id?: number;
+  brand_id?: number;
+  state_id?: number;
+  city_id?: number;
+  phone_hidden?: boolean;
+  lat?: number;
+  lng?: number;
 }
 
 export interface ListingImage {
@@ -19,6 +38,7 @@ export interface ListingImage {
   listing_id: number;
   image_url: string;
   is_primary: boolean;
+  url?: string;
 }
 
 export interface ListingDetails extends Listing {
@@ -27,13 +47,56 @@ export interface ListingDetails extends Listing {
     name: string;
     avatar?: string;
     phone?: string;
+    image?: string;
+    first_name?: string;
+    last_name?: string;
+    created_at?: string;
+    verified?: boolean;
   };
   category: {
     id: number;
     name: string;
   };
+  // Additional properties used in AdDetails component
+  related?: Listing[];
+  comments?: any[];
+  category_name?: string;
+  sub_category_name?: string;
+  address?: string;
+  state?: string;
+  listing_type?: string;
+  sub_category_id?: number;
+  child_category_id?: number;
+  brand_id?: number;
+  state_id?: number;
+  city_id?: number;
+  phone_hidden?: boolean;
+  lat?: number;
+  lng?: number;
+  lon?: number; // Added for backward compatibility
 }
 
 export interface Ad extends Listing {
   // Ad is an alias for Listing
+  // Additional properties for backward compatibility
+  category?: string;
+  subcategory?: string;
+  district?: string;
+  comments_count?: number;
+  listing_type?: string;
+}
+
+export interface Favorite {
+  id: number;
+  user_id: string;
+  listing_id: number;
+  created_at: string;
+}
+
+export interface SubCategory {
+  id: number;
+  name: string;
+  category_id: number;
+  created_at: string;
+  updated_at: string;
 }
