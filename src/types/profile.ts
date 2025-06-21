@@ -42,7 +42,11 @@ export interface Comment {
     id: number;
     name: string;
     avatar?: string;
+    image?: string;
+    first_name?: string;
+    last_name?: string;
   };
+  replies?: Comment[];
 }
 
 export interface Conversation {
@@ -61,3 +65,6 @@ export interface Message {
   created_at: string;
   sender: User;
 }
+
+// Import User from the user types
+import { User } from './user';

@@ -12,6 +12,15 @@ export interface Listing {
   images?: ListingImage[];
   location?: string;
   condition?: string;
+  // Additional properties used in components
+  image?: string | { image_url: string; url: string };
+  featured?: boolean;
+  city?: string;
+  city_name?: string;
+  views_count?: number;
+  viewCount?: number;
+  negotiable?: boolean;
+  is_negotiable?: boolean;
 }
 
 export interface ListingImage {
@@ -19,6 +28,7 @@ export interface ListingImage {
   listing_id: number;
   image_url: string;
   is_primary: boolean;
+  url?: string;
 }
 
 export interface ListingDetails extends Listing {
