@@ -4,6 +4,7 @@ export interface SearchFilters {
   category_id?: number;
   subcategory_id?: number;
   sub_category_id?: number;
+  child_category_id?: number;
   brand_id?: number;
   min_price?: number;
   max_price?: number;
@@ -27,4 +28,5 @@ export interface SearchFilters {
   featured?: boolean;
   verified_user?: boolean;
   with_images?: boolean;
+  user_id?: number;
 }

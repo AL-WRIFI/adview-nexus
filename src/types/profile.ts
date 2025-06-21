@@ -28,6 +28,12 @@ export interface PaginatedResponse<T> {
   per_page: number;
   current_page: number;
   last_page: number;
+  meta?: {
+    total: number;
+    per_page: number;
+    current_page: number;
+    last_page: number;
+  };
 }
 
 export interface Comment {
@@ -68,6 +74,7 @@ export interface Message {
   content: string;
   created_at: string;
   sender: User;
+  receiver_id?: number;
 }
 
 // Import User from the user types

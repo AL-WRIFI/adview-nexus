@@ -22,6 +22,15 @@ export interface Listing {
   negotiable?: boolean;
   is_negotiable?: boolean;
   main_image_url?: string;
+  listing_type?: string;
+  sub_category_id?: number;
+  child_category_id?: number;
+  brand_id?: number;
+  state_id?: number;
+  city_id?: number;
+  phone_hidden?: boolean;
+  lat?: number;
+  lng?: number;
 }
 
 export interface ListingImage {
@@ -38,6 +47,11 @@ export interface ListingDetails extends Listing {
     name: string;
     avatar?: string;
     phone?: string;
+    image?: string;
+    first_name?: string;
+    last_name?: string;
+    created_at?: string;
+    verified?: boolean;
   };
   category: {
     id: number;
@@ -51,6 +65,14 @@ export interface ListingDetails extends Listing {
   address?: string;
   state?: string;
   listing_type?: string;
+  sub_category_id?: number;
+  child_category_id?: number;
+  brand_id?: number;
+  state_id?: number;
+  city_id?: number;
+  phone_hidden?: boolean;
+  lat?: number;
+  lng?: number;
 }
 
 export interface Ad extends Listing {
@@ -60,4 +82,5 @@ export interface Ad extends Listing {
   subcategory?: string;
   district?: string;
   comments_count?: number;
+  listing_type?: string;
 }

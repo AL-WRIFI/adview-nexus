@@ -48,7 +48,8 @@ export const USERS: User[] = [
     created_at: new Date(2023, 0, 1).toISOString(),
     updated_at: new Date(2023, 0, 1).toISOString(),
     name: 'أحمد محمد',
-    avatar: 'https://i.pravatar.cc/150?img=1'
+    avatar: 'https://i.pravatar.cc/150?img=1',
+    verified: true
   },
   {
     id: 2,
@@ -68,7 +69,8 @@ export const USERS: User[] = [
     created_at: new Date(2023, 1, 15).toISOString(),
     updated_at: new Date(2023, 1, 15).toISOString(),
     name: 'خالد العتيبي',
-    avatar: 'https://i.pravatar.cc/150?img=2'
+    avatar: 'https://i.pravatar.cc/150?img=2',
+    verified: true
   },
   {
     id: 3,
@@ -88,7 +90,8 @@ export const USERS: User[] = [
     created_at: new Date(2023, 2, 10).toISOString(),
     updated_at: new Date(2023, 2, 10).toISOString(),
     name: 'عبدالله القحطاني',
-    avatar: 'https://i.pravatar.cc/150?img=3'
+    avatar: 'https://i.pravatar.cc/150?img=3',
+    verified: false
   },
   {
     id: 4,
@@ -108,7 +111,8 @@ export const USERS: User[] = [
     created_at: new Date(2023, 3, 5).toISOString(),
     updated_at: new Date(2023, 3, 5).toISOString(),
     name: 'سارة الشمري',
-    avatar: 'https://i.pravatar.cc/150?img=4'
+    avatar: 'https://i.pravatar.cc/150?img=4',
+    verified: true
   },
   {
     id: 5,
@@ -128,7 +132,8 @@ export const USERS: User[] = [
     created_at: new Date(2023, 4, 20).toISOString(),
     updated_at: new Date(2023, 4, 20).toISOString(),
     name: 'نورة العنزي',
-    avatar: 'https://i.pravatar.cc/150?img=5'
+    avatar: 'https://i.pravatar.cc/150?img=5',
+    verified: false
   }
 ];
 
@@ -426,7 +431,14 @@ export const COMMENTS: Record<string, Comment[]> = {
       listing_id: 1,
       created_at: new Date(2023, 5, 12).toISOString(),
       updated_at: new Date(2023, 5, 12).toISOString(),
-      user: USERS[1],
+      user: {
+        id: 2,
+        name: 'خالد العتيبي',
+        avatar: 'https://i.pravatar.cc/150?img=2',
+        image: 'https://i.pravatar.cc/150?img=2',
+        first_name: 'خالد',
+        last_name: 'العتيبي'
+      },
       replies: [
         {
           id: 2,
@@ -436,7 +448,14 @@ export const COMMENTS: Record<string, Comment[]> = {
           parent_id: 1,
           created_at: new Date(2023, 5, 12, 2).toISOString(),
           updated_at: new Date(2023, 5, 12, 2).toISOString(),
-          user: USERS[0]
+          user: {
+            id: 1,
+            name: 'أحمد محمد',
+            avatar: 'https://i.pravatar.cc/150?img=1',
+            image: 'https://i.pravatar.cc/150?img=1',
+            first_name: 'أحمد',
+            last_name: 'محمد'
+          }
         }
       ]
     },
@@ -447,7 +466,14 @@ export const COMMENTS: Record<string, Comment[]> = {
       listing_id: 1,
       created_at: new Date(2023, 5, 15).toISOString(),
       updated_at: new Date(2023, 5, 15).toISOString(),
-      user: USERS[2],
+      user: {
+        id: 3,
+        name: 'عبدالله القحطاني',
+        avatar: 'https://i.pravatar.cc/150?img=3',
+        image: 'https://i.pravatar.cc/150?img=3',
+        first_name: 'عبدالله',
+        last_name: 'القحطاني'
+      },
       replies: []
     }
   ],
@@ -459,7 +485,14 @@ export const COMMENTS: Record<string, Comment[]> = {
       listing_id: 3,
       created_at: new Date(2023, 5, 16).toISOString(),
       updated_at: new Date(2023, 5, 16).toISOString(),
-      user: USERS[0],
+      user: {
+        id: 1,
+        name: 'أحمد محمد',
+        avatar: 'https://i.pravatar.cc/150?img=1',
+        image: 'https://i.pravatar.cc/150?img=1',
+        first_name: 'أحمد',
+        last_name: 'محمد'
+      },
       replies: [
         {
           id: 5,
@@ -469,7 +502,14 @@ export const COMMENTS: Record<string, Comment[]> = {
           parent_id: 4,
           created_at: new Date(2023, 5, 16, 3).toISOString(),
           updated_at: new Date(2023, 5, 16, 3).toISOString(),
-          user: USERS[2]
+          user: {
+            id: 3,
+            name: 'عبدالله القحطاني',
+            avatar: 'https://i.pravatar.cc/150?img=3',
+            image: 'https://i.pravatar.cc/150?img=3',
+            first_name: 'عبدالله',
+            last_name: 'القحطاني'
+          }
         }
       ]
     },
@@ -480,7 +520,14 @@ export const COMMENTS: Record<string, Comment[]> = {
       listing_id: 3,
       created_at: new Date(2023, 5, 17).toISOString(),
       updated_at: new Date(2023, 5, 17).toISOString(),
-      user: USERS[3],
+      user: {
+        id: 4,
+        name: 'سارة الشمري',
+        avatar: 'https://i.pravatar.cc/150?img=4',
+        image: 'https://i.pravatar.cc/150?img=4',
+        first_name: 'سارة',
+        last_name: 'الشمري'
+      },
       replies: [
         {
           id: 7,
@@ -490,7 +537,14 @@ export const COMMENTS: Record<string, Comment[]> = {
           parent_id: 6,
           created_at: new Date(2023, 5, 17, 1).toISOString(),
           updated_at: new Date(2023, 5, 17, 1).toISOString(),
-          user: USERS[2]
+          user: {
+            id: 3,
+            name: 'عبدالله القحطاني',
+            avatar: 'https://i.pravatar.cc/150?img=3',
+            image: 'https://i.pravatar.cc/150?img=3',
+            first_name: 'عبدالله',
+            last_name: 'القحطاني'
+          }
         }
       ]
     }
@@ -500,31 +554,45 @@ export const COMMENTS: Record<string, Comment[]> = {
 export const CONVERSATIONS: Conversation[] = [
   {
     id: 1,
-    listing: ADS[0],
+    listing: {
+      id: 1,
+      title: 'تويوتا كامري 2022 خليجي',
+      price: 120000,
+      main_image_url: '/lovable-uploads/1c8bb087-b7a3-4d42-989b-3942f1844df7.png'
+    },
     other_user: USERS[1],
     last_message: {
       id: 1,
       content: 'هل مازالت السيارة متوفرة؟',
       sender_id: 2,
-      receiver_id: 1,
-      created_at: new Date(2023, 5, 11).toISOString()
+      conversation_id: 1,
+      created_at: new Date(2023, 5, 11).toISOString(),
+      sender: USERS[1]
     },
     unread_count: 0,
+    created_at: new Date(2023, 5, 11).toISOString(),
     updated_at: new Date(2023, 5, 11).toISOString(),
     participants: [USERS[0], USERS[1]]
   },
   {
     id: 2,
-    listing: ADS[0],
+    listing: {
+      id: 1,
+      title: 'تويوتا كامري 2022 خليجي',
+      price: 120000,
+      main_image_url: '/lovable-uploads/1c8bb087-b7a3-4d42-989b-3942f1844df7.png'
+    },
     other_user: USERS[2],
     last_message: {
       id: 2,
       content: 'هل يمكن المعاينة غداً؟',
       sender_id: 1,
-      receiver_id: 3,
-      created_at: new Date(2023, 5, 16).toISOString()
+      conversation_id: 2,
+      created_at: new Date(2023, 5, 16).toISOString(),
+      sender: USERS[0]
     },
     unread_count: 1,
+    created_at: new Date(2023, 5, 16).toISOString(),
     updated_at: new Date(2023, 5, 16).toISOString(),
     participants: [USERS[0], USERS[2]]
   }
