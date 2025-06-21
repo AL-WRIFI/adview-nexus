@@ -2,6 +2,7 @@
 import { Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/context/theme-provider";
+import { useThemeStore } from "@/store/theme-store";
 
 interface ThemeToggleProps {
   variant?: "default" | "outline" | "secondary" | "ghost" | "link" | "destructive";
@@ -15,13 +16,23 @@ export function ThemeToggle({
   className = ""
 }: ThemeToggleProps) {
   const { setTheme, theme } = useTheme();
+  const { applyTheme } = useThemeStore();
+
+  const handleToggle = () => {
+    const newTheme = theme === "dark" ? "light" : "dark";
+    setTheme(newTheme);
+    // Force immediate theme application
+    setTimeout(() => {
+      applyTheme();
+    }, 50);
+  };
 
   return (
     <Button 
       variant={variant} 
       size={size} 
       className={`relative ${className}`}
-      onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+      onClick={handleToggle}
       title={theme === "dark" ? "وضع النهار" : "الوضع الداكن"}
     >
       <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />

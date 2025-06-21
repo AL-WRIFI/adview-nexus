@@ -1,51 +1,21 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { CategoryGrid } from './CategoryGrid';
 import { SubCategoryButtons } from './SubCategoryButtons';
+import { EnhancedMobileCategoryBar } from './EnhancedMobileCategoryBar';
 import { useCategories } from '@/hooks/use-api';
 import { Category } from '@/types';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { MobileFilterDrawer } from '@/components/filters/MobileFilterDrawer';
 import { WithSkeleton } from '@/components/ui/loading-skeleton';
-import { MobilePagination } from './MobilePagination';
 import { Link } from 'react-router-dom';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import {
-  Car, Home, Smartphone, Mouse, Briefcase, Wrench, Shirt, Gamepad,
-  Gem, ShoppingBag, Utensils, Laptop, BookOpen, Baby, Bike, Camera, FileText,
-  Headphones, Gift, Train
-} from 'lucide-react';
-
-const iconMap: Record<string, React.ComponentType<any>> = {
-  'Car': Car,
-  'Home': Home,
-  'Smartphone': Smartphone,
-  'Mouse': Mouse,
-  'Briefcase': Briefcase,
-  'Wrench': Wrench,
-  'Shirt': Shirt,
-  'Gamepad': Gamepad,
-  'Gem': Gem,
-  'ShoppingBag': ShoppingBag,
-  'Utensils': Utensils,
-  'Laptop': Laptop,
-  'BookOpen': BookOpen,
-  'Baby': Baby,
-  'Bike': Bike,
-  'Camera': Camera,
-  'FileText': FileText,
-  'Headphones': Headphones,
-  'Gift': Gift,
-  'Train': Train
-};
 
 export function CategoryBar() {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const params = useParams<{ categoryId: string }>();
-  const [searchParams] = useSearchParams();
-  const scrollContainer = useRef<HTMLDivElement>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   const categoryIdFromUrl = params.categoryId ? parseInt(params.categoryId, 10) : null;
   const subcategoryIdFromUrl = searchParams.get('subcategory') ? parseInt(searchParams.get('subcategory')!, 10) : null;
@@ -54,172 +24,149 @@ export function CategoryBar() {
   const [selectedCategory, setSelectedCategory] = useState<number | null>(categoryIdFromUrl);
   const [selectedSubcategory, setSelectedSubcategory] = useState<number | null>(subcategoryIdFromUrl);
   const [selectedChildCategory, setSelectedChildCategory] = useState<number | null>(childCategoryIdFromUrl);
-  const [selectedRegion, setSelectedRegion] = useState<string>('كل المناطق');
-
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const [showLeftScroll, setShowLeftScroll] = useState(false);
-  const [showRightScroll, setShowRightScroll] = useState(true);
 
   const { data: categories, isLoading: loadingCategories } = useCategories();
 
-  const categoriesPerPage = 8;
-  const totalPages = categories ? Math.ceil(categories.length / categoriesPerPage) : 1;
-  const [currentPage, setCurrentPage] = useState(1);
-
-  const touchStartX = useRef<number | null>(null);
-  const touchEndX = useRef<number | null>(null);
-
+  // Sync state with URL changes
   useEffect(() => {
-    if (categoryIdFromUrl !== selectedCategory) setSelectedCategory(categoryIdFromUrl);
-    if (subcategoryIdFromUrl !== selectedSubcategory) setSelectedSubcategory(subcategoryIdFromUrl);
-    if (childCategoryIdFromUrl !== selectedChildCategory) setSelectedChildCategory(childCategoryIdFromUrl);
+    setSelectedCategory(categoryIdFromUrl);
+    setSelectedSubcategory(subcategoryIdFromUrl);
+    setSelectedChildCategory(childCategoryIdFromUrl);
   }, [categoryIdFromUrl, subcategoryIdFromUrl, childCategoryIdFromUrl]);
 
+  // Reset child selections when parent changes
+  useEffect(() => {
+    if (selectedCategory !== categoryIdFromUrl) {
+      setSelectedSubcategory(null);
+      setSelectedChildCategory(null);
+    }
+  }, [selectedCategory, categoryIdFromUrl]);
+
+  useEffect(() => {
+    if (selectedSubcategory !== subcategoryIdFromUrl) {
+      setSelectedChildCategory(null);
+    }
+  }, [selectedSubcategory, subcategoryIdFromUrl]);
+
   const subcategories = selectedCategory && categories
-    ? categories.find(cat => cat.id === selectedCategory)?.subcategories || []
-    : [];
+      ? categories.find(cat => cat.id === selectedCategory)?.subcategories || []
+      : [];
 
   const childCategories = selectedSubcategory && subcategories
-    ? subcategories.find(sub => sub.id === selectedSubcategory)?.children || []
-    : [];
+      ? subcategories.find(sub => sub.id === selectedSubcategory)?.children || []
+      : [];
+
+  const getCategoryImage = (category: Category) => {
+    if (category.image_url) return category.image_url;
+    if (category.image) return category.image;
+    
+    const defaultImages: Record<string, string> = {
+      'سيارات': 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=120&h=80&fit=crop',
+      'عقارات': 'https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=120&h=80&fit=crop',
+      'إلكترونيات': 'https://images.unsplash.com/photo-1498049794561-7780e7231661?w=120&h=80&fit=crop',
+      'أثاث': 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=120&h=80&fit=crop',
+      'أزياء': 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=120&h=80&fit=crop',
+      'وظائف': 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&h=80&fit=crop',
+      'خدمات': 'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?w=120&h=80&fit=crop',
+      'رياضة': 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=120&h=80&fit=crop',
+    };
+    
+    for (const [key, image] of Object.entries(defaultImages)) {
+      if (category.name.includes(key)) return image;
+    }
+    
+    return 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=120&h=80&fit=crop';
+  };
 
   const handleCategorySelect = (category: Category) => {
     if (selectedCategory === category.id) {
       setSelectedCategory(null);
       setSelectedSubcategory(null);
       setSelectedChildCategory(null);
-      navigate('/');
+      navigate('/', { replace: true });
     } else {
       setSelectedCategory(category.id);
       setSelectedSubcategory(null);
       setSelectedChildCategory(null);
-      navigate(`/category/${category.id}`);
+      navigate(`/category/${category.id}`, { replace: true });
     }
   };
 
-  const handleSubcategorySelect = (subcategoryId: number | undefined) => {
+  const handleCategorySelectById = (categoryId: number | null) => {
+    if (!categoryId) {
+      setSelectedCategory(null);
+      setSelectedSubcategory(null);
+      setSelectedChildCategory(null);
+      navigate('/', { replace: true });
+      return;
+    }
+
+    const category = categories?.find(cat => cat.id === categoryId);
+    if (category) {
+      handleCategorySelect(category);
+    }
+  };
+
+  const handleSubcategorySelect = (subcategoryId: number) => {
     if (selectedSubcategory === subcategoryId) {
       setSelectedSubcategory(null);
       setSelectedChildCategory(null);
-      navigate(`/category/${selectedCategory}`);
+      if (selectedCategory) {
+        navigate(`/category/${selectedCategory}`, { replace: true });
+      }
     } else {
-      setSelectedSubcategory(subcategoryId || null);
+      setSelectedSubcategory(subcategoryId);
       setSelectedChildCategory(null);
-      navigate(`/category/${selectedCategory}?subcategory=${subcategoryId}`);
-    }
-  };
-
-  const handleChildCategorySelect = (childCategoryId: number | undefined) => {
-    if (selectedChildCategory === childCategoryId) {
-      setSelectedChildCategory(null);
-      navigate(`/category/${selectedCategory}?subcategory=${selectedSubcategory}`);
-    } else {
-      setSelectedChildCategory(childCategoryId || null);
-      navigate(`/category/${selectedCategory}?subcategory=${selectedSubcategory}&childcategory=${childCategoryId}`);
-    }
-  };
-
-  const handleFilterChange = (filters: any) => {
-    console.log('Filters applied:', filters);
-  };
-
-  const onTouchStart = (e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX;
-  };
-
-  const onTouchMove = (e: React.TouchEvent) => {
-    touchEndX.current = e.touches[0].clientX;
-  };
-
-  const onTouchEnd = () => {
-    if (touchStartX.current !== null && touchEndX.current !== null) {
-      const deltaX = touchStartX.current - touchEndX.current;
-      const swipeThreshold = 50;
-      if (deltaX > swipeThreshold && currentPage > 1) {
-        setCurrentPage(currentPage - 1);
-      } else if (deltaX < -swipeThreshold && currentPage < totalPages) {
-        setCurrentPage(currentPage + 1);
+      if (selectedCategory) {
+        navigate(`/category/${selectedCategory}?subcategory=${subcategoryId}`, { replace: true });
       }
     }
-    touchStartX.current = null;
-    touchEndX.current = null;
   };
 
-  const scrollLeft = () => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollBy({ left: -200, behavior: 'smooth' });
+  const handleSubcategorySelectById = (subcategoryId: number | null) => {
+    if (!subcategoryId) {
+      setSelectedSubcategory(null);
+      setSelectedChildCategory(null);
+      if (selectedCategory) {
+        navigate(`/category/${selectedCategory}`, { replace: true });
+      }
+      return;
     }
+
+    handleSubcategorySelect(subcategoryId);
   };
 
-  const scrollRight = () => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollBy({ left: 200, behavior: 'smooth' });
+  const handleChildCategorySelect = (childCategoryId: number) => {
+    if (selectedChildCategory === childCategoryId) {
+      setSelectedChildCategory(null);
+      if (selectedCategory && selectedSubcategory) {
+        navigate(`/category/${selectedCategory}?subcategory=${selectedSubcategory}`, { replace: true });
+      }
+    } else {
+      setSelectedChildCategory(childCategoryId);
+      if (selectedCategory && selectedSubcategory) {
+        navigate(`/category/${selectedCategory}?subcategory=${selectedSubcategory}&childcategory=${childCategoryId}`, { replace: true });
+      }
     }
   };
-
-  const checkScrollButtons = () => {
-    if (scrollRef.current) {
-      const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
-      setShowLeftScroll(scrollLeft > 0);
-      setShowRightScroll(scrollLeft < scrollWidth - clientWidth - 10);
-    }
-  };
-
-  useEffect(() => {
-    const scrollEl = scrollRef.current;
-    if (scrollEl) {
-      scrollEl.addEventListener('scroll', checkScrollButtons);
-      checkScrollButtons();
-      return () => {
-        scrollEl.removeEventListener('scroll', checkScrollButtons);
-      };
-    }
-  }, []);
 
   if (isMobile) {
     return (
-      <div dir="rtl" className="bg-white dark:bg-dark-background border-b border-border dark:border-dark-border" ref={scrollContainer}>
-        <div className="container px-4 mx-auto overflow-hidden" onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd} style={{ touchAction: 'pan-y' }}>
-          <WithSkeleton isLoading={loadingCategories} data={categories} skeletonCount={8}>
-            {(categoriesData) => {
-              const pages = [];
-              for (let i = 0; i < totalPages; i++) {
-                pages.push(categoriesData.slice(i * categoriesPerPage, (i + 1) * categoriesPerPage));
-              }
-              return (
-                <div className="flex flex-nowrap transition-transform duration-300 ease-in-out" style={{ width: `${totalPages * 100}%`, transform: `translateX(${-(currentPage - 1) * (100 / totalPages)}%)` }}>
-                  {pages.map((pageCategories, idx) => (
-                    <div key={idx} className="flex-shrink-0" style={{ width: `${100 / totalPages}%` }}>
-                      <CategoryGrid
-                        categories={pageCategories}
-                        selectedCategoryId={selectedCategory}
-                        onCategorySelect={handleCategorySelect}
-                      />
-                    </div>
-                  ))}
-                </div>
-              );
-            }}
-          </WithSkeleton>
-        </div>
-        <MobilePagination currentPage={currentPage} totalPages={totalPages} onChange={(page) => setCurrentPage(page)} />
-        {selectedCategory && subcategories.length > 0 && (
-          <div className="container px-4 mx-auto border-t border-gray-100 dark:border-dark-border">
-            <SubCategoryButtons 
-              items={subcategories} 
-              selectedId={selectedSubcategory} 
-              onSelect={handleSubcategorySelect} 
-              level="sub" 
-            />
-          </div>
-        )}
+      <div dir="rtl" className="bg-white dark:bg-dark-background border-b border-border dark:border-dark-border">
+        <EnhancedMobileCategoryBar 
+          selectedCategory={selectedCategory}
+          onCategorySelect={handleCategorySelectById}
+          selectedSubcategory={selectedSubcategory}
+          onSubcategorySelect={handleSubcategorySelectById}
+        />
+
         {selectedSubcategory && childCategories.length > 0 && (
           <div className="container px-4 mx-auto border-t border-gray-100 dark:border-dark-border bg-gray-50 dark:bg-dark-surface">
-            <SubCategoryButtons 
-              items={childCategories} 
-              selectedId={selectedChildCategory} 
-              onSelect={handleChildCategorySelect} 
-              level="child" 
+            <SubCategoryButtons
+              items={childCategories}
+              selectedId={selectedChildCategory}
+              onSelect={handleChildCategorySelect}
+              level="child"
             />
           </div>
         )}
@@ -229,50 +176,54 @@ export function CategoryBar() {
     return (
       <div className="relative bg-white border-b border-border dark:bg-dark-background">
         <div className="container px-4 mx-auto relative py-4">
-          {showLeftScroll && (
-            <div className="absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-white to-transparent z-10 flex items-center">
-              <Button variant="ghost" size="icon" className="h-8 w-8 absolute left-4 rounded-full shadow-sm" onClick={scrollLeft} aria-label="Scroll left">
-                <ChevronLeft className="h-5 w-5" />
-              </Button>
-            </div>
-          )}
-          <div ref={scrollRef} className="scroll-container gap-3 py-1 pl-10 pr-10 overflow-x-auto flex">
+          <div ref={scrollRef} className="scroll-container gap-3 py-1 overflow-x-auto flex">
             {loadingCategories ? (
-              <div className="flex justify-center items-center w-full py-2">
-                <span className="text-muted-foreground">جاري تحميل التصنيفات...</span>
-              </div>
+                <div className="flex justify-center items-center w-full py-2">
+                  <span className="text-muted-foreground">جاري تحميل التصنيفات...</span>
+                </div>
             ) : categories && categories.length > 0 ? (
-              categories.map((category) => {
-                const iconName = category.icon || 'Car';
-                const Icon = iconMap[iconName] || Car;
-                const isSelected = selectedCategory === category.id;
-                return (
-                  <div key={category.id} className="flex flex-col items-center">
-                    <button
-                      onClick={() => handleCategorySelect(category)}
-                      className={`category-icon dark:border-dark-border bg-white dark:bg-dark-background min-w-[100px] text-center transition-all ${isSelected ? 'scale-105' : ''}`}
-                    >
-                      <div className={`p-3 rounded-full mx-auto mb-2 transition-colors ${isSelected ? 'bg-brand text-white' : 'bg-brand-light'}`} style={{ width: '56px', height: '56px' }}>
-                        <Icon className={`h-full w-full ${isSelected ? 'text-white' : 'text-brand'}`} />
+                categories.map((category) => {
+                  const isSelected = selectedCategory === category.id;
+                  return (
+                      <div key={category.id} className="flex flex-col items-center">
+                        <button
+                            onClick={() => handleCategorySelect(category)}
+                            className="min-w-[100px] text-center"
+                        >
+                          <div className={`relative w-20 h-20 rounded-lg mx-auto mb-2 overflow-hidden transition-all ${isSelected ? 'shadow-lg scale-105' : ''}`}>
+                            <img
+                              src={getCategoryImage(category)}
+                              alt={category.name}
+                              className="w-full h-full object-cover transition-transform hover:scale-110"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.style.display = 'none';
+                                target.parentElement!.innerHTML = `
+                                  <div class="w-full h-full bg-brand/10 flex items-center justify-center">
+                                    <svg class="w-8 h-8 text-brand" fill="currentColor" viewBox="0 0 20 20">
+                                      <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd" />
+                                    </svg>
+                                  </div>
+                                `;
+                              }}
+                            />
+                            {isSelected && (
+                              <div className="absolute inset-0 bg-brand/20 rounded-lg"></div>
+                            )}
+                          </div>
+                          <span className={`text-sm font-medium block truncate max-w-[80px] ${isSelected ? 'text-brand' : 'text-foreground'}`}>
+                            {category.name}
+                          </span>
+                        </button>
                       </div>
-                      <span className="text-sm font-medium truncate block">{category.name}</span>
-                    </button>
-                  </div>
-                );
-              })
+                  );
+                })
             ) : (
-              <div className="flex justify-center items-center w-full py-2">
-                <span className="text-muted-foreground">لا توجد تصنيفات</span>
-              </div>
+                <div className="flex justify-center items-center w-full py-2">
+                  <span className="text-muted-foreground">لا توجد تصنيفات</span>
+                </div>
             )}
           </div>
-          {showRightScroll && (
-            <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-white to-transparent z-10 flex items-center">
-              <Button variant="ghost" size="icon" className="h-8 w-8 absolute right-4 rounded-full shadow-sm" onClick={scrollRight} aria-label="Scroll right">
-                <ChevronRight className="h-5 w-5" />
-              </Button>
-            </div>
-          )}
         </div>
         {selectedCategory && subcategories.length > 0 && (
           <div className="bg-gray-50 border-t border-border transition-all dark:bg-dark-background">

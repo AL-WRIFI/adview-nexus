@@ -1,54 +1,52 @@
 
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { AlertTriangle } from 'lucide-react';
 
 interface DeleteConfirmDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  adId: string;
   onConfirm: () => void;
-  isLoading?: boolean;
-  title: string;
-  description: string;
 }
 
-export function DeleteConfirmDialog({
-  open,
-  onOpenChange,
-  onConfirm,
-  isLoading = false,
-  title,
-  description
+export function DeleteConfirmDialog({ 
+  open, 
+  onOpenChange, 
+  adId, 
+  onConfirm 
 }: DeleteConfirmDialogProps) {
   return (
-    <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>{title}</AlertDialogTitle>
-          <AlertDialogDescription>
-            {description}
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel disabled={isLoading}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5 text-red-500" />
+            تأكيد حذف الإعلان
+          </DialogTitle>
+        </DialogHeader>
+        
+        <div className="py-4">
+          <p className="text-muted-foreground">
+            هل أنت متأكد من رغبتك في حذف هذا الإعلان؟ هذا الإجراء لا يمكن التراجع عنه.
+          </p>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
             إلغاء
-          </AlertDialogCancel>
-          <AlertDialogAction 
-            onClick={onConfirm}
-            disabled={isLoading}
-            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          </Button>
+          <Button 
+            variant="destructive" 
+            onClick={() => {
+              onConfirm();
+              onOpenChange(false);
+            }}
           >
-            {isLoading ? 'جاري الحذف...' : 'حذف'}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+            حذف الإعلان
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

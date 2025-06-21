@@ -1,178 +1,498 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { SearchFilters, Listing, User, Category, Brand, State, City, Comment, Favorite, PaginatedResponse, ApiResponse } from '@/types';
-import { 
-  listingsAPI, 
-  userListingsAPI, 
-  authAPI, 
-  profileAPI, 
-  categoriesAPI, 
-  locationAPI,
-  settingsAPI
-} from '@/services/api';
+import { toast } from '@/hooks/use-toast';
+import * as API from '@/services/api';
+import { Listing, ListingDetails, Category, Brand, User, SearchFilters, Comment, PaginatedResponse, ApiResponse } from '@/types';
+import { profileAPI } from '@/services/apis';
 
-// Mock API calls - replace with actual API implementations
-const mockApiCall = (data: any, delay: number = 1000) => {
-  return new Promise((resolve) => {
-    setTimeout(() => resolve(data), delay);
-  });
-};
-
-// User Authentication hooks
-export function useCurrentUser() {
-  return useQuery({
-    queryKey: ['currentUser'],
-    queryFn: async (): Promise<User | null> => {
-      try {
-        const response = await profileAPI.getProfile();
-        return response.data;
-      } catch (error) {
-        console.error('Error fetching current user:', error);
-        return null;
-      }
-    },
-  });
-}
-
-
-
+// Auth Hooks
 export function useLogin() {
   const queryClient = useQueryClient();
+  
   return useMutation({
-    mutationFn: async ({ identifier, password }: { identifier: string; password: string }) => {
-      const response = await authAPI.login(identifier, password);
-      return response.data;
+    mutationFn: ({ identifier, password }: { identifier: string; password: string }) => 
+      API.authAPI.login(identifier, password),
+    onSuccess: (data) => {
+      queryClient.setQueryData(['currentUser'], data.data.user);
+      toast({
+        title: "تم تسجيل الدخول بنجاح",
+        description: `مرحباً ${data.data.user.first_name} ${data.data.user.last_name}`,
+      });
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-    },
-  });
-}
-
-export function useRegister() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (userData: any) => {
-      const response = await authAPI.register(userData);
-      return response.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-    },
+    meta: {
+      onError: (error: Error) => {
+        toast({
+          variant: "destructive",
+          title: "خطأ في تسجيل الدخول",
+          description: error instanceof Error ? error.message : "خطأ غير معروف",
+        });
+      }
+    }
   });
 }
 
 export function useLogout() {
   const queryClient = useQueryClient();
+  
   return useMutation({
-    mutationFn: async () => {
-      const response = await authAPI.logout();
-      return response.data;
-    },
+    mutationFn: API.authAPI.logout,
     onSuccess: () => {
       queryClient.clear();
+      toast({
+        title: "تم تسجيل الخروج بنجاح",
+      });
     },
-  });
-}
-
-// User Listings Hook
-export function useUserListings() {
-  return useQuery({
-    queryKey: ['user-listings'],
-    queryFn: async (): Promise<Listing[]> => {
-      try {
-        const response = await userListingsAPI.getUserListings();
-        return response.data;
-      } catch (error) {
-        console.error('Error fetching user listings:', error);
-        return [];
+    meta: {
+      onError: (error: Error) => {
+        toast({
+          variant: "destructive",
+          title: "خطأ في تسجيل الخروج",
+          description: error instanceof Error ? error.message : "خطأ غير معروف",
+        });
       }
-    },
+    }
   });
 }
 
-// Ads Hook  
-export function useAds(filters?: SearchFilters) {
-  return useQuery({
-    queryKey: ['ads', filters],
-    queryFn: async (): Promise<PaginatedResponse<Listing>> => {
-      try {
-        const response = await listingsAPI.getListings(filters);
-        return response.data;
-      } catch (error) {
-        console.error('Error fetching ads:', error);
-        return {
-          data: [],
-          current_page: 1,
-          last_page: 1,
-          per_page: 10,
-          total: 0
-        };
+export function useRegister() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (userData: {
+      first_name: string;
+      last_name: string;
+      email: string;
+      phone: string;
+      password: string;
+      password_confirmation: string;
+      city_id: number;
+      state_id: number;
+    }) => API.authAPI.register(userData),
+    onSuccess: (data) => {
+      queryClient.setQueryData(['currentUser'], data.data.user);
+      toast({
+        title: "تم إنشاء الحساب بنجاح",
+        description: `مرحباً ${data.data.user.first_name} ${data.data.user.last_name}`,
+      });
+    },
+    meta: {
+      onError: (error: Error) => {
+        toast({
+          variant: "destructive",
+          title: "خطأ في إنشاء الحساب",
+          description: error instanceof Error ? error.message : "خطأ غير معروف",
+        });
       }
-    },
+    }
   });
 }
 
-// Categories Hook
+export function useCurrentUser() {
+  return useQuery({
+    queryKey: ['currentUser'],
+    queryFn: async () => {
+      const response = await API.authAPI.getCurrentUser();
+      return response.data;
+    },
+    enabled: API.isAuthenticated(),
+    retry: 1,
+  });
+}
+
+// Categories Hooks
 export function useCategories() {
   return useQuery({
     queryKey: ['categories'],
-    queryFn: async (): Promise<Category[]> => {
-      try {
-        const response = await categoriesAPI.getCategories();
-        return response.data;
-      } catch (error) {
-        console.error('Error fetching categories:', error);
-        return [];
-      }
+    queryFn: async () => {
+      const response = await API.categoriesAPI.getCategories();
+      return response.data;
     },
+    staleTime: 24 * 60 * 60 * 1000, // 24 hours - categories don't change often
   });
 }
 
-// Listings Hook
+export function useCategory(id: number | undefined) {
+  return useQuery({
+    queryKey: ['category', id],
+    queryFn: async () => {
+      if (!id) return Promise.reject('No category ID provided');
+      const response = await API.categoriesAPI.getCategory(id);
+      return response.data;
+    },
+    enabled: !!id,
+  });
+}
+
+// Subcategories Hooks
+export function useSubCategories() {
+  return useQuery({
+    queryKey: ['subcategories'],
+    queryFn: async () => {
+      const response = await API.categoriesAPI.getSubCategories();
+      return response.data;
+    },
+    staleTime: 24 * 60 * 60 * 1000, // 24 hours - subcategories don't change often
+  });
+}
+
+// Child Categories Hooks
+export function useChildCategories() {
+  return useQuery({
+    queryKey: ['childcategories'],
+    queryFn: async () => {
+      const response = await API.categoriesAPI.getChildCategories();
+      return response.data;
+    },
+    staleTime: 24 * 60 * 60 * 1000, // 24 hours - child categories don't change often
+  });
+}
+
+// Brands Hooks
+export function useBrands() {
+  return useQuery({
+    queryKey: ['brands'],
+    queryFn: async () => {
+      const response = await API.brandsAPI.getBrands();
+      return response.data;
+    },
+    staleTime: 24 * 60 * 60 * 1000, // 24 hours - brands don't change often
+  });
+}
+
+export function useBrand(id: number | undefined) {
+  return useQuery({
+    queryKey: ['brand', id],
+    queryFn: async () => {
+      if (!id) return Promise.reject('No brand ID provided');
+      const response = await API.brandsAPI.getBrand(id);
+      return response.data;
+    },
+    enabled: !!id,
+  });
+}
+
+// Listings Hooks
 export function useListings(filters?: SearchFilters) {
   return useQuery({
     queryKey: ['listings', filters],
-    queryFn: async (): Promise<PaginatedResponse<Listing>> => {
-      try {
-        const response = await listingsAPI.getListings(filters);
-        return response.data;
-      } catch (error) {
-        console.error('Error fetching listings:', error);
-        return {
-          data: [],
-          current_page: 1,
-          last_page: 1,
-          per_page: 12,
-          total: 0
-        };
-      }
+    queryFn: async () => {
+      const response = await API.listingsAPI.getListings(filters);
+      return response;
     },
   });
 }
 
-// Favorites Hook
+export function useListing(id: number | undefined) {
+  return useQuery({
+    queryKey: ['listing', id],
+    queryFn: async () => {
+      if (!id) return Promise.reject('No listing ID provided');
+      const response = await API.listingsAPI.getListing(id);
+      return response.data;
+    },
+    enabled: !!id,
+  });
+}
+
+export function useRelatedListings(listingId: number | undefined, limit: number = 4) {
+  return useQuery({
+    queryKey: ['relatedListings', listingId, limit],
+    queryFn: async () => {
+      if (!listingId) return Promise.reject('No listing ID provided');
+      const response = await API.listingsAPI.getRelatedListings(listingId, limit);
+      return response.data;
+    },
+    enabled: !!listingId,
+  });
+}
+
+export function useCreateListing() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (formData: FormData) => API.listingsAPI.createListing(formData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['listings'] });
+      queryClient.invalidateQueries({ queryKey: ['userListings'] });
+      toast({
+        title: "تم إنشاء الإعلان بنجاح",
+        description: "سيظهر الإعلان بعد مراجعته",
+      });
+    },
+    meta: {
+      onError: (error: Error) => {
+        toast({
+          variant: "destructive",
+          title: "خطأ في إنشاء الإعلان",
+          description: error instanceof Error ? error.message : "خطأ غير معروف",
+        });
+      }
+    }
+  });
+}
+
+export function useUpdateListing(id: number) {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (formData: FormData) => {
+      const response = await API.listingsAPI.updateListing(id, formData);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['listing', id] });
+      queryClient.invalidateQueries({ queryKey: ['listings'] });
+      queryClient.invalidateQueries({ queryKey: ['userListings'] });
+      toast({
+        title: "تم تحديث الإعلان بنجاح",
+        description: "تم تحديث بيانات الإعلان",
+      });
+    },
+    meta: {
+      onError: (error: Error) => {
+        toast({
+          variant: "destructive",
+          title: "خطأ في تحديث الإعلان",
+          description: error instanceof Error ? error.message : "خطأ غير معروف",
+        });
+      }
+    }
+  });
+}
+
+export function useDeleteListing() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (id: number) => API.listingsAPI.deleteListing(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['listings'] });
+      queryClient.invalidateQueries({ queryKey: ['userListings'] });
+      toast({
+        title: "تم حذف الإعلان بنجاح",
+      });
+    },
+    meta: {
+      onError: (error: Error) => {
+        toast({
+          variant: "destructive",
+          title: "خطأ في حذف الإعلان",
+          description: error instanceof Error ? error.message : "خطأ غير معروف",
+        });
+      }
+    }
+  });
+}
+
+// Comments Hooks
+export function useAddComment(listingId: number) {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (content: string) => API.listingsAPI.addComment(listingId, content),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['listing', listingId] });
+      toast({
+        title: "تم إضافة التعليق بنجاح",
+      });
+    },
+    meta: {
+      onError: (error: Error) => {
+        toast({
+          variant: "destructive",
+          title: "خطأ في إضافة التعليق",
+          description: error instanceof Error ? error.message : "خطأ غير معروف",
+        });
+      }
+    }
+  });
+}
+
+export function useDeleteComment(listingId: number) {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (commentId: number) => API.listingsAPI.deleteComment(listingId, commentId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['listing', listingId] });
+      toast({
+        title: "تم حذف التعليق بنجاح",
+      });
+    },
+    meta: {
+      onError: (error: Error) => {
+        toast({
+          variant: "destructive",
+          title: "خطأ في حذف التعليق",
+          description: error instanceof Error ? error.message : "خطأ غير معروف",
+        });
+      }
+    }
+  });
+}
+
+export function useEditComment(listingId: number) {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ commentId, content }: { commentId: number; content: string }) => 
+      API.listingsAPI.editComment(listingId, commentId, content),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['listings', listingId, 'comments'] });
+      toast({
+        title: "تم تعديل التعليق بنجاح",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        variant: "destructive",
+        title: "خطأ في تعديل التعليق",
+        description: error.message,
+      });
+    },
+  });
+}
+
+
+export function useAddReply(listingId: number, commentId?: number) {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (content: string) => API.listingsAPI.addReply(listingId, commentId, content),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['listing', listingId] });
+      toast({
+        title: "تم إضافة الرد بنجاح",
+      });
+    },
+    meta: {
+      onError: (error: Error) => {
+        toast({
+          variant: "destructive",
+          title: "خطأ في إضافة الرد",
+          description: error instanceof Error ? error.message : "خطأ غير معروف",
+        });
+      }
+    }
+  });
+}
+
+export function useDeleteReply(listingId: number) {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ commentId, replyId }: { commentId: number; replyId: number }) => 
+      API.listingsAPI.deleteReply(listingId, commentId, replyId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['listings', listingId, 'comments'] });
+      toast({
+        title: "تم حذف الرد بنجاح",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        variant: "destructive",
+        title: "خطأ في حذف الرد",
+        description: error.message,
+      });
+    },
+  });
+}
+
+export function useEditReply(listingId: number) {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ commentId, replyId, content }: { commentId: number; replyId: number; content: string }) => 
+      API.listingsAPI.editReply(listingId, commentId, replyId, content),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['listings', listingId, 'comments'] });
+      toast({
+        title: "تم تعديل الرد بنجاح",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        variant: "destructive",
+        title: "خطأ في تعديل الرد",
+        description: error.message,
+      });
+    },
+  });
+}
+
+// Favorites Hooks
+export function useAddToFavorites() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (listingId: number) => API.listingsAPI.addToFavorites(listingId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['favorites'] });
+      toast({
+        title: "تمت الإضافة للمفضلة",
+      });
+    },
+    meta: {
+      onError: (error: Error) => {
+        toast({
+          variant: "destructive",
+          title: "خطأ في الإضافة للمفضلة",
+          description: error instanceof Error ? error.message : "خطأ غير معروف",
+        });
+      }
+    }
+  });
+}
+
+export function useRemoveFromFavorites() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (listingId: number) => API.listingsAPI.removeFromFavorites(listingId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['favorites'] });
+      toast({
+        title: "تمت الإزالة من المفضلة",
+      });
+    },
+    meta: {
+      onError: (error: Error) => {
+        toast({
+          variant: "destructive",
+          title: "خطأ في الإزالة من المفضلة",
+          description: error instanceof Error ? error.message : "خطأ غير معروف",
+        });
+      }
+    }
+  });
+}
+
 export function useFavorites() {
   return useQuery({
     queryKey: ['favorites'],
-    queryFn: async (): Promise<PaginatedResponse<Favorite>> => {
-      try {
-        const response = await profileAPI.getFavorites();
-        return response.data;
-      } catch (error) {
-        console.error('Error fetching favorites:', error);
-        return {
-          data: [],
-          current_page: 1,
-          last_page: 1,
-          per_page: 10,
-          total: 0
-        };
-      }
+    queryFn: async () => {
+      const response = await API.listingsAPI.getFavorites();
+      return response;
     },
+    enabled: API.isAuthenticated(),
   });
 }
 
-// User Analytics Hook
+export function useIsFavorite(listingId: number | undefined) {
+  return useQuery({
+    queryKey: ['favorite', listingId],
+    queryFn: async () => {
+      if (!listingId) return Promise.reject('No listing ID provided');
+      const response = await API.listingsAPI.isFavorite(listingId);
+      return response.data;
+    },
+    enabled: !!listingId && API.isAuthenticated(),
+  });
+}
+
+
+
 export function useUserAnalytics() {
   return useQuery({
     queryKey: ['user-analytics'],
@@ -194,413 +514,145 @@ export function useUserAnalytics() {
   });
 }
 
-// User Stats Hook
-export function useUserStats() {
-  return useQuery({
-    queryKey: ['user-stats'],
-    queryFn: async () => {
-      try {
-        const response = await profileAPI.getUserStats();
-        return response.data;
-      } catch (error) {
-        console.error('Error fetching user stats:', error);
-        return {
-          totalListings: 0,
-          activeListings: 0,
-          totalViews: 0,
-          totalFavorites: 0,
-          totalComments: 0
-        };
-      }
-    },
-  });
-}
 
-// Other hooks with proper return types
-export function useBrands() {
-  return useQuery({
-    queryKey: ['brands'],
-    queryFn: async (): Promise<Brand[]> => {
-      try {
-        const response = await categoriesAPI.getBrands();
-        return response.data;
-      } catch (error) {
-        console.error('Error fetching brands:', error);
-        return [];
-      }
-    },
-  });
-}
-
+// Location Hooks
 export function useStates() {
   return useQuery({
     queryKey: ['states'],
-    queryFn: async (): Promise<State[]> => {
-      try {
-        const response = await locationAPI.getStates();
-        return response.data;
-      } catch (error) {
-        console.error('Error fetching states:', error);
-        return [];
-      }
+    queryFn: async () => {
+      const response = await API.locationAPI.getStates();
+      return response.data;
     },
+    staleTime: 24 * 60 * 60 * 1000, // 24 hours - states don't change often
+  });
+}
+
+export function useCities(stateId: number | undefined) {
+  return useQuery({
+    queryKey: ['cities', stateId],
+    queryFn: async () => {
+      if (!stateId) return Promise.reject('No state ID provided');
+      const response = await API.locationAPI.getCities(stateId);
+      return response.data;
+    },
+    enabled: !!stateId,
+    staleTime: 24 * 60 * 60 * 1000, // 24 hours - cities don't change often
   });
 }
 
 export function useAllCities() {
   return useQuery({
-    queryKey: ['all-cities'],
-    queryFn: async (): Promise<City[]> => {
-      try {
-        const response = await locationAPI.getAllCities();
-        return response.data;
-      } catch (error) {
-        console.error('Error fetching cities:', error);
-        return [];
-      }
+    queryKey: ['allCities'],
+    queryFn: async () => {
+      const response = await API.locationAPI.getAllCities();
+      return response.data;
     },
-  });
-}
-
-export function useCities(stateId?: number) {
-  return useQuery({
-    queryKey: ['cities', stateId],
-    queryFn: async (): Promise<City[]> => {
-      if (!stateId) return [];
-      try {
-        const response = await locationAPI.getCitiesByState(stateId);
-        return response.data;
-      } catch (error) {
-        console.error('Error fetching cities:', error);
-        return [];
-      }
-    },
-    enabled: !!stateId,
+    staleTime: 24 * 60 * 60 * 1000, // 24 hours - cities don't change often
   });
 }
 
 export function useCurrentLocation() {
   return useQuery({
-    queryKey: ['current-location'],
-    queryFn: async () => {
-      return new Promise<{ lat: number; lon: number }>((resolve, reject) => {
-        if (!navigator.geolocation) {
-          reject(new Error('Geolocation is not supported'));
-          return;
-        }
-
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            resolve({
-              lat: position.coords.latitude,
-              lon: position.coords.longitude
-            });
-          },
-          (error) => {
-            console.error('Error getting location:', error);
-            // Return default coordinates for Syria
-            resolve({ lat: 35.2271, lon: 38.9968 });
-          }
-        );
-      });
-    },
+    queryKey: ['currentLocation'],
+    queryFn: API.locationAPI.getCurrentLocation,
+    retry: false,
+    staleTime: 30 * 60 * 1000, // 30 minutes
   });
 }
 
-export function useComments(listingId: number) {
-  return useQuery({
-    queryKey: ['comments', listingId],
-    queryFn: async (): Promise<Comment[]> => {
-      try {
-        const response = await listingsAPI.getComments(listingId);
-        return response.data;
-      } catch (error) {
-        console.error('Error fetching comments:', error);
-        return [];
-      }
-    },
-  });
-}
-
-export function useAd(id: string | number) {
-  return useQuery({
-    queryKey: ['ad', id],
-    queryFn: async (): Promise<Listing | null> => {
-      try {
-        const response = await listingsAPI.getListing(Number(id));
-        return response.data;
-      } catch (error) {
-        console.error('Error fetching ad:', error);
-        return null;
-      }
-    },
-  });
-}
-
-export function useRelatedAds(categoryId?: number, excludeId?: number) {
-  return useQuery({
-    queryKey: ['related-ads', categoryId, excludeId],
-    queryFn: async (): Promise<Listing[]> => {
-      if (!categoryId || !excludeId) return [];
-      try {
-        const response = await listingsAPI.getRelatedListings(excludeId);
-        return response.data;
-      } catch (error) {
-        console.error('Error fetching related ads:', error);
-        return [];
-      }
-    },
-    enabled: !!categoryId,
-  });
-}
-
-export function useListing(id: string | number) {
-  return useQuery({
-    queryKey: ['listing', id],
-    queryFn: async (): Promise<Listing | null> => {
-      try {
-        const response = await listingsAPI.getListing(Number(id));
-        return response.data;
-      } catch (error) {
-        console.error('Error fetching listing:', error);
-        return null;
-      }
-    },
-  });
-}
-
-// Mutation hooks
-export function useAddToFavorites() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (listingId: number) => {
-      const response = await profileAPI.addToFavorites(listingId);
-      return response.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['favorites'] });
-    },
-  });
-}
-
-export function useRemoveFromFavorites() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (listingId: number) => {
-      const response = await profileAPI.removeFromFavorites(listingId);
-      return response.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['favorites'] });
-    },
-  });
-}
-
-export function useIsFavorite(listingId: number) {
-  return useQuery({
-    queryKey: ['is-favorite', listingId],
-    queryFn: async () => {
-      try {
-        const response = await profileAPI.checkIsFavorite(listingId);
-        return response.data.is_favorite;
-      } catch (error) {
-        console.error('Error checking favorite status:', error);
-        return false;
-      }
-    },
-  });
-}
-
-export function useAddComment() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ listingId, content }: { listingId: number; content: string }) => {
-      const response = await userListingsAPI.addComment(listingId, content);
-      return response.data;
-    },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['comments', variables.listingId] });
-    },
-  });
-}
-
-export function useEditComment() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ listingId, commentId, content }: { listingId: number; commentId: number; content: string }) => {
-      const response = await userListingsAPI.editComment(listingId, commentId, content);
-      return response.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['comments'] });
-    },
-  });
-}
-
-export function useDeleteComment() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ listingId, commentId }: { listingId: number; commentId: number }) => {
-      const response = await userListingsAPI.deleteComment(listingId, commentId);
-      return response.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['comments'] });
-    },
-  });
-}
-
-export function useAddReply() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ listingId, commentId, content }: { listingId: number; commentId: number; content: string }) => {
-      const response = await userListingsAPI.addReply(listingId, commentId, content);
-      return response.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['comments'] });
-    },
-  });
-}
-
-export function useEditReply() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ listingId, commentId, replyId, content }: { listingId: number; commentId: number; replyId: number; content: string }) => {
-      const response = await userListingsAPI.editReply(listingId, commentId, replyId, content);
-      return response.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['comments'] });
-    },
-  });
-}
-
-export function useDeleteReply() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ listingId, commentId, replyId }: { listingId: number; commentId: number; replyId: number }) => {
-      const response = await userListingsAPI.deleteReply(listingId, commentId, replyId);
-      return response.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['comments'] });
-    },
-  });
-}
-
-export function useCreateListing() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (data: FormData) => {
-      const response = await userListingsAPI.createListing(data);
-      return response.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['user-listings'] });
-    },
-  });
-}
-
-export function useUpdateListing() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ id, data }: { id: string | number; data: FormData }) => {
-      const response = await userListingsAPI.updateListing(Number(id), data);
-      return response.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['user-listings'] });
-    },
-  });
-}
-
-export function useDeleteListing() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (id: number) => {
-      const response = await userListingsAPI.deleteListing(id);
-      return response.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['user-listings'] });
-    },
-  });
-}
-
+// User Hooks
 export function useUpdateProfile() {
   const queryClient = useQueryClient();
+  
   return useMutation({
-    mutationFn: async (data: FormData) => {
-      const response = await profileAPI.updateProfile(data);
+    mutationFn: (formData: FormData) => API.userAPI.updateProfile(formData),
+    onSuccess: (data) => {
+      queryClient.setQueryData(['currentUser'], data.data);
+      toast({
+        title: "تم تحديث الملف الشخصي بنجاح",
+      });
+    },
+    meta: {
+      onError: (error: Error) => {
+        toast({
+          variant: "destructive",
+          title: "خطأ في تحديث الملف الشخصي",
+          description: error instanceof Error ? error.message : "خطأ غير معروف",
+        });
+      }
+    }
+  });
+}
+
+export function useUserListings(userId?: number) {
+  return useQuery({
+    queryKey: ['userListings', userId],
+    queryFn: async () => {
+      const response = await API.userAPI.getUserListings(userId);
       return response.data;
     },
+    enabled: API.isAuthenticated(),
+  });
+}
+
+export function useChangePassword() {
+  return useMutation({
+    mutationFn: (data: { current_password: string; password: string; password_confirmation: string }) => 
+      API.userAPI.changePassword(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['profile'] });
-      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+      toast({
+        title: "تم تغيير كلمة المرور بنجاح",
+      });
     },
+    meta: {
+      onError: (error: Error) => {
+        toast({
+          variant: "destructive",
+          title: "خطأ في تغيير كلمة المرور",
+          description: error instanceof Error ? error.message : "خطأ غير معروف",
+        });
+      }
+    }
   });
 }
 
-// Settings hooks
-export function useSiteIdentity() {
+// User Statistics Hook
+export function useUserStats() {
   return useQuery({
-    queryKey: ['site-identity'],
+    queryKey: ['user-stats'],
     queryFn: async () => {
-      try {
-        const response = await settingsAPI.getSiteIdentity();
-        return response.data;
-      } catch (error) {
-        console.error('Error fetching site identity:', error);
-        return {
-          site_logo: '',
-          site_white_logo: '',
-          site_favicon: ''
-        };
-      }
+      const response = await API.userAPI.getUserStatistics();
+      return response.data;
     },
+    enabled: API.isAuthenticated(),
+    meta: {
+      onError: (error: Error) => {
+        toast({
+          title: "خطأ في تحميل إحصائيات المستخدم",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
+    }
   });
 }
 
-export function useBasicSettings() {
+// Search Hooks
+export function useSearchListings(query: string, filters?: SearchFilters) {
   return useQuery({
-    queryKey: ['basic-settings'],
+    queryKey: ['search', query, filters],
     queryFn: async () => {
-      try {
-        const response = await settingsAPI.getBasicSettings();
-        return response.data;
-      } catch (error) {
-        console.error('Error fetching basic settings:', error);
-        return {
-          site_title: '',
-          site_tag_line: '',
-          site_footer_copyright: '',
-          user_email_verify_enable_disable: null,
-          user_otp_verify_enable_disable: null
-        };
-      }
+      const response = await API.searchAPI.searchListings(query, filters);
+      return response;
     },
+    enabled: query !== '',
   });
 }
 
-export function useColorSettings() {
-  return useQuery({
-    queryKey: ['color-settings'],
-    queryFn: async () => {
-      try {
-        const response = await settingsAPI.getColorSettings();
-        return response.data;
-      } catch (error) {
-        console.error('Error fetching color settings:', error);
-        return {
-          site_main_color_one: '',
-          site_main_color_two: '',
-          site_main_color_three: '',
-          heading_color: '',
-          light_color: '',
-          extra_light_color: ''
-        };
-      }
-    },
-  });
-}
+// For backward compatibility
+export const useAds = useListings;
+export const useAd = useListing;
+export const useRelatedAds = useRelatedListings;
+export const useCreateAd = useCreateListing;
+export const useUpdateAd = useUpdateListing;
+export const useDeleteAd = useDeleteListing;

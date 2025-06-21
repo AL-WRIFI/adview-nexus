@@ -154,10 +154,10 @@ export default function MessagesPage() {
     setSelectedUsers([]);
   };
 
-  const handleSearchUser = (query: string) => {
-    setSearchQuery(query);
+  const handleSearchUser = (search: string) => {
+    setSearchQuery(search);
     const filtered = mockUsers.filter((u) =>
-      u.name.toLowerCase().includes(query.toLowerCase())
+      u.name.toLowerCase().includes(search.toLowerCase())
     );
     setFilteredUsers(filtered);
   };

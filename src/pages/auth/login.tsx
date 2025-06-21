@@ -1,144 +1,206 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
-import { toast } from '@/hooks/use-toast';
+import { tokenStorage } from '@/context/auth-context';
+import { isAuthenticated } from '@/services/api';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 
-export default function Login() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  
-  const { login } = useAuth();
+export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { toast } = useToast();
+  const auth = useAuth();
   
-  const from = location.state?.from?.pathname || '/dashboard';
-
+  const [identifier, setIdentifier] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
+  const [isPending, setIsPending] = useState(false);
+  
+  // Get the redirect path from location state or default to dashboard
+  const from = location.state?.from || '/dashboard';
+  const previousFormData = location.state?.formData;
+  const autoSubmit = location.state?.autoSubmit;
+  
+  // Check if already authenticated
+  useEffect(() => {
+    if (auth.isAuthenticated) {
+      navigate(from, { replace: true });
+    }
+  }, [auth.isAuthenticated, navigate, from]);
+  
+  // Auto-submit after login if needed
+  useEffect(() => {
+    if (auth.isAuthenticated && previousFormData && autoSubmit) {
+      // This might be handled by the receiving component based on state
+      navigate(from, { 
+        replace: true, 
+        state: { formData: previousFormData, autoSubmit: true }
+      });
+    }
+  }, [auth.isAuthenticated, navigate, from, previousFormData, autoSubmit]);
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!email || !password) {
+    if (!identifier || !password) {
       toast({
-        variant: "destructive",
-        title: "خطأ في البيانات",
-        description: "يرجى إدخال البريد الإلكتروني وكلمة المرور",
+        variant: 'destructive',
+        title: 'خطأ في البيانات',
+        description: 'يرجى ملء جميع الحقول المطلوبة',
       });
       return;
     }
-
-    setIsLoading(true);
     
     try {
-      await login(email, password);
-      toast({
-        title: "تم تسجيل الدخول بنجاح",
-        description: "مرحباً بك مرة أخرى",
-      });
-      navigate(from, { replace: true });
+      setIsPending(true);
+      await auth.login(identifier, password);
+      
+      // The token will be saved by the login function
+      // But we need to set the rememberMe option
+      const token = tokenStorage.getToken();
+      if (token) {
+        tokenStorage.setToken(token, rememberMe);
+      }
+      
+      // After successful login
+      if (previousFormData) {
+        navigate(from, { 
+          replace: true, 
+          state: { formData: previousFormData, autoSubmit: true }
+        });
+      } else {
+        navigate(from, { replace: true });
+      }
     } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "خطأ في تسجيل الدخول",
-        description: error instanceof Error ? error.message : "حدث خطأ غير متوقع",
-      });
+      // Error is handled in the auth context
+      console.error('Login failed:', error);
     } finally {
-      setIsLoading(false);
+      setIsPending(false);
     }
   };
-
+  
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-neutral-900 px-4">
-      <Card className="w-full max-w-md bg-white dark:bg-neutral-800 border-gray-200 dark:border-neutral-700">
-        <CardHeader className="text-center space-y-2">
-          <CardTitle className="text-2xl font-bold text-gray-900 dark:text-white">
-            تسجيل الدخول
-          </CardTitle>
-          <CardDescription className="text-gray-600 dark:text-gray-300">
-            أدخل بياناتك للوصول إلى حسابك
-          </CardDescription>
-        </CardHeader>
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <div className="w-full max-w-md">
+        <div className="absolute top-4 right-4">
+          <ThemeToggle />
+        </div>
         
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-gray-700 dark:text-gray-200">
-                البريد الإلكتروني
-              </Label>
-              <div className="relative">
-                <Mail className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+        <Card className="shadow-lg">
+          <CardHeader className="text-center">
+            <CardTitle className="text-2xl">
+              تسجيل الدخول
+            </CardTitle>
+            <CardDescription>
+              أدخل بيانات حسابك للوصول إلى لوحة التحكم
+            </CardDescription>
+          </CardHeader>
+          <form onSubmit={handleSubmit}>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="identifier">
+                  البريد الإلكتروني أو رقم الهاتف أو اسم المستخدم
+                </Label>
                 <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="أدخل بريدك الإلكتروني"
-                  className="pr-10 bg-white dark:bg-neutral-700 border-gray-300 dark:border-neutral-600 text-gray-900 dark:text-white"
-                  disabled={isLoading}
+                  id="identifier"
+                  type="text"
+                  placeholder="أدخل البريد الإلكتروني أو رقم الهاتف أو اسم المستخدم"
+                  value={identifier}
+                  onChange={(e) => setIdentifier(e.target.value)}
                 />
               </div>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="password" className="text-gray-700 dark:text-gray-200">
-                كلمة المرور
-              </Label>
-              <div className="relative">
-                <Lock className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                <Input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="أدخل كلمة المرور"
-                  className="pr-10 pl-10 bg-white dark:bg-neutral-700 border-gray-300 dark:border-neutral-600 text-gray-900 dark:text-white"
-                  disabled={isLoading}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password">
+                    كلمة المرور
+                  </Label>
+                  <Button
+                    variant="link"
+                    className="p-0 h-auto text-xs"
+                    type="button"
+                    onClick={() => navigate('/auth/forgot-password')}
+                  >
+                    نسيت كلمة المرور؟
+                  </Button>
+                </div>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="أدخل كلمة المرور"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute left-0 top-0 h-full"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                </div>
               </div>
-            </div>
-            
-            <Button 
-              type="submit" 
-              className="w-full bg-brand hover:bg-brand/90 text-white dark:bg-brand dark:hover:bg-brand/90"
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <>
-                  <div className="mr-2 h-4 w-4 animate-spin border-2 border-transparent border-t-white rounded-full" />
-                  جاري تسجيل الدخول...
-                </>
-              ) : (
-                'تسجيل الدخول'
-              )}
-            </Button>
-          </form>
-          
-          <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600 dark:text-gray-300">
-              ليس لديك حساب؟{' '}
-              <Link 
-                to="/register" 
-                className="text-brand hover:text-brand/90 font-medium"
+
+              <div className="flex items-center space-x-2 space-x-reverse">
+                <input
+                  type="checkbox"
+                  id="remember"
+                  className="rounded"
+                  checked={rememberMe}
+                  onChange={() => setRememberMe(!rememberMe)}
+                />
+                <Label htmlFor="remember" className="text-sm">
+                  تذكرني
+                </Label>
+              </div>
+            </CardContent>
+            <CardFooter className="flex flex-col space-y-4">
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={isPending}
               >
-                إنشاء حساب جديد
-              </Link>
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+                {isPending ? (
+                  <>
+                    <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+                    جاري تسجيل الدخول...
+                  </>
+                ) : (
+                  'تسجيل الدخول'
+                )}
+              </Button>
+
+              <div className="text-center text-sm text-muted-foreground">
+                ليس لديك حساب؟{' '}
+                <Link to="/auth/register" className="text-primary hover:underline">
+                  إنشاء حساب جديد
+                </Link>
+              </div>
+
+              <div className="text-center">
+                <Button
+                  variant="link"
+                  className="p-0 h-auto text-sm text-muted-foreground"
+                  onClick={() => navigate('/')}
+                >
+                  العودة إلى الصفحة الرئيسية
+                </Button>
+              </div>
+            </CardFooter>
+          </form>
+        </Card>
+      </div>
     </div>
   );
 }

@@ -6,14 +6,8 @@ import {
   FileText, Headphones, Gift, Train, Sofa, MonitorSmartphone, Dog, Users, Building, 
   Paintbrush, Wallet, Glasses, ShoppingBasket
 } from 'lucide-react';
-import { Category } from '@/types';
-
-interface CategoryIconProps {
-  category: Category;
-  isSelected: boolean;
-  onClick: () => void;
-  size?: 'sm' | 'md' | 'lg';
-}
+import { CategoryIconProps } from './CategoryIconProps';
+import { cn } from '@/lib/utils';
 
 // Improved icon map
 const iconMap: Record<string, React.ComponentType<any>> = {
@@ -48,57 +42,48 @@ const iconMap: Record<string, React.ComponentType<any>> = {
   'ShoppingBasket': ShoppingBasket,
 };
 
-export function CategoryIcon({ category, isSelected, onClick, size = 'md' }: CategoryIconProps) {
-  const iconName = category.icon || 'Car';
+export function CategoryIcon({ category, icon, isSelected = false, onClick, size = 'lg', className }: CategoryIconProps) {
+  // Use icon prop if provided, otherwise use category icon, fallback to Car
+  const iconName = icon || category?.icon || 'Car';
   const Icon = iconMap[iconName] || Car;
+  const categoryName = category?.name || '';
   
-  // Different sizes based on requested size
-  const sizes = {
-    sm: {
-      container: "min-w-[80px]", // Made smaller for mobile
-      icon: "p-2 h-10 w-12",
-      iconSize: "h-5 w-5",
-      text: "text-xs mt-1"
-    },
-    md: {
-      container: "min-w-[85px]",
-      icon: "p-3 h-12 w-12",
-      iconSize: "h-6 w-6",
-      text: "text-sm mt-2"
-    },
-    lg: {
-      container: "min-w-[100px]",
-      icon: "p-4 h-16 w-16",
-      iconSize: "h-8 w-8",
-      text: "text-base mt-2"
-    }
+  // If only icon is provided without category, render just the icon
+  if (icon && !category) {
+    return <Icon className={className} />;
+  }
+  
+  const sizeClasses = {
+    sm: 'w-16 h-16 p-2',
+    lg: 'w-20 h-20 p-3'
   };
   
-  const currentSize = sizes[size];
-  // const currentSize = sizes[size];
+  const iconSizes = {
+    sm: 'h-6 w-6',
+    lg: 'h-8 w-8'
+  };
   
   return (
     <div
-      className={`category-icon dark:border-dark-border bg-white dark:bg-dark-background min-h-[80px] flex flex-col items-center justify-center ${currentSize.container} cursor-pointer transition-all`}
+      className={cn(
+        "flex flex-col items-center cursor-pointer transition-colors rounded-lg border",
+        sizeClasses[size as keyof typeof sizeClasses] || sizeClasses.lg,
+        isSelected 
+          ? "bg-brand/10 border-brand text-brand" 
+          : "bg-white dark:bg-dark-card border-border hover:bg-muted",
+        className
+      )}
       onClick={onClick}
     >
-      {/* <div className={`${currentSize.icon} flex items-center justify-center rounded-full mx-auto mb-1
-          ${isSelected 
-            ? 'bg-brand shadow-md' 
-            : 'bg-gray-100 dark:bg-dark-card'}`
-        }
-      >
-        <Icon className={`${currentSize.iconSize} ${isSelected ? 'text-white' : 'text-brand dark:text-brand'}`} />
-      </div> */}
-      <div className={`p-3 rounded-full mx-auto mb-2 transition-colors ${isSelected ? 'bg-brand text-white' : 'bg-brand-light'}`} style={{ width: '45px', height: '45px' }}>
-          <Icon className={`h-full w-full ${isSelected ? 'text-white' : 'text-brand'}`} />
-      </div>
-      <span 
-        className={`${currentSize.text} truncate block text-center w-full
-          ${isSelected ? 'text-brand font-bold' : 'text-gray-700 dark:text-gray-300'}`}
-      >
-        {category.name}
-      </span>
+      <Icon className={iconSizes[size as keyof typeof iconSizes] || iconSizes.lg} />
+      {categoryName && (
+        <span className={cn(
+          "text-center font-medium leading-tight mt-1",
+          size === 'sm' ? 'text-xs' : 'text-sm'
+        )}>
+          {categoryName}
+        </span>
+      )}
     </div>
   );
 }

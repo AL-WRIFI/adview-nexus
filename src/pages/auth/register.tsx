@@ -1,202 +1,192 @@
 
-import { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/context/auth-context';
-import { useStates, useCities } from '@/hooks/use-api';
-import { getAuthRedirectState } from '@/utils/auth';
+import { useRegister } from '@/hooks/use-api';
+import { useAllCities, useStates } from '@/hooks/use-api';
+import { isAuthenticated } from '@/services/api';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 
 export default function RegisterPage() {
-  const [formData, setFormData] = useState({
-    first_name: '',
-    last_name: '',
-    username: '',
-    email: '',
-    phone: '',
-    password: '',
-    password_confirmation: '',
-    state_id: '',
-    city_id: '',
-  });
-  const [isLoading, setIsLoading] = useState(false);
-  const [selectedStateId, setSelectedStateId] = useState<number | undefined>();
-
-  const { register } = useAuth();
-  const { toast } = useToast();
   const navigate = useNavigate();
-  const location = useLocation();
+  const { toast } = useToast();
+  const { data: states, isLoading: loadingStates } = useStates();
+  const { data: cities, isLoading: loadingCities } = useAllCities();
   
-  const { data: states = [] } = useStates();
-  const { data: cities = [] } = useCities(selectedStateId);
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleStateChange = (value: string) => {
-    const stateId = parseInt(value);
-    setSelectedStateId(stateId);
-    setFormData(prev => ({ 
-      ...prev, 
-      state_id: value,
-      city_id: '' // Reset city when state changes
-    }));
-  };
-
-  const handleCityChange = (value: string) => {
-    setFormData(prev => ({ ...prev, city_id: value }));
-  };
-
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [stateId, setStateId] = useState<number | null>(null);
+  const [cityId, setCityId] = useState<number | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [agreeTerms, setAgreeTerms] = useState(false);
+  
+  // Filter cities based on selected state
+  const filteredCities = stateId 
+    ? cities?.filter(city => city.state_id === stateId)
+    : [];
+  
+  // Check if already authenticated
+  useEffect(() => {
+    if (isAuthenticated()) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [navigate]);
+  
+  // Register mutation
+  const registerMutation = useRegister();
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (formData.password !== formData.password_confirmation) {
+    // Validate inputs
+    if (!firstName || !lastName || !email || !phone || !password || !confirmPassword || !stateId || !cityId) {
       toast({
-        title: 'خطأ',
-        description: 'كلمات المرور غير متطابقة',
         variant: 'destructive',
+        title: 'خطأ في البيانات',
+        description: 'يرجى ملء جميع الحقول المطلوبة',
       });
       return;
     }
-
-    if (!formData.state_id || !formData.city_id) {
+    
+    if (password !== confirmPassword) {
       toast({
-        title: 'خطأ',
-        description: 'يرجى اختيار الولاية والمدينة',
         variant: 'destructive',
+        title: 'كلمات المرور غير متطابقة',
+        description: 'يرجى التأكد من تطابق كلمات المرور',
       });
       return;
     }
-
-    setIsLoading(true);
-
+    
+    if (password.length < 8) {
+      toast({
+        variant: 'destructive',
+        title: 'كلمة المرور ضعيفة',
+        description: 'يجب أن تكون كلمة المرور 8 أحرف على الأقل',
+      });
+      return;
+    }
+    
+    if (!agreeTerms) {
+      toast({
+        variant: 'destructive',
+        title: 'الموافقة على الشروط',
+        description: 'يجب الموافقة على شروط الاستخدام وسياسة الخصوصية',
+      });
+      return;
+    }
+    
     try {
-      await register({
-        first_name: formData.first_name,
-        last_name: formData.last_name,
-        username: formData.username,
-        email: formData.email,
-        phone: formData.phone,
-        password: formData.password,
-        password_confirmation: formData.password_confirmation,
-        city_id: parseInt(formData.city_id),
-        state_id: parseInt(formData.state_id),
+      await registerMutation.mutateAsync({
+        first_name: firstName,
+        last_name: lastName,
+        email,
+        phone,
+        password,
+        password_confirmation: confirmPassword,
+        city_id: cityId,
+        state_id: stateId
       });
-
-      toast({
-        title: 'تم إنشاء الحساب بنجاح',
-        description: 'مرحباً بك في مكس سوريا',
-      });
-
-      const { from } = getAuthRedirectState(location.state);
-      navigate(from || '/');
-    } catch (error: any) {
-      toast({
-        title: 'خطأ في إنشاء الحساب',
-        description: error.message || 'حدث خطأ، يرجى المحاولة مرة أخرى',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
+      
+      // Redirect to dashboard
+      navigate('/dashboard', { replace: true });
+    } catch (error) {
+      // Error is handled in the mutation
     }
   };
-
+  
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center">إنشاء حساب جديد</CardTitle>
-          <CardDescription className="text-center">
-            أدخل بياناتك لإنشاء حساب جديد
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <div className="w-full max-w-md">
+        <div className="absolute top-4 right-4">
+          <ThemeToggle />
+        </div>
+        
+        <Card className="shadow-lg">
+          <CardHeader className="text-center">
+            <CardTitle className="text-2xl">إنشاء حساب جديد</CardTitle>
+            <CardDescription>
+              أدخل بياناتك لإنشاء حساب جديد
+            </CardDescription>
+          </CardHeader>
+          <form onSubmit={handleSubmit}>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="firstName">الاسم الأول</Label>
+                  <Input
+                    id="firstName"
+                    placeholder="الاسم الأول"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="lastName">الاسم الأخير</Label>
+                  <Input
+                    id="lastName"
+                    placeholder="الاسم الأخير"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                  />
+                </div>
+              </div>
+
               <div className="space-y-2">
-                <Label htmlFor="first_name">الاسم الأول</Label>
+                <Label htmlFor="email">البريد الإلكتروني</Label>
                 <Input
-                  id="first_name"
-                  name="first_name"
-                  type="text"
-                  required
-                  value={formData.first_name}
-                  onChange={handleInputChange}
-                  placeholder="أدخل اسمك الأول"
+                  id="email"
+                  type="email"
+                  placeholder="أدخل البريد الإلكتروني"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                 />
               </div>
+
               <div className="space-y-2">
-                <Label htmlFor="last_name">الاسم الأخير</Label>
+                <Label htmlFor="phone">رقم الهاتف</Label>
                 <Input
-                  id="last_name"
-                  name="last_name"
-                  type="text"
-                  required
-                  value={formData.last_name}
-                  onChange={handleInputChange}
-                  placeholder="أدخل اسمك الأخير"
+                  id="phone"
+                  placeholder="أدخل رقم الهاتف"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
                 />
               </div>
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="username">اسم المستخدم</Label>
-              <Input
-                id="username"
-                name="username"
-                type="text"
-                required
-                value={formData.username}
-                onChange={handleInputChange}
-                placeholder="أدخل اسم المستخدم"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="email">البريد الإلكتروني</Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                required
-                value={formData.email}
-                onChange={handleInputChange}
-                placeholder="أدخل بريدك الإلكتروني"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="phone">رقم الهاتف</Label>
-              <Input
-                id="phone"
-                name="phone"
-                type="tel"
-                required
-                value={formData.phone}
-                onChange={handleInputChange}
-                placeholder="أدخل رقم هاتفك"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="state">الولاية</Label>
-                <Select value={formData.state_id} onValueChange={handleStateChange}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="اختر الولاية" />
+                <Label htmlFor="state">المنطقة / المحافظة</Label>
+                <Select 
+                  value={stateId?.toString()} 
+                  onValueChange={(value) => {
+                    setStateId(parseInt(value, 10));
+                    setCityId(null);
+                  }}
+                >
+                  <SelectTrigger id="state">
+                    <SelectValue placeholder="اختر المنطقة / المحافظة" />
                   </SelectTrigger>
                   <SelectContent>
-                    {states.map((state) => (
-                      <SelectItem key={state.id} value={state.id.toString()}>
-                        {state.name}
-                      </SelectItem>
-                    ))}
+                    {loadingStates ? (
+                      <div className="p-2 text-center text-sm text-muted-foreground">
+                        جاري التحميل...
+                      </div>
+                    ) : (
+                      states?.map((state) => (
+                        <SelectItem key={state.id} value={state.id.toString()}>
+                          {state.name}
+                        </SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -204,69 +194,137 @@ export default function RegisterPage() {
               <div className="space-y-2">
                 <Label htmlFor="city">المدينة</Label>
                 <Select 
-                  value={formData.city_id} 
-                  onValueChange={handleCityChange}
-                  disabled={!selectedStateId}
+                  value={cityId?.toString()} 
+                  onValueChange={(value) => setCityId(parseInt(value, 10))}
+                  disabled={!stateId}
                 >
-                  <SelectTrigger>
-                    <SelectValue placeholder="اختر المدينة" />
+                  <SelectTrigger id="city">
+                    <SelectValue placeholder={stateId ? "اختر المدينة" : "اختر المنطقة أولاً"} />
                   </SelectTrigger>
                   <SelectContent>
-                    {cities.map((city) => (
-                      <SelectItem key={city.id} value={city.id.toString()}>
-                        {city.name}
-                      </SelectItem>
-                    ))}
+                    {!stateId ? (
+                      <div className="p-2 text-center text-sm text-muted-foreground">
+                        الرجاء اختيار المنطقة أولاً
+                      </div>
+                    ) : loadingCities ? (
+                      <div className="p-2 text-center text-sm text-muted-foreground">
+                        جاري التحميل...
+                      </div>
+                    ) : filteredCities?.length === 0 ? (
+                      <div className="p-2 text-center text-sm text-muted-foreground">
+                        لا توجد مدن متوفرة
+                      </div>
+                    ) : (
+                      filteredCities?.map((city) => (
+                        <SelectItem key={city.id} value={city.id.toString()}>
+                          {city.name}
+                        </SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
               </div>
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="password">كلمة المرور</Label>
-              <Input
-                id="password"
-                name="password"
-                type="password"
-                required
-                value={formData.password}
-                onChange={handleInputChange}
-                placeholder="أدخل كلمة المرور"
-              />
-            </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">كلمة المرور</Label>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="أدخل كلمة المرور (8 أحرف على الأقل)"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute left-0 top-0 h-full"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="password_confirmation">تأكيد كلمة المرور</Label>
-              <Input
-                id="password_confirmation"
-                name="password_confirmation"
-                type="password"
-                required
-                value={formData.password_confirmation}
-                onChange={handleInputChange}
-                placeholder="أعد إدخال كلمة المرور"
-              />
-            </div>
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">تأكيد كلمة المرور</Label>
+                <div className="relative">
+                  <Input
+                    id="confirmPassword"
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    placeholder="أعد إدخال كلمة المرور"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute left-0 top-0 h-full"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  >
+                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </div>
 
-            <Button 
-              type="submit" 
-              className="w-full" 
-              disabled={isLoading}
-            >
-              {isLoading ? 'جاري إنشاء الحساب...' : 'إنشاء حساب'}
-            </Button>
+              <div className="flex items-center space-x-2 space-x-reverse">
+                <input
+                  type="checkbox"
+                  id="terms"
+                  className="rounded"
+                  checked={agreeTerms}
+                  onChange={() => setAgreeTerms(!agreeTerms)}
+                />
+                <Label htmlFor="terms" className="text-sm">
+                  أوافق على{' '}
+                  <Link to="/terms" className="text-primary hover:underline">
+                    شروط الاستخدام
+                  </Link>{' '}
+                  و{' '}
+                  <Link to="/privacy" className="text-primary hover:underline">
+                    سياسة الخصوصية
+                  </Link>
+                </Label>
+              </div>
+            </CardContent>
+            <CardFooter className="flex flex-col space-y-4">
+              <Button 
+                type="submit" 
+                className="w-full"
+                disabled={registerMutation.isPending}
+              >
+                {registerMutation.isPending ? (
+                  <>
+                    <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+                    جاري إنشاء الحساب...
+                  </>
+                ) : (
+                  'إنشاء حساب'
+                )}
+              </Button>
+
+              <div className="text-center text-sm text-muted-foreground">
+                لديك حساب بالفعل؟{' '}
+                <Link to="/auth/login" className="text-primary hover:underline">
+                  تسجيل الدخول
+                </Link>
+              </div>
+
+              <div className="text-center">
+                <Button 
+                  variant="link" 
+                  className="p-0 h-auto text-sm text-muted-foreground"
+                  onClick={() => navigate('/')}
+                >
+                  العودة إلى الصفحة الرئيسية
+                </Button>
+              </div>
+            </CardFooter>
           </form>
-
-          <div className="mt-6 text-center">
-            <span className="text-sm text-gray-600 dark:text-gray-400">
-              لديك حساب بالفعل؟{' '}
-              <Link to="/auth/login" className="text-primary hover:underline">
-                تسجيل الدخول
-              </Link>
-            </span>
-          </div>
-        </CardContent>
-      </Card>
+        </Card>
+      </div>
     </div>
   );
 }

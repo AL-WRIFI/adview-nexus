@@ -8,7 +8,8 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Upload, CreditCard, Banknote, Wallet } from 'lucide-react';
-import { usePromotionPackages, usePromoteWithBankTransfer, usePromoteWithStripe, usePromoteWithWallet, PromotionPackage } from '@/hooks/use-promotions';
+import { usePromotionPackages, usePromoteWithBankTransfer, usePromoteWithStripe, usePromoteWithWallet } from '@/hooks/use-promotions';
+import { PromotionPackage } from '@/types/promotions';
 import { Listing } from '@/types';
 import { useAuth } from '@/context/auth-context';
 
@@ -77,6 +78,37 @@ export function PromoteListingDialog({ open, onOpenChange, listing }: PromoteLis
   const walletBalance = user?.wallet_balance || 0;
   const canAffordWithWallet = selectedPackageData ? (walletBalance >= selectedPackageData.price * 100) : false;
 
+  // Helper function to get image URL with proper type handling
+  const getImageUrl = (listing: Listing): string => {
+    if (listing.main_image_url) {
+      if (typeof listing.main_image_url === 'string') {
+        return listing.main_image_url;
+      }
+      if (typeof listing.main_image_url === 'object' && listing.main_image_url && 'image_url' in listing.main_image_url) {
+        return (listing.main_image_url as any).image_url;
+      }
+    }
+    
+    if (typeof listing.image === 'string' && listing.image) {
+      return listing.image;
+    }
+    if (listing.image && typeof listing.image === 'object' && 'image_url' in listing.image) {
+      return (listing.image as any).image_url;
+    }
+    
+    if (listing.images && Array.isArray(listing.images) && listing.images.length > 0) {
+      const firstImage = listing.images[0];
+      if (typeof firstImage === 'string') {
+        return firstImage;
+      }
+      if (firstImage && typeof firstImage === 'object' && 'url' in firstImage) {
+        return (firstImage as any).url;
+      }
+    }
+    
+    return 'https://placehold.co/200x200';
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -93,13 +125,11 @@ export function PromoteListingDialog({ open, onOpenChange, listing }: PromoteLis
               </CardHeader>
               <CardContent>
                 <div className="flex items-center gap-3">
-                  {listing.main_image_url && (
-                    <img 
-                      src={listing.main_image_url} 
-                      alt={listing.title}
-                      className="w-12 h-12 object-cover rounded"
-                    />
-                  )}
+                  <img 
+                    src={getImageUrl(listing)} 
+                    alt={listing.title}
+                    className="w-12 h-12 object-cover rounded"
+                  />
                   <div>
                     <h3 className="font-semibold">{listing.title}</h3>
                     <p className="text-sm text-muted-foreground">{listing.price} ريال</p>

@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from 'react';
 import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Maximize, ArrowLeft, ArrowRight } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -113,13 +114,12 @@ export function AdImageGallery({ images, title }: AdImageGalleryProps) {
       <div className="relative bg-neutral-100 dark:bg-neutral-800">
         <Dialog>
           <DialogTrigger asChild>
-            <div className="cursor-zoom-in relative h-64 md:h-96 overflow-hidden">
+            <div className="cursor-zoom-in relative h-64 md:h-96">
               <img 
                 ref={imageRef}
                 src={images[currentImageIndex]} 
                 alt={title} 
                 className="w-full h-full object-contain"
-                style={{ maxWidth: '100%', maxHeight: '100%' }}
               />
               
               <div className="absolute top-2 right-2 bg-black/30 text-white p-2 rounded-full">
@@ -128,7 +128,11 @@ export function AdImageGallery({ images, title }: AdImageGalleryProps) {
             </div>
           </DialogTrigger>
           
-          <DialogContent className="max-w-5xl w-[90vw] h-[90vh] p-0 bg-black/95">
+          <DialogContent className="max-w-5xl w-[90vw] h-[90vh] p-0 bg-black/95"
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseUp}
+            onTouchEnd={handleTouchEnd}
+          >
             <div 
               className="relative w-full h-full flex items-center justify-center p-4"
               onMouseMove={handleMouseMove}

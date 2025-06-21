@@ -7,6 +7,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from './context/auth-context';
 import { ProtectedRoute } from './components/auth/protected-route';
 import { ThemeProvider } from './context/theme-provider';
+import { useScrollToTop } from './hooks/use-scroll-to-top';
 import '../public/registerServiceWorker'; // Register service worker for PWA
 
 // Pages
@@ -15,6 +16,7 @@ import Home from './pages/Home';
 import NotFound from './pages/NotFound';
 import AdDetails from './pages/AdDetails';
 import CategoryPage from './pages/category';
+import CategoriesPage from './pages/categories';
 import AddAd from './pages/AddAd';
 import EditAd from './pages/EditAd';
 import SearchPage from './pages/search';
@@ -30,6 +32,7 @@ import FavoritesPage from './pages/favorites';
 // Auth pages
 import LoginPage from './pages/auth/login';
 import RegisterPage from './pages/auth/register';
+import NewSearchPage from './pages/search/NewSearchPage';
 
 // Create a client with optimized cache config
 const queryClient = new QueryClient({
@@ -42,6 +45,77 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+function AppContent() {
+  useScrollToTop();
+
+  return (
+    <Routes>
+      <Route path="/" element={<Home />} />
+      <Route path="/index" element={<Index />} />
+      <Route path="/ad/:id" element={<AdDetails />} />
+      <Route path="/category/:categoryId" element={<CategoryPage />} />
+      <Route path="/categories" element={<CategoriesPage />} />
+      <Route path="/add-ad" element={<AddAd />} />
+      <Route path="/edit-ad/:listingId" element={
+        <ProtectedRoute>
+          <EditAd />
+        </ProtectedRoute>
+      } />
+      <Route path="/search" element={<NewSearchPage/>} />
+      <Route path="/search/:query" element={<NewSearchPage />} />
+      
+      {/* Auth Routes */}
+      <Route path="/auth/login" element={<LoginPage />} />
+      <Route path="/auth/register" element={<RegisterPage />} />
+      
+      {/* Protected Routes */}
+      <Route path="/dashboard" element={
+        <ProtectedRoute>
+          <UserDashboard />
+        </ProtectedRoute>
+      } />
+      <Route path="/dashboard/:tab" element={
+        <ProtectedRoute>
+          <DashboardPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/profile" element={
+        <ProtectedRoute>
+          <ProfilePage />
+        </ProtectedRoute>
+      } />
+      <Route path="/statistics" element={
+        <ProtectedRoute>
+          <StatisticsPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/settings" element={
+        <ProtectedRoute>
+          <SettingsPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/messages" element={
+        <ProtectedRoute>
+          <MessagesPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/notifications" element={
+        <ProtectedRoute>
+          <NotificationsPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/favorites" element={
+        <ProtectedRoute>
+          <FavoritesPage />
+        </ProtectedRoute>
+      } />
+      
+      {/* 404 Not Found */}
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  );
+}
 
 function App() {
   // Set the page title and meta description
@@ -91,68 +165,7 @@ function App() {
         <TooltipProvider>
           <AuthProvider>
             <BrowserRouter>
-              <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/index" element={<Index />} />
-                <Route path="/ad/:id" element={<AdDetails />} />
-                <Route path="/category/:categoryId" element={<CategoryPage />} />
-                <Route path="/add-ad" element={<AddAd />} />
-                <Route path="/edit-ad/:listingId" element={
-                  <ProtectedRoute>
-                    <EditAd />
-                  </ProtectedRoute>
-                } />
-                <Route path="/search" element={<SearchPage />} />
-                
-                {/* Auth Routes */}
-                <Route path="/auth/login" element={<LoginPage />} />
-                <Route path="/auth/register" element={<RegisterPage />} />
-                
-                {/* Protected Routes */}
-                <Route path="/dashboard" element={
-                  <ProtectedRoute>
-                    <UserDashboard />
-                  </ProtectedRoute>
-                } />
-                <Route path="/dashboard/:tab" element={
-                  <ProtectedRoute>
-                    <DashboardPage />
-                  </ProtectedRoute>
-                } />
-                <Route path="/profile" element={
-                  <ProtectedRoute>
-                    <ProfilePage />
-                  </ProtectedRoute>
-                } />
-                <Route path="/statistics" element={
-                  <ProtectedRoute>
-                    <StatisticsPage />
-                  </ProtectedRoute>
-                } />
-                <Route path="/settings" element={
-                  <ProtectedRoute>
-                    <SettingsPage />
-                  </ProtectedRoute>
-                } />
-                <Route path="/messages" element={
-                  <ProtectedRoute>
-                    <MessagesPage />
-                  </ProtectedRoute>
-                } />
-                <Route path="/notifications" element={
-                  <ProtectedRoute>
-                    <NotificationsPage />
-                  </ProtectedRoute>
-                } />
-                <Route path="/favorites" element={
-                  <ProtectedRoute>
-                    <FavoritesPage />
-                  </ProtectedRoute>
-                } />
-                
-                {/* 404 Not Found */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
+              <AppContent />
               <Toaster />
             </BrowserRouter>
           </AuthProvider>

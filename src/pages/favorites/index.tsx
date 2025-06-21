@@ -32,9 +32,9 @@ export default function FavoritesPage() {
   const sortedFavorites = [...currentFavorites].sort((a, b) => {
     switch (sortBy) {
       case 'price-low':
-        return a.listing.price - b.listing.price;
+        return a.price - b.price;
       case 'price-high':
-        return b.listing.price - a.listing.price;
+        return b.price - a.price;
       case 'oldest':
         return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
       case 'recent':
@@ -123,8 +123,9 @@ export default function FavoritesPage() {
                       {favorites.map((favorite) => (
                         <AdCard 
                           key={favorite.id} 
-                          ad={favorite.listing} 
+                          ad={favorite} 
                           layout={layout}
+                          isFavorite={true}
                         />
                       ))}
                     </div>

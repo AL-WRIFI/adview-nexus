@@ -1,248 +1,287 @@
 
-import { useParams, useSearchParams } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
-import { MobileNav } from '@/components/layout/mobile-nav';
+import { AdFilters } from '@/components/filters/ad-filters';
 import { AdCard } from '@/components/ads/ad-card';
-import { Pagination } from '@/components/custom/pagination';
 import { Button } from '@/components/ui/button';
-import { Filter, Grid, List } from 'lucide-react';
-import { useListings, useCategories } from '@/hooks/use-api';
+import { Loader2, Grid2X2, List } from 'lucide-react';
+import { MobileNav } from '@/components/layout/mobile-nav';
+import { useListings, useCategory, useCategories } from '@/hooks/use-api';
 import { SearchFilters } from '@/types';
-import { cn } from '@/lib/utils';
+import { useAuth } from '@/context/auth-context';
+import { CategoryBar } from '@/components/layout/category/CategoryBar';
+import { Pagination } from '@/components/custom/pagination';
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select';
 
 export default function CategoryPage() {
-  const { categoryId } = useParams();
+  const { categoryId } = useParams<{ categoryId: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const navigate = useNavigate();
   
-  const { data: categories = [] } = useCategories();
+  const numericCategoryId = categoryId ? parseInt(categoryId, 10) : 0;
   
-  // Build filters from URL params
-  const filters: SearchFilters = {
-    category_id: categoryId ? parseInt(categoryId) : undefined,
-    sub_category_id: searchParams.get('sub_category_id') ? parseInt(searchParams.get('sub_category_id')!) : undefined,
-    child_category_id: searchParams.get('child_category_id') ? parseInt(searchParams.get('child_category_id')!) : undefined,
-    brand_id: searchParams.get('brand_id') ? parseInt(searchParams.get('brand_id')!) : undefined,
-    state_id: searchParams.get('state_id') ? parseInt(searchParams.get('state_id')!) : undefined,
-    city_id: searchParams.get('city_id') ? parseInt(searchParams.get('city_id')!) : undefined,
-    min_price: searchParams.get('min_price') ? parseFloat(searchParams.get('min_price')!) : undefined,
-    max_price: searchParams.get('max_price') ? parseFloat(searchParams.get('max_price')!) : undefined,
-    product_condition: searchParams.get('product_condition') as 'new' | 'used' | undefined,
-    listing_type: searchParams.get('listing_type') as 'sell' | 'rent' | 'job' | 'service' | undefined,
-    sort_by: searchParams.get('sort_by') as 'newest' | 'oldest' | 'price_asc' | 'price_desc' | undefined,
-    page: searchParams.get('page') ? parseInt(searchParams.get('page')!) : 1,
-    per_page: 12,
-  };
-
-  const { data: listingsData, isLoading } = useListings(filters);
-  const listings = listingsData?.data || [];
-  const pagination = listingsData?.meta;
-
-  const currentCategory = categories.find(cat => cat.id === parseInt(categoryId || ''));
-
-  const handleFilterChange = (newFilters: Partial<SearchFilters>) => {
-    const updatedParams = new URLSearchParams(searchParams);
-    
-    Object.entries(newFilters).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== '') {
-        updatedParams.set(key, value.toString());
-      } else {
-        updatedParams.delete(key);
-      }
-    });
-    
-    // Reset to page 1 when filters change
-    if (Object.keys(newFilters).some(key => key !== 'page')) {
-      updatedParams.set('page', '1');
+  const [filters, setFilters] = useState<SearchFilters>({
+    category_id: numericCategoryId,
+    sub_category_id: searchParams.get('subcategory') ? parseInt(searchParams.get('subcategory')!, 10) : undefined,
+    child_category_id: searchParams.get('childcategory') ? parseInt(searchParams.get('childcategory')!, 10) : undefined,
+  });
+  const [adLayout, setAdLayout] = useState<'grid' | 'list'>('grid');
+  const [page, setPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(12);
+  const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'price_asc' | 'price_desc' | 'popular' | 'created_at' | 'updated_at'>('created_at');
+  const { isAuthenticated } = useAuth();
+  
+  // Fetch data
+  const { data: category, isLoading: isCategoryLoading } = useCategory(numericCategoryId);
+  const { data: categoriesData } = useCategories();
+  const { data: listingsResponse, isLoading: isLoadingListings, error } = useListings({
+    category_id: numericCategoryId,
+    page,
+    per_page: itemsPerPage,
+    sort: sortBy,
+    ...filters,
+  });
+  
+  useEffect(() => {
+    // Update filters when URL params change
+    if (categoryId || searchParams.get('subcategory') || searchParams.get('childcategory')) {
+      setFilters(prev => ({
+        ...prev,
+        category_id: numericCategoryId,
+        sub_category_id: searchParams.get('subcategory') ? parseInt(searchParams.get('subcategory')!, 10) : undefined,
+        child_category_id: searchParams.get('childcategory') ? parseInt(searchParams.get('childcategory')!, 10) : undefined,
+      }));
+      setPage(1); // Reset to first page on filter changes
     }
-    
-    setSearchParams(updatedParams);
+  }, [categoryId, searchParams.get('subcategory'), searchParams.get('childcategory')]);
+  
+  const handleFilterChange = (newFilters: SearchFilters) => {
+    setFilters(prev => ({
+      ...prev,
+      ...newFilters,
+      category_id: numericCategoryId,
+      sub_category_id: searchParams.get('subcategory') ? parseInt(searchParams.get('subcategory')!, 10) : undefined,
+      child_category_id: searchParams.get('childcategory') ? parseInt(searchParams.get('childcategory')!, 10) : undefined,
+    }));
+    setPage(1); // Reset to first page when filters change
   };
-
-  const handlePageChange = (page: number) => {
-    handleFilterChange({ page });
-  };
-
-  const handleSortChange = (sortBy: string) => {
-    handleFilterChange({ sort_by: sortBy as any });
-  };
-
+  
+  // Get the listings from the response, ensure it's an array even if undefined
+  const listings = listingsResponse?.data?.data || [];
+  const totalPages = listingsResponse?.data?.last_page || 1;
+  const totalResults = listingsResponse?.data?.total || 0;
+  
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen flex flex-col">
       <Header />
       
-      <main className="container mx-auto px-4 py-6">
-        {/* Page Header */}
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-            {currentCategory?.name || 'التصنيفات'}
-          </h1>
-          <p className="text-gray-600 dark:text-gray-300">
-            {listings.length} إعلان متاح
-          </p>
-        </div>
-
-        <div className="flex gap-6">
-          {/* Desktop Filters Sidebar - Simplified for now */}
-          <div className="hidden lg:block w-80 flex-shrink-0">
-            <div className="sticky top-6">
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-                <h3 className="text-lg font-semibold mb-4">الفلاتر</h3>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-2">حالة المنتج</label>
-                    <select
-                      value={filters.product_condition || ''}
-                      onChange={(e) => handleFilterChange({ product_condition: e.target.value as 'new' | 'used' || undefined })}
-                      className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    >
-                      <option value="">الكل</option>
-                      <option value="new">جديد</option>
-                      <option value="used">مستعمل</option>
-                    </select>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium mb-2">نوع الإعلان</label>
-                    <select
-                      value={filters.listing_type || ''}
-                      onChange={(e) => handleFilterChange({ listing_type: e.target.value as 'sell' | 'rent' | 'job' | 'service' || undefined })}
-                      className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    >
-                      <option value="">الكل</option>
-                      <option value="sell">للبيع</option>
-                      <option value="rent">للإيجار</option>
-                      <option value="job">وظائف</option>
-                      <option value="service">خدمات</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-2">السعر</label>
-                    <div className="grid grid-cols-2 gap-2">
-                      <input
-                        type="number"
-                        placeholder="الحد الأدنى"
-                        value={filters.min_price || ''}
-                        onChange={(e) => handleFilterChange({ min_price: e.target.value ? parseFloat(e.target.value) : undefined })}
-                        className="p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                      />
-                      <input
-                        type="number"
-                        placeholder="الحد الأعلى"
-                        value={filters.max_price || ''}
-                        onChange={(e) => handleFilterChange({ max_price: e.target.value ? parseFloat(e.target.value) : undefined })}
-                        className="p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
+      <CategoryBar />
+      
+      <div className="container px-4 mx-auto py-6">
+        {/* Results Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h2 className="text-xl font-bold">
+              {category?.name || 'إعلانات التصنيف'}
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              {totalResults} إعلان متاح
+            </p>
+          </div>
+          
+          {/* Sort and layout controls */}
+          <div className="flex items-center gap-3">
+            <Select
+              value={sortBy}
+              onValueChange={(value: 'newest' | 'oldest' | 'price_asc' | 'price_desc' | 'popular' | 'created_at' | 'updated_at') => {
+                setSortBy(value);
+                setPage(1);
+              }}
+            >
+              <SelectTrigger className="w-16 h-8">
+                <SelectValue placeholder="الترتيب" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="created_at">الترتيب الجديد</SelectItem>
+                <SelectItem value="updated_at">الترتيب القديم</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            <Select
+              value={itemsPerPage.toString()}
+              onValueChange={(value) => {
+                setItemsPerPage(parseInt(value, 10));
+                setPage(1);
+              }}
+            >
+              <SelectTrigger className="w-16 h-8">
+                <SelectValue placeholder="12" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="12">12</SelectItem>
+                <SelectItem value="24">24</SelectItem>
+                <SelectItem value="36">36</SelectItem>
+                <SelectItem value="48">48</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            <div className="flex border rounded-sm overflow-hidden">
+              <Button 
+                variant={adLayout === 'grid' ? "default" : "ghost"} 
+                size="icon"
+                onClick={() => setAdLayout('grid')}
+                className="h-8 w-8 rounded-none"
+                aria-label="Grid view"
+                title="عرض شبكي"
+              >
+                <Grid2X2 className="h-4 w-4" />
+              </Button>
+              <Button 
+                variant={adLayout === 'list' ? "default" : "ghost"}
+                size="icon" 
+                onClick={() => setAdLayout('list')}
+                className="h-8 w-8 rounded-none"
+                aria-label="List view"
+                title="عرض قائمة"
+              >
+                <List className="h-4 w-4" />
+              </Button>
             </div>
           </div>
-
-          {/* Main Content */}
-          <div className="flex-1">
-            {/* Controls Bar */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 mb-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="lg:hidden"
-                    onClick={() => setMobileFiltersOpen(true)}
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          {/* Sidebar with filters */}
+          <div className="col-span-1 hidden md:block">
+            <AdFilters 
+              layout="sidebar" 
+              onLayoutChange={setAdLayout} 
+              currentLayout={adLayout}
+              onFilterChange={handleFilterChange}
+              selectedCategory={category}
+            />
+          </div>
+          
+          {/* Main content */}
+          <div className="col-span-1 md:col-span-3">
+            {/* Mobile filters */}
+            <div className="md:hidden mb-6">
+              <AdFilters 
+                layout="horizontal" 
+                onLayoutChange={setAdLayout} 
+                currentLayout={adLayout} 
+                onFilterChange={handleFilterChange}
+                selectedCategory={category}
+              />
+            </div>
+            
+            {/* Compact view toggle buttons and per page select */}
+            <div className="flex flex-col sm:flex-row justify-between mb-4 gap-3">
+              <p className="text-muted-foreground">
+                {Array.isArray(listings) && listings.length > 0 ? `${listings.length} نتيجة` : '0 نتيجة'} 
+              </p>
+              
+              <div className="flex items-center gap-3">
+                <Select
+                  value={itemsPerPage.toString()}
+                  onValueChange={(value) => {
+                    setItemsPerPage(parseInt(value, 10));
+                    setPage(1);
+                  }}
+                >
+                  <SelectTrigger className="w-16 h-8">
+                    <SelectValue placeholder="12" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="12">12</SelectItem>
+                    <SelectItem value="24">24</SelectItem>
+                    <SelectItem value="36">36</SelectItem>
+                    <SelectItem value="48">48</SelectItem>
+                  </SelectContent>
+                </Select>
+                
+                <div className="flex border rounded-sm overflow-hidden">
+                  <Button 
+                    variant={adLayout === 'grid' ? "default" : "ghost"} 
+                    size="icon"
+                    onClick={() => setAdLayout('grid')}
+                    className="h-8 w-8 rounded-none"
+                    aria-label="Grid view"
+                    title="عرض شبكي"
                   >
-                    <Filter className="h-4 w-4 mr-2" />
-                    الفلاتر
+                    <Grid2X2 className="h-4 w-4" />
                   </Button>
-                  
-                  <div className="hidden sm:flex items-center gap-2">
-                    <Button
-                      variant={viewMode === 'grid' ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => setViewMode('grid')}
-                    >
-                      <Grid className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant={viewMode === 'list' ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => setViewMode('list')}
-                    >
-                      <List className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-4">
-                  <select
-                    value={filters.sort_by || 'newest'}
-                    onChange={(e) => handleSortChange(e.target.value)}
-                    className="text-sm border border-gray-300 dark:border-gray-600 rounded-md px-3 py-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  <Button 
+                    variant={adLayout === 'list' ? "default" : "ghost"}
+                    size="icon" 
+                    onClick={() => setAdLayout('list')}
+                    className="h-8 w-8 rounded-none"
+                    aria-label="List view"
+                    title="عرض قائمة"
                   >
-                    <option value="newest">الأحدث</option>
-                    <option value="oldest">الأقدم</option>
-                    <option value="price_asc">السعر: من الأقل للأعلى</option>
-                    <option value="price_desc">السعر: من الأعلى للأقل</option>
-                  </select>
+                    <List className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
             </div>
-
-            {/* Listings Grid */}
-            {isLoading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {[...Array(6)].map((_, i) => (
-                  <div key={i} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 animate-pulse">
-                    <div className="w-full h-48 bg-gray-200 dark:bg-gray-700 rounded-lg mb-4" />
-                    <div className="space-y-2">
-                      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded" />
-                      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-2/3" />
-                    </div>
-                  </div>
-                ))}
+            
+            {/* Loading state */}
+            {isLoadingListings && (
+              <div className="flex justify-center items-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-brand" />
               </div>
-            ) : listings.length > 0 ? (
+            )}
+            
+            {/* Error state */}
+            {error && !isLoadingListings && (
+              <div className="text-center py-12 bg-gray-50 dark:bg-dark-surface">
+                <p className="text-red-500 mb-4">حدث خطأ أثناء تحميل الإعلانات</p>
+                <Button onClick={() => window.location.reload()}>إعادة المحاولة</Button>
+              </div>
+            )}
+            
+            {/* Content when data is loaded */}
+            {!isLoadingListings && !error && (
               <>
-                <div className={cn(
-                  viewMode === 'grid' 
-                    ? "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"
-                    : "space-y-4"
-                )}>
-                  {listings.map((listing) => (
-                    <AdCard 
-                      key={listing.id}
-                      ad={listing}
-                    />
-                  ))}
-                </div>
-
-                {/* Pagination */}
-                {pagination && pagination.last_page > 1 && (
-                  <div className="mt-8 flex justify-center">
-                    <Pagination
-                      currentPage={pagination.current_page}
-                      totalPages={pagination.last_page}
-                      onPageChange={handlePageChange}
-                    />
+                {/* Listings grid */}
+                {Array.isArray(listings) && listings.length > 0 ? (
+                  <div className={`grid gap-4 ${
+                    adLayout === 'grid' 
+                      ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3' 
+                      : 'grid-cols-1'
+                  }`}>
+                    {listings.map((listing) => (
+                      <AdCard 
+                        key={listing.id} 
+                        ad={listing} 
+                        layout={adLayout}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12 bg-gray-50 dark:bg-dark-surface">
+                    <p className="text-muted-foreground mb-4">
+                      لا توجد إعلانات متطابقة مع البحث في هذا التصنيف
+                    </p>
                   </div>
                 )}
+                
+                {/* Pagination */}
+                <div className="mt-6">
+                  <Pagination 
+                    currentPage={page} 
+                    totalPages={totalPages}
+                    onPageChange={setPage}
+                  />
+                </div>
               </>
-            ) : (
-              <div className="text-center py-12">
-                <p className="text-gray-500 dark:text-gray-400 text-lg">
-                  لا توجد إعلانات في هذا التصنيف
-                </p>
-              </div>
             )}
           </div>
         </div>
-      </main>
-
+      </div>
+      
       <Footer />
       <MobileNav />
     </div>

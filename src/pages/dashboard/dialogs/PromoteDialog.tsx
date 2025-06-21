@@ -1,6 +1,8 @@
 
 import React, { useState } from 'react';
 import { usePromotionPackages, usePromoteWithBankTransfer, usePromoteWithStripe } from '@/hooks/use-promotions';
+import { usePromoteListing } from '@/hooks/use-promotions';
+
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -137,8 +139,8 @@ export function PromoteDialog({ open, onOpenChange, adId }: PromoteDialogProps) 
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+    <Dialog open={open} onOpenChange={onOpenChange} >
+      <DialogContent className="w-[95%] rounded-lg sm:max-w-[600px] max-h-[90vh] overflow-y-auto bg-neutral-50 dark:bg-neutral-800">
         <DialogHeader>
           <DialogTitle>ترقية الإعلان</DialogTitle>
           <DialogDescription>

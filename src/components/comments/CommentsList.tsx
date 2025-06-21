@@ -14,24 +14,26 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from '@/context/auth-context';
-import { 
-  useAddComment, 
-  useAddReply, 
-  useDeleteComment, 
-  useEditComment, 
-  useDeleteReply, 
-  useEditReply 
-} from '@/hooks/use-api';
 
 interface CommentsListProps {
   comments: Comment[];
-  listingId: number;
+  onAddComment: (text: string) => void;
+  onAddReply: (commentId: number, text: string) => void;
+  onDeleteComment: (commentId: number) => void;
+  onEditComment: (commentId: number, text: string) => void;
+  onDeleteReply: (commentId: number, replyId: number) => void;
+  onEditReply: (commentId: number, replyId: number, text: string) => void;
   isLoading?: boolean;
 }
 
 export function CommentsList({
   comments,
-  listingId,
+  onAddComment,
+  onAddReply,
+  onDeleteComment,
+  onEditComment,
+  onDeleteReply,
+  onEditReply,
   isLoading = false
 }: CommentsListProps) {
   const [commentText, setCommentText] = useState('');
@@ -43,33 +45,19 @@ export function CommentsList({
   
   const { isAuthenticated, user } = useAuth();
 
-  // API hooks - now properly configured
-  const addCommentMutation = useAddComment();
-  const addReplyMutation = useAddReply();
-  const deleteCommentMutation = useDeleteComment();
-  const editCommentMutation = useEditComment();
-  const deleteReplyMutation = useDeleteReply();
-  const editReplyMutation = useEditReply();
-
   const handleSubmitComment = (e: React.FormEvent) => {
     e.preventDefault();
     if (commentText.trim()) {
-      addCommentMutation.mutate({ listingId, content: commentText }, {
-        onSuccess: () => {
-          setCommentText('');
-        }
-      });
+      onAddComment(commentText);
+      setCommentText('');
     }
   };
 
   const handleSubmitReply = (commentId: number) => {
     if (replyText.trim()) {
-      addReplyMutation.mutate({ listingId, commentId, content: replyText }, {
-        onSuccess: () => {
-          setReplyText('');
-          setReplyingTo(null);
-        }
-      });
+      onAddReply(commentId, replyText);
+      setReplyText('');
+      setReplyingTo(null);
     }
   };
 
@@ -85,37 +73,18 @@ export function CommentsList({
 
   const handleSubmitEdit = () => {
     if (editingComment && editText.trim()) {
-      editCommentMutation.mutate({ listingId, commentId: editingComment, content: editText }, {
-        onSuccess: () => {
-          setEditingComment(null);
-          setEditText('');
-        }
-      });
+      onEditComment(editingComment, editText);
+      setEditingComment(null);
+      setEditText('');
     }
   };
 
   const handleSubmitEditReply = () => {
     if (editingReply && editText.trim()) {
-      editReplyMutation.mutate({ 
-        listingId,
-        commentId: editingReply.commentId,
-        replyId: editingReply.replyId, 
-        content: editText 
-      }, {
-        onSuccess: () => {
-          setEditingReply(null);
-          setEditText('');
-        }
-      });
+      onEditReply(editingReply.commentId, editingReply.replyId, editText);
+      setEditingReply(null);
+      setEditText('');
     }
-  };
-
-  const handleDeleteComment = (commentId: number) => {
-    deleteCommentMutation.mutate({ listingId, commentId });
-  };
-
-  const handleDeleteReply = (commentId: number, replyId: number) => {
-    deleteReplyMutation.mutate({ listingId, commentId, replyId });
   };
 
   const canModifyComment = (userId?: number) => {
@@ -147,10 +116,10 @@ export function CommentsList({
               <div className="flex justify-end">
                 <Button 
                   type="submit" 
-                  disabled={!commentText.trim() || addCommentMutation.isPending}
+                  disabled={!commentText.trim() || isLoading}
                   className="bg-brand hover:bg-brand/90 text-white dark:bg-brand dark:hover:bg-brand/90 dark:text-white"
                 >
-                  {addCommentMutation.isPending ? (
+                  {isLoading ? (
                     <>
                       <div className="mr-2 h-4 w-4 animate-spin border-2 border-transparent border-t-white rounded-full" />
                       جاري الإضافة...
@@ -213,7 +182,7 @@ export function CommentsList({
                             </DropdownMenuItem>
                             <DropdownMenuItem 
                               className="text-red-500 focus:text-red-500"
-                              onClick={() => handleDeleteComment(comment.id)}
+                              onClick={() => onDeleteComment(comment.id)}
                             >
                               <Trash className="mr-2 h-4 w-4" />
                               حذف التعليق
@@ -244,7 +213,6 @@ export function CommentsList({
                           <Button
                             size="sm"
                             onClick={handleSubmitEdit}
-                            disabled={editCommentMutation.isPending}
                           >
                             حفظ التعديل
                           </Button>
@@ -305,11 +273,11 @@ export function CommentsList({
                         />
                         <Button
                           size="sm"
-                          disabled={!replyText.trim() || addReplyMutation.isPending}
+                          disabled={!replyText.trim() || isLoading}
                           className="bg-brand hover:bg-brand/90 text-white"
                           onClick={() => handleSubmitReply(comment.id)}
                         >
-                          {addReplyMutation.isPending ? (
+                          {isLoading ? (
                             <div className="h-4 w-4 animate-spin border-2 border-transparent border-t-white rounded-full" />
                           ) : (
                             <Send className="h-4 w-4" />
@@ -366,7 +334,7 @@ export function CommentsList({
                                   </DropdownMenuItem>
                                   <DropdownMenuItem 
                                     className="text-red-500 focus:text-red-500"
-                                    onClick={() => handleDeleteReply(comment.id, reply.id)}
+                                    onClick={() => onDeleteReply(comment.id, reply.id)}
                                   >
                                     <Trash className="mr-2 h-3 w-3" />
                                     حذف الرد
@@ -397,7 +365,6 @@ export function CommentsList({
                                 <Button
                                   size="sm"
                                   onClick={handleSubmitEditReply}
-                                  disabled={editReplyMutation.isPending}
                                 >
                                   حفظ التعديل
                                 </Button>

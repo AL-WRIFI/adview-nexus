@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Search, X, Filter, ArrowRight, Check, ChevronRight, MapPin } from 'lucide-react';
 import { 
@@ -61,11 +62,11 @@ export function MobileFilterDrawer({
     initialFilters?.city_id as number | undefined
   );
   const [priceRange, setPriceRange] = useState<[number, number]>([
-    initialFilters?.price_min || 0,
-    initialFilters?.price_max || 100000
+    initialFilters?.min_price || 0,
+    initialFilters?.max_price || 100000
   ]);
-  const [listingType, setListingType] = useState<'sell' | 'rent' | 'job' | 'service' | undefined>(
-    initialFilters?.listing_type as 'sell' | 'rent' | 'job' | 'service' | undefined
+  const [listingType, setListingType] = useState<'sell' | 'rent' | 'wanted' | undefined>(
+    initialFilters?.listing_type as 'sell' | 'rent' | 'wanted' | undefined
   );
   const [condition, setCondition] = useState<'new' | 'used' | undefined>(
     initialFilters?.condition as 'new' | 'used' | undefined
@@ -74,7 +75,7 @@ export function MobileFilterDrawer({
     initialFilters?.lat && initialFilters.lon ? true : false
   );
   const [sortBy, setSortBy] = useState<'newest' | 'price_asc' | 'price_desc' | 'oldest' | undefined>(
-    initialFilters?.sort as 'newest' | 'price_asc' | 'price_desc' | 'oldest' | undefined
+    initialFilters?.sort_by as 'newest' | 'price_asc' | 'price_desc' | 'oldest' | undefined
   );
   
   // Current filter section
@@ -152,16 +153,18 @@ export function MobileFilterDrawer({
     if (selectedBrandId) filters.brand_id = selectedBrandId;
     if (selectedStateId) filters.state_id = selectedStateId;
     if (selectedCityId) filters.city_id = selectedCityId;
-    if (priceRange[0] > 0) filters.price_min = priceRange[0];
-    if (priceRange[1] < 100000) filters.price_max = priceRange[1];
+
+    if (priceRange[0] > 0) filters.min_price = priceRange[0];
+    if (priceRange[1] < 100000) filters.max_price = priceRange[1];
     if (listingType) filters.listing_type = listingType;
     if (condition) filters.condition = condition;
-    if (sortBy) filters.sort = sortBy;
+    if (sortBy) filters.sort_by = sortBy;
+
     
     // Add location if nearby ads is selected
     if (nearbyAds && locationData) {
       filters.lat = locationData.lat;
-      filters.lon = locationData.lon;
+      filters.lon = locationData.lng;
       filters.radius = 20; // 20 km radius
     }
     
@@ -259,7 +262,7 @@ export function MobileFilterDrawer({
         </div>
         {selectedBrandId && brands && (
           <div className="flex items-center text-xs text-muted-foreground">
-            {brands.find(b => b.id === selectedBrandId)?.name || brands.find(b => b.id === selectedBrandId)?.title}
+            {brands.find(b => b.id === selectedBrandId)?.name}
             <ChevronRight className="h-4 w-4 mr-1" />
           </div>
         )}
@@ -305,7 +308,7 @@ export function MobileFilterDrawer({
           <div className="flex items-center text-xs text-muted-foreground">
             {condition === 'new' ? 'جديد' : condition === 'used' ? 'مستعمل' : ''}
             {listingType && condition ? ' • ' : ''}
-            {listingType === 'sell' ? 'للبيع' : listingType === 'rent' ? 'للإيجار' : listingType === 'job' ? 'وظائف' : listingType === 'service' ? 'خدمات' : ''}
+            {listingType === 'sell' ? 'للبيع' : listingType === 'rent' ? 'للإيجار' : listingType === 'wanted' ? 'مطلوب' : ''}
             <ChevronRight className="h-4 w-4 mr-1" />
           </div>
         )}
@@ -475,7 +478,7 @@ export function MobileFilterDrawer({
                   key={brand.id} 
                   value={brand.id?.toString() || ""}
                 >
-                  {brand.name || brand.title}
+                  {brand.name}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -494,7 +497,7 @@ export function MobileFilterDrawer({
               >
                 <div className="p-1 rounded-full">
                   {brand.logo ? (
-                    <img src={brand.logo} alt={brand.name || brand.title} className="h-8 w-8 object-contain" />
+                    <img src={brand.logo} alt={brand.name} className="h-8 w-8 object-contain" />
                   ) : (
                     <div className={`p-2 rounded-full ${
                       selectedBrandId === brand.id ? 'bg-brand text-white' : 'bg-gray-100 dark:bg-dark-muted'
@@ -504,7 +507,7 @@ export function MobileFilterDrawer({
                   )}
                 </div>
                 <span className="text-xs mt-1 truncate w-full">
-                  {brand.name || brand.title}
+                  {brand.name}
                 </span>
               </div>
             ))}
@@ -598,7 +601,7 @@ export function MobileFilterDrawer({
         <Label className="mb-2 block">نوع الإعلان</Label>
         <Select 
           value={listingType || "all"} 
-          onValueChange={(value: 'sell' | 'rent' | 'job' | 'service' | 'all') => {
+          onValueChange={(value: 'sell' | 'rent' | 'wanted' | 'all') => {
             setListingType(value === 'all' ? undefined : value);
           }}
         >
@@ -609,8 +612,7 @@ export function MobileFilterDrawer({
             <SelectItem value="all">الكل</SelectItem>
             <SelectItem value="sell">للبيع</SelectItem>
             <SelectItem value="rent">للإيجار</SelectItem>
-            <SelectItem value="job">وظائف</SelectItem>
-            <SelectItem value="service">خدمات</SelectItem>
+            <SelectItem value="wanted">مطلوب</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -802,12 +804,12 @@ export function MobileFilterDrawer({
 }
 
 // Add imports for icons that weren't imported above
-import {  Layers, Settings2, ArrowUpDown } from 'lucide-react';
+import {  Layers, Settings2, ArrowUpDown, Wallet } from 'lucide-react';
 import { 
   Car, Home, Smartphone, Mouse, Briefcase, Wrench, Shirt, Gamepad, 
   Gem, ShoppingBag, Utensils, Laptop, BookOpen, Baby, Bike, Camera, 
   FileText, Headphones, Gift, Train, Sofa, MonitorSmartphone, Dog, Users, Building, 
-  Paintbrush, Wallet, Glasses, ShoppingBasket
+  Paintbrush, Glasses, ShoppingBasket
 } from 'lucide-react';
 // Import the iconMap from CategoryIcon to avoid duplicating code
 const iconMap: Record<string, React.ComponentType<any>> = {
@@ -837,7 +839,6 @@ const iconMap: Record<string, React.ComponentType<any>> = {
   'Dog': Dog,
   'Users': Users,
   'Paintbrush': Paintbrush,
-  'Wallet': Wallet,
   'Glasses': Glasses,
   'ShoppingBasket': ShoppingBasket,
 };

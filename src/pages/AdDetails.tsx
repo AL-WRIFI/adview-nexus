@@ -1,389 +1,490 @@
-
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { PageLayout } from '@/components/layout/PageLayout';
-import { AdImageGallery } from '@/components/image-gallery/AdImageGallery';
-import { RelatedAndSuggestedAds } from '@/components/ads/RelatedAndSuggestedAds';
-import { CommentsList } from '@/components/comments/CommentsList';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/context/auth-context';
-import {
-  Heart,
-  Share2,
-  MessageCircle,
-  Phone,
-  MapPin,
-  Calendar,
-  Eye,
-  Flag,
-  Star,
-  Verified
+import { Link, useParams, useNavigate } from 'react-router-dom';
+import { 
+  MapPin, Eye, MessageSquare, Phone, Heart, Share, Flag, 
+  Star, Loader2, User,
+  Clock
 } from 'lucide-react';
-import {
-  useAd,
-  useComments,
-  useIsFavorite,
-  useAddToFavorites,
-  useRemoveFromFavorites,
-  useAddComment,
-  useEditComment,
-  useDeleteComment,
-  useAddReply,
-  useEditReply,
-  useDeleteReply
-} from '@/hooks/use-api';
+import { Header } from '@/components/layout/header';
+import { Footer } from '@/components/layout/footer';
+import { MobileNav } from '@/components/layout/mobile-nav';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { AdImageGallery } from '@/components/image-gallery/AdImageGallery';
+import { CommentsList } from '@/components/comments/CommentsList';
+import { AdDetailsSkeleton } from '@/components/ui/ad-details-skeleton';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
+import { 
+  useAd, 
+  useRelatedAds, 
+  useAddComment, 
+  useIsFavorite, 
+  useAddToFavorites, 
+  useRemoveFromFavorites, 
+  useAddReply,
+  useDeleteComment,
+  useEditComment,
+  useDeleteReply,
+  useEditReply
+} from '@/hooks/use-api';
+import { useAuth } from '@/context/auth-context';
+import { toast } from '@/hooks/use-toast';
+import { Comment } from '@/types';
+import { RelatedAndSuggestedAds } from '@/components/ads/RelatedAndSuggestedAds';
 
 export default function AdDetails() {
   const { id } = useParams<{ id: string }>();
+  const [activeTab, setActiveTab] = useState('comments');
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [commandId, setCommandId] = useState(null);
   const navigate = useNavigate();
-  const { toast } = useToast();
-  const { user } = useAuth();
   
-  const adId = parseInt(id || '0');
+  const { isAuthenticated, user } = useAuth();
+  
+  const numId = id ? parseInt(id, 10) : 0;
   
   // API hooks
-  const { data: ad, isLoading: adLoading, error: adError } = useAd(id || '');
-  const { data: comments, isLoading: commentsLoading } = useComments(adId);
-  const { data: isFavorited } = useIsFavorite(adId);
-  const addToFavoritesMutation = useAddToFavorites();
-  const removeFromFavoritesMutation = useRemoveFromFavorites();
-  const addCommentMutation = useAddComment();
-  const editCommentMutation = useEditComment();
-  const deleteCommentMutation = useDeleteComment();
-  const addReplyMutation = useAddReply();
-  const editReplyMutation = useEditReply();
-  const deleteReplyMutation = useDeleteReply();
+  const { data: ad, isLoading, error } = useAd(numId);
+  const { data: isFavoriteResponse } = useIsFavorite(numId);
+  const { data: relatedAdsResponse } = useRelatedAds(numId);
   
-  // Local state
-  const [showContactInfo, setShowContactInfo] = useState(false);
-  const [isLiked, setIsLiked] = useState(false);
-
+  const addCommentMutation = useAddComment(numId);
+  const addReplyMutation = useAddReply(numId, commandId);
+  const deleteCommentMutation = useDeleteComment(numId);
+  const editCommentMutation = useEditComment(numId);
+  const deleteReplyMutation = useDeleteReply(numId);
+  const editReplyMutation = useEditReply(numId);
+  const addToFavorites = useAddToFavorites();
+  const removeFromFavorites = useRemoveFromFavorites();
+  
   useEffect(() => {
-    if (isFavorited !== undefined) {
-      setIsLiked(isFavorited);
+    if (isFavoriteResponse !== undefined) {
+      setIsFavorite(isFavoriteResponse);
     }
-  }, [isFavorited]);
+  }, [isFavoriteResponse]);
 
-  const handleLike = async () => {
-    if (!user) {
+  const handleFavoriteToggle = () => {
+    if (!isAuthenticated) {
       toast({
         title: "تسجيل الدخول مطلوب",
-        description: "يجب تسجيل الدخول لإضافة الإعلان للمفضلة",
+        description: "يجب عليك تسجيل الدخول لإضافة للمفضلة",
         variant: "destructive"
       });
+      navigate('/auth/login', { state: { from: `/ad/${id}` } });
       return;
     }
-
-    try {
-      if (isLiked) {
-        await removeFromFavoritesMutation.mutateAsync(adId);
-        setIsLiked(false);
-        toast({
-          title: "تم الحذف من المفضلة",
-          description: "تم حذف الإعلان من قائمة المفضلة بنجاح"
-        });
-      } else {
-        await addToFavoritesMutation.mutateAsync(adId);
-        setIsLiked(true);
-        toast({
-          title: "تم الإضافة للمفضلة",
-          description: "تم إضافة الإعلان لقائمة المفضلة بنجاح"
-        });
-      }
-    } catch (error) {
-      toast({
-        title: "خطأ",
-        description: "حدث خطأ أثناء تحديث المفضلة",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleShare = () => {
-    if (navigator.share) {
-      navigator.share({
-        title: ad?.title || '',
-        text: ad?.description || '',
-        url: window.location.href
-      });
+    
+    if (isFavorite) {
+      removeFromFavorites.mutate(numId);
     } else {
-      navigator.clipboard.writeText(window.location.href);
-      toast({
-        title: "تم النسخ",
-        description: "تم نسخ رابط الإعلان للحافظة"
-      });
+      addToFavorites.mutate(numId);
     }
+    setIsFavorite(!isFavorite);
   };
 
-  const handleAddComment = async (content: string) => {
-    if (!user) {
+  // Comment handlers
+  const handleAddComment = (text: string) => {
+    if (!isAuthenticated) {
       toast({
         title: "تسجيل الدخول مطلوب",
-        description: "يجب تسجيل الدخول لإضافة تعليق",
+        description: "يجب عليك تسجيل الدخول لإضافة تعليق",
         variant: "destructive"
       });
+      navigate('/auth/login', { state: { from: `/ad/${id}` } });
       return;
     }
-
-    try {
-      await addCommentMutation.mutateAsync({ listingId: adId, content });
+    
+    if (text.trim() && numId) {
+      addCommentMutation.mutate(text);
+    }
+  };
+  
+  const handleAddReply = (commentId: number, text: string) => {
+    setCommandId(commentId);
+    if (!isAuthenticated) {
       toast({
-        title: "تم إضافة التعليق",
-        description: "تم إضافة تعليقك بنجاح"
-      });
-    } catch (error) {
-      toast({
-        title: "خطأ",
-        description: "حدث خطأ أثناء إضافة التعليق",
+        title: "تسجيل الدخول مطلوب",
+        description: "يجب عليك تسجيل الدخول للرد على التعليق",
         variant: "destructive"
       });
+      navigate('/auth/login', { state: { from: `/ad/${id}` } });
+      return;
     }
+    
+    if (text.trim()) {
+      addReplyMutation.mutate(text);
+    }
+  };
+  
+  const handleDeleteComment = (commentId: number) => {
+    deleteCommentMutation.mutate(commentId);
+  };
+
+  const handleEditComment = (commentId: number, text: string) => {
+    if (!isAuthenticated) {
+      toast({
+        title: "تسجيل الدخول مطلوب",
+        description: "يجب عليك تسجيل الدخول ",
+        variant: "destructive"
+      });
+      navigate('/auth/login', { state: { from: `/ad/${id}` } });
+      return;
+    }
+    
+    if (text.trim()) {
+        editCommentMutation.mutate({ commentId, content: text });
+    }
+  };
+  
+  const handleDeleteReply = (commentId: number, replyId: number) => {
+    deleteReplyMutation.mutate({ commentId, replyId });
+  };
+  
+  const handleEditReply = (commentId: number, replyId: number, text: string) => {
+    editReplyMutation.mutate({ commentId, replyId, content: text });
   };
 
   // Show loading skeleton while data is being fetched
-  if (adLoading) {
+  if (isLoading) {
     return (
-      <PageLayout showSkeleton={true} isLoading={true}>
-        <div className="container mx-auto px-4 py-6">
-          <div className="animate-pulse space-y-6">
-            {/* Image Skeleton */}
-            <div className="aspect-video bg-muted rounded-lg"></div>
-            
-            {/* Title and Price Skeleton */}
-            <div className="space-y-4">
-              <div className="h-8 bg-muted rounded w-2/3"></div>
-              <div className="h-6 bg-muted rounded w-1/4"></div>
-            </div>
-            
-            {/* Details Skeleton */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <div className="lg:col-span-2 space-y-4">
-                <div className="h-32 bg-muted rounded"></div>
-                <div className="h-20 bg-muted rounded"></div>
-              </div>
-              <div className="space-y-4">
-                <div className="h-40 bg-muted rounded"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </PageLayout>
+      <div className="min-h-screen flex flex-col bg-white dark:bg-neutral-900">
+        <Header />
+        <main className="flex-1">
+          <AdDetailsSkeleton />
+        </main>
+        <Footer />
+        <MobileNav />
+      </div>
     );
   }
 
-  if (adError || !ad) {
+  if (error || !ad) {
     return (
-      <PageLayout>
-        <div className="container mx-auto px-4 py-6">
-          <div className="text-center py-12">
-            <h2 className="text-2xl font-bold mb-4">الإعلان غير موجود</h2>
-            <Button onClick={() => navigate('/')}>
-              العودة للرئيسية
-            </Button>
+      <div className="min-h-screen flex flex-col bg-white dark:bg-neutral-900">
+        <Header />
+        <main className="flex-1 py-10">
+          <div className="container mx-auto px-4">
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-8 text-center">
+              <h2 className="text-2xl font-bold text-red-800 dark:text-red-400 mb-4">عذراً، لم يتم العثور على هذا الإعلان</h2>
+              <p className="mb-6 text-neutral-600 dark:text-neutral-300">قد يكون الإعلان تم حذفه أو انتهاء صلاحيته</p>
+              <Button asChild className="dark:bg-neutral-800 dark:hover:bg-neutral-700">
+                <Link to="/">العودة إلى الصفحة الرئيسية</Link>
+              </Button>
+            </div>
           </div>
-        </div>
-      </PageLayout>
+        </main>
+        <Footer />
+        <MobileNav />
+      </div>
     );
   }
 
-  const adImages = Array.isArray(ad.images) 
-    ? ad.images.map(img => typeof img === 'string' ? img : img.url || '')
-    : ad.image 
-      ? [typeof ad.image === 'string' ? ad.image : ad.image.image_url]
-      : ['https://placehold.co/600x400'];
+  const timeAgo = formatDistanceToNow(new Date(ad.created_at), { 
+    addSuffix: true,
+    locale: ar
+  });
+  
+  // Process images according to the new format
+  const processImages = () => {
+    const images: string[] = [];
+    
+    // Add main image if available
+    if (ad.image && typeof ad.image === 'object' && ad.image.image_url) {
+      images.push(ad.image.image_url);
+    } else if (typeof ad.image === 'string' && ad.image) {
+      images.push(ad.image);
+    }
+    
+    // Add gallery images
+    if (ad.images && Array.isArray(ad.images)) {
+      ad.images.forEach(img => {
+        if (typeof img === 'object' && img.url) {
+          images.push(img.url);
+        } else if (typeof img === 'string') {
+          images.push(img);
+        }
+      });
+    }
+    
+    return images;
+  };
+
+  // Get all images
+  const allImages = processImages();
+  
+  // Prepare related ads - convert ListingDetails to Listing format if needed
+  const relatedAds = ad.related || [];
+  
+  // Process comments
+  const comments: Comment[] = ad.comments || [];
 
   return (
-    <PageLayout>
-      <div className="container mx-auto px-4 py-6 space-y-8">
-        {/* Ad Images */}
-        <AdImageGallery images={adImages} title={ad?.title} />
-
-        {/* Ad Details */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
-            <div className="bg-card rounded-xl p-6 border border-border shadow-sm">
-              {/* Title and Price */}
-              <div className="flex justify-between items-start mb-6">
-                <div className="flex-1">
-                  <h1 className="text-2xl lg:text-3xl font-bold mb-3 text-foreground">{ad.title}</h1>
-                  <div className="flex items-center gap-2 text-3xl font-bold text-brand">
-                    {ad.price.toLocaleString()} ريال
-                  </div>
-                </div>
-                
-                {/* Action Buttons */}
-                <div className="flex gap-3">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={handleLike}
-                    className={`${isLiked ? 'text-red-500 border-red-500 bg-red-50' : ''} hover:scale-105 transition-transform`}
-                  >
-                    <Heart className={`h-5 w-5 ${isLiked ? 'fill-current' : ''}`} />
-                  </Button>
-                  
-                  <Button 
-                    variant="outline" 
-                    size="icon" 
-                    onClick={handleShare}
-                    className="hover:scale-105 transition-transform"
-                  >
-                    <Share2 className="h-5 w-5" />
-                  </Button>
-                </div>
-              </div>
-
-              {/* Badges */}
-              <div className="flex gap-2 mb-6 flex-wrap">
-                {ad.featured && (
-                  <Badge variant="default" className="bg-yellow-500 hover:bg-yellow-600">
-                    <Star className="w-3 h-3 ml-1" />
-                    مميز
-                  </Badge>
-                )}
-                {ad.condition && (
-                  <Badge variant="secondary">
-                    {ad.condition === 'new' ? 'جديد' : 'مستعمل'}
-                  </Badge>
-                )}
-                <Badge variant="outline">{ad.category}</Badge>
-              </div>
-
-              {/* Description */}
+    <div className="min-h-screen flex flex-col bg-white dark:bg-neutral-900 transition-colors">
+      <Header />
+      
+      <main className="flex-1 pb-20 md:pb-0">
+        <div className="container px-4 mx-auto py-6">
+          <div className="text-sm mb-4 text-neutral-600 dark:text-neutral-400">
+            <Link to="/" className="hover:text-black dark:hover:text-neutral-200">الرئيسية</Link>
+            {' > '}
+            <Link to={`/category/${ad.category_id}`} className="hover:text-black dark:hover:text-neutral-200">
+              {ad.category_name || 'تصنيف'}
+            </Link>
+            {' > '}
+            <span className="dark:text-neutral-300">{ad.title}</span>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Main content column */}
+            <div className="md:col-span-2">
+              {/* Title and price */}
               <div className="mb-6">
-                <h3 className="text-lg font-semibold mb-3 text-foreground">الوصف</h3>
-                <p className="text-muted-foreground leading-relaxed text-base">
-                  {ad.description}
-                </p>
-              </div>
-
-              {/* Details Grid */}
-              <div className="grid grid-cols-2 gap-4 mb-6 p-4 bg-muted/30 rounded-lg">
-                <div className="flex items-center gap-2 text-sm">
-                  <MapPin className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-foreground">{ad.location}</span>
-                </div>
-                
-                <div className="flex items-center gap-2 text-sm">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-foreground">
-                    {formatDistanceToNow(new Date(ad.created_at), { 
-                      addSuffix: true, 
-                      locale: ar 
-                    })}
-                  </span>
-                </div>
-                
-                <div className="flex items-center gap-2 text-sm">
-                  <Eye className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-foreground">{ad.views || ad.views_count || ad.viewCount || 0} مشاهدة</span>
-                </div>
-                
-                <div className="flex items-center gap-2 text-sm">
-                  <Heart className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-foreground">{ad.favorites_count || 0} إعجاب</span>
-                </div>
+              <h1 className="text-xl md:text-2xl font-bold text-neutral-800 dark:text-white mb-2">{ad.title}</h1>
+              <div className="flex items-center text-neutral-600 dark:text-neutral-400 text-sm gap-4">
+                <div className="flex items-center gap-1"><Eye className="w-4 h-4" /> {ad.viewCount} مشاهدة</div>
+                <div className="flex items-center gap-1"><MapPin className="w-4 h-4" /> <span className="truncate max-w-[80px]">{ad.city ?? "غير معروف"}</span></div>
+                <div className="flex items-center gap-1"><Clock className="w-4 h-4" /> {timeAgo}</div>
               </div>
             </div>
 
-            {/* Comments Section */}
-            <CommentsList 
-              comments={comments || []}
-              listingId={adId}
-              isLoading={commentsLoading}
-            />
-          </div>
-
-          {/* Sidebar */}
-          <div className="lg:col-span-1">
-            {/* Seller Info */}
-            <div className="bg-card rounded-xl p-6 border border-border shadow-sm mb-6 sticky top-24">
-              <div className="text-center">
-                <div className="w-20 h-20 bg-gradient-to-r from-brand to-brand/80 rounded-full mx-auto mb-4 flex items-center justify-center shadow-lg">
-                  <span className="text-2xl font-bold text-white">
-                    {ad.user?.first_name?.[0]}{ad.user?.last_name?.[0]}
-                  </span>
-                </div>
+            <div className="mb-6 text-neutral-800 dark:text-neutral-100 whitespace-pre-line leading-relaxed">
+              {ad.description}
+            </div>
+              
+              {/* Gallery */}
+              <div className="mb-6">
+                <AdImageGallery images={allImages} title={ad.title} />
+              </div>
+              
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
+                <TabsList className="w-full bg-neutral-50 dark:bg-neutral-800">
+                  <TabsTrigger 
+                    value="details" 
+                    className="flex-1 data-[state=active]:bg-white data-[state=active]:dark:bg-neutral-700 data-[state=active]:dark:text-neutral-100"
+                  >
+                    التفاصيل
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="comments" 
+                    className="flex-1 data-[state=active]:bg-white data-[state=active]:dark:bg-neutral-700 data-[state=active]:dark:text-neutral-100"
+                  >
+                    التعليقات ({comments.length || 0})
+                  </TabsTrigger>
+                </TabsList>
                 
-                <h3 className="font-bold text-lg mb-1 text-foreground">
-                  {ad.user?.first_name} {ad.user?.last_name}
-                </h3>
-                
-                <div className="flex items-center justify-center gap-1 text-sm text-muted-foreground mb-6">
-                  <Verified className="h-4 w-4 text-green-500" />
-                  <span>عضو موثق</span>
-                </div>
-
-                <div className="space-y-3">
-                  {!showContactInfo ? (
-                    <Button 
-                      className="w-full bg-gradient-to-r from-brand to-brand/90 hover:from-brand/90 hover:to-brand shadow-lg" 
-                      onClick={() => setShowContactInfo(true)}
-                    >
-                      <Phone className="ml-2 h-4 w-4" />
-                      إظهار رقم الهاتف
-                    </Button>
-                  ) : (
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-center gap-2 p-3 bg-muted rounded-lg border">
-                        <Phone className="h-4 w-4 text-brand" />
-                        <span className="font-mono font-semibold">{ad.phone || ad.user?.phone || '966501234567'}</span>
+                {/* Details tab */}
+                <TabsContent value="details" className="pt-4">
+                  <div className="bg-neutral-50 dark:bg-neutral-800 p-4 rounded-lg">
+                    <h2 className="font-bold mb-2 dark:text-neutral-100">معلومات إضافية</h2>
+                    <div className="grid grid-cols-2 gap-4 text-neutral-700 dark:text-neutral-300">
+                      <div className="flex items-center">
+                        <span className="text-neutral-500 dark:text-neutral-400 ml-2"> التصنيف : </span>
+                        <span>{ad.category_name || "غير محدد"}</span>
                       </div>
-                      <Button variant="outline" className="w-full border-brand text-brand hover:bg-brand hover:text-white">
-                        <MessageCircle className="ml-2 h-4 w-4" />
-                        إرسال رسالة
-                      </Button>
+                      {ad.sub_category_name && (
+                        <div className="flex items-center">
+                          <span className="text-neutral-500 dark:text-neutral-400 ml-2"> التصنيف الفرعي : </span>
+                          <span>{ad.sub_category_name}</span>
+                        </div>
+                      )}
+                      <div className="flex items-center">
+                        <span className="text-neutral-500 dark:text-neutral-400 ml-2"> المدينة : </span>
+                        <span>{ad.city || ad.address || "غير محدد"}</span>
+                      </div>
+                      {ad.state && (
+                        <div className="flex items-center">
+                          <span className="text-neutral-500 dark:text-neutral-400 ml-2"> الحي : </span>
+                          <span>{ad.state}</span>
+                        </div>
+                      )}
+                      <div className="flex items-center">
+                        <span className="text-neutral-500 dark:text-neutral-400 ml-2">نوع الإعلان  :  </span>
+                        <span>
+                          {ad.listing_type === 'sell' ? ' بيع' : 
+                           ad.listing_type === 'buy' ? ' شراء' : 
+                           ad.listing_type === 'exchange' ? ' تبادل' : ' خدمة'}
+                        </span>
+                      </div>
+                      <div className="flex items-center">
+                        <span className="text-neutral-500 dark:text-neutral-400 ml-2">تاريخ النشر : </span>
+                        <span>{new Date(ad.created_at).toLocaleDateString('ar-SA')}</span>
+                      </div>
+                      {ad.condition && (
+                        <div className="flex items-center">
+                          <span className="text-neutral-500 dark:text-neutral-400 ml-2">الحالة : </span>
+                          <span>{ad.condition === 'new' ? 'جديد' : 'مستعمل'}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </TabsContent>
+
+                {/* Comments tab */}
+                <TabsContent value="comments" className="pt-4">
+                  <CommentsList 
+                    comments={comments}
+                    onAddComment={handleAddComment}
+                    onAddReply={handleAddReply}
+                    onDeleteComment={handleDeleteComment}
+                    onEditComment={handleEditComment}
+                    onDeleteReply={handleDeleteReply}
+                    onEditReply={handleEditReply}
+                    isLoading={
+                      addCommentMutation.isPending ||
+                      addReplyMutation.isPending ||
+                      deleteCommentMutation.isPending ||
+                      editCommentMutation.isPending ||
+                      deleteReplyMutation.isPending ||
+                      editReplyMutation.isPending
+                    }
+                  />
+                </TabsContent>
+              </Tabs>
+            </div>
+
+            {/* Sidebar */}
+            <div className="md:col-span-1">
+              {/* Seller info */}
+              <div className="border border-neutral-200 dark:border-neutral-700 rounded-lg overflow-hidden mb-6 bg-white dark:bg-neutral-800">
+                <div className="p-4 bg-neutral-50 dark:bg-neutral-700 border-b border-neutral-200 dark:border-neutral-700">
+                  <h2 className="font-bold text-lg dark:text-neutral-100">معلومات المعلن</h2>
+                </div>
+                <div className="p-4">
+                  {ad.user && (
+                    <div className="flex items-center mb-4">
+                      <Avatar className="w-12 h-12 ml-3 border">
+                        {ad.user.image ? (
+                          <AvatarImage src={ad.user.image} alt={`${ad.user.first_name} ${ad.user.last_name}`} />
+                        ) : (
+                          <AvatarFallback className="bg-neutral-200 dark:bg-neutral-700">
+                            <User className="h-6 w-6 text-neutral-500" />
+                          </AvatarFallback>
+                        )}
+                      </Avatar>
+                      <div>
+                        <div className="font-bold dark:text-neutral-100">{`${ad.user.first_name} ${ad.user.last_name}`}</div>
+                        <div className="text-sm text-neutral-500 dark:text-neutral-400">
+                          عضو منذ {new Date(ad.user.created_at || '').toLocaleDateString('ar-SA')}
+                        </div>
+                      </div>
+                      {ad.user.verified && (
+                        <div className="mr-auto">
+                          <div className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs px-2 py-1 rounded-full flex items-center">
+                            <Star className="h-3 w-3 ml-1 fill-green-700 dark:fill-green-400" />
+                            موثق
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
-
-                  <Button variant="outline" size="sm" className="w-full text-muted-foreground hover:text-red-600 hover:border-red-600">
-                    <Flag className="ml-2 h-4 w-4" />
-                    الإبلاغ عن الإعلان
-                  </Button>
+                  
+                  <div className="space-y-3">
+                    {ad.user?.phone && !ad.phone_hidden && (
+                      <Button className="w-full flex items-center justify-center bg-brand hover:bg-brand/90 text-white" size="lg">
+                        <Phone className="ml-2 h-5 w-5" />
+                        {ad.user.phone}
+                      </Button>
+                    )}
+                    <Button 
+                      variant="outline" 
+                      className="w-full dark:border-neutral-600 dark:text-neutral-300 dark:hover:bg-neutral-700" 
+                      size="lg" 
+                      onClick={() => {
+                        if (!isAuthenticated) {
+                          toast({
+                            title: "تسجيل الدخول مطلوب",
+                            description: "يجب عليك تسجيل الدخول لإرسال رسالة",
+                            variant: "destructive"
+                          });
+                          navigate('/auth/login', { state: { from: `/ad/${id}` } });
+                          return;
+                        }
+                        navigate('/messages', { state: { userId: ad.user_id } });
+                      }}
+                    >
+                      <MessageSquare className="ml-2 h-5 w-5" />
+                      مراسلة
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      className={`w-full border dark:border-neutral-700 ${
+                        isFavorite 
+                          ? 'text-red-500 dark:text-red-400 border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20' 
+                          : 'dark:text-neutral-300 dark:hover:bg-neutral-700'
+                      }`} 
+                      size="lg"
+                      onClick={handleFavoriteToggle}
+                    >
+                      <Heart className={`ml-2 h-5 w-5 ${isFavorite ? 'fill-red-500 dark:fill-red-400' : ''}`} />
+                      {isFavorite ? 'تمت الإضافة للمفضلة' : 'أضف للمفضلة'}
+                    </Button>
+                    <div className="flex justify-between pt-2">
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        className="dark:text-neutral-300 dark:hover:bg-neutral-700"
+                      >
+                        <Share className="ml-1 h-4 w-4" />
+                        مشاركة
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="text-red-500 dark:text-red-400 dark:hover:bg-red-900/20"
+                        onClick={() => {
+                          if (!isAuthenticated) {
+                            toast({
+                              title: "تسجيل الدخول مطلوب",
+                              description: "يجب عليك تسجيل الدخول للإبلاغ عن الإعلان",
+                              variant: "destructive"
+                            });
+                            navigate('/auth/login', { state: { from: `/ad/${id}` } });
+                            return;
+                          }
+                          toast({
+                            title: "تم الإبلاغ",
+                            description: "شكراً لإبلاغك عن هذا الإعلان، سيتم مراجعته قريباً",
+                          });
+                        }}
+                      >
+                        <Flag className="ml-1 h-4 w-4" />
+                        إبلاغ
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Safety tips */}
+              <div className="border border-neutral-200 dark:border-neutral-700 rounded-lg overflow-hidden mb-6 bg-white dark:bg-neutral-800">
+                <div className="p-4 bg-neutral-50 dark:bg-neutral-700 border-b border-neutral-200 dark:border-neutral-700">
+                  <h2 className="font-bold dark:text-neutral-100">نصائح للسلامة</h2>
+                </div>
+                <div className="p-4">
+                  <ul className="text-sm space-y-2 list-disc pr-5 text-neutral-700 dark:text-neutral-300">
+                    <li>تأكد من مقابلة البائع في مكان عام</li>
+                    <li>تحقق من المنتج قبل شرائه</li>
+                    <li>استخدم طرق دفع آمنة</li>
+                    <li>لا ترسل أموالاً مقدماً</li>
+                    <li>كن حذراً من العروض المغرية جداً</li>
+                  </ul>
                 </div>
               </div>
             </div>
-
-            {/* Safety Tips */}
-            <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-4">
-              <h4 className="font-semibold text-amber-800 mb-3 flex items-center gap-2">
-                <Flag className="h-4 w-4" />
-                نصائح للأمان
-              </h4>
-              <ul className="text-sm text-amber-700 space-y-2">
-                <li className="flex items-start gap-2">
-                  <span className="text-amber-600">•</span>
-                  <span>قابل البائع في مكان عام</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-amber-600">•</span>
-                  <span>تأكد من المنتج قبل الدفع</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-amber-600">•</span>
-                  <span>لا تشارك معلوماتك المالية</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-amber-600">•</span>
-                  <span>احذر من العروض المشبوهة</span>
-                </li>
-              </ul>
-            </div>
           </div>
+          
+          {/* Related ads carousel */}
+           <RelatedAndSuggestedAds
+              categoryId={ad.category_id} 
+              excludeId={ad.id}
+            />
         </div>
-
-        {/* Related and Suggested Ads */}
-        <RelatedAndSuggestedAds 
-          categoryId={ad.category_id} 
-          excludeId={ad.id}
-          currentAd={ad}
-        />
-      </div>
-    </PageLayout>
+      </main>
+      
+      <Footer />
+      <MobileNav />
+    </div>
   );
 }

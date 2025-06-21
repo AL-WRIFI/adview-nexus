@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
@@ -163,7 +162,7 @@ export default function NotificationsPage() {
   
   return (
     <div className="min-h-screen flex flex-col">
-      <Header isLoggedIn={true} />
+      <Header />
       
       <main className="flex-1 pb-20 md:pb-0">
         <div className="bg-gray-50 border-b border-border">

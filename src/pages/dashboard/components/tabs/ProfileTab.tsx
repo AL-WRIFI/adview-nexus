@@ -1,246 +1,164 @@
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Skeleton } from '@/components/ui/skeleton';
-import { User, Phone, Mail, MapPin, Edit2, Save, X } from 'lucide-react';
+import { Label } from '@/components/ui/label';
+import { UserCircle, Upload } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
-import { useToast } from '@/hooks/use-toast';
 
 export function ProfileTab() {
   const { user, refreshUser } = useAuth();
-  const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
-  const [loading, setLoading] = useState(false);
-  
   const [formData, setFormData] = useState({
-    first_name: user?.first_name || '',
-    last_name: user?.last_name || '',
-    phone: user?.phone || '',
+    firstName: user?.first_name || '',
+    lastName: user?.last_name || '',
     email: user?.email || '',
+    phone: user?.phone || '',
     bio: user?.bio || '',
-    city: user?.city || '',
   });
-
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
-
-  const handleSave = async () => {
-    setLoading(true);
-    try {
-      // Mock API call - replace with actual implementation
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      toast({
-        title: "تم الحفظ",
-        description: "تم تحديث بياناتك بنجاح",
-      });
-      
-      setIsEditing(false);
-      await refreshUser();
-    } catch (error) {
-      toast({
-        title: "خطأ",
-        description: "حدث خطأ أثناء تحديث البيانات",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleCancel = () => {
-    setFormData({
-      first_name: user?.first_name || '',
-      last_name: user?.last_name || '',
-      phone: user?.phone || '',
-      email: user?.email || '',
-      bio: user?.bio || '',
-      city: user?.city || '',
-    });
+  
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    // Update profile functionality would go here
+    // For now, just toggle edit mode
     setIsEditing(false);
   };
-
-  if (!user) {
-    return (
-      <div className="space-y-4">
-        <Skeleton className="h-8 w-48" />
-        <Skeleton className="h-64 w-full" />
-      </div>
-    );
-  }
-
+  
   return (
-    <div className="space-y-6">
-      <Card className="bg-card border-border">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2 text-card-foreground">
-              <User className="h-5 w-5" />
-              الملف الشخصي
-            </CardTitle>
-            {!isEditing ? (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsEditing(true)}
-                className="border-border text-card-foreground hover:bg-accent"
-              >
-                <Edit2 className="h-4 w-4 ml-2" />
-                تعديل
-              </Button>
+    <Card>
+      <CardHeader>
+        <CardTitle>الملف الشخصي</CardTitle>
+        <CardDescription>عرض وتعديل معلومات الملف الشخصي</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="flex flex-col md:flex-row gap-6">
+          {/* Avatar section */}
+          <div className="flex flex-col items-center">
+            <div className="w-32 h-32 bg-gray-200 rounded-full overflow-hidden mb-4">
+              {user?.avatar ? (
+                <img src={user.avatar} alt="Profile" className="w-full h-full object-cover" />
+              ) : (
+                <UserCircle className="w-full h-full text-gray-400" />
+              )}
+            </div>
+            <Button variant="outline" size="sm" className="mb-2">
+              <Upload className="mr-2 h-4 w-4" />
+              تغيير الصورة
+            </Button>
+          </div>
+          
+          {/* Profile info section */}
+          <div className="flex-1">
+            {isEditing ? (
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="firstName">الاسم الأول</Label>
+                    <Input
+                      id="firstName"
+                      name="firstName"
+                      value={formData.firstName}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="lastName">الاسم الأخير</Label>
+                    <Input
+                      id="lastName"
+                      name="lastName"
+                      value={formData.lastName}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="email">البريد الإلكتروني</Label>
+                    <Input
+                      id="email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">رقم الهاتف</Label>
+                    <Input
+                      id="phone"
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="bio">نبذة عني</Label>
+                  <Textarea
+                    id="bio"
+                    name="bio"
+                    value={formData.bio}
+                    onChange={handleInputChange}
+                    rows={4}
+                  />
+                </div>
+                
+                <div className="flex justify-end space-x-2 space-x-reverse">
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => setIsEditing(false)}
+                  >
+                    إلغاء
+                  </Button>
+                  <Button type="submit">حفظ التغييرات</Button>
+                </div>
+              </form>
             ) : (
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleCancel}
-                  className="border-border text-card-foreground hover:bg-accent"
-                >
-                  <X className="h-4 w-4 ml-2" />
-                  إلغاء
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={handleSave}
-                  disabled={loading}
-                  className="bg-brand hover:bg-brand/90 text-white"
-                >
-                  <Save className="h-4 w-4 ml-2" />
-                  {loading ? 'جاري الحفظ...' : 'حفظ'}
-                </Button>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground">الاسم الأول</p>
+                    <p className="font-medium">{user?.first_name || 'غير محدد'}</p>
+                  </div>
+                  
+                  <div>
+                    <p className="text-sm text-muted-foreground">الاسم الأخير</p>
+                    <p className="font-medium">{user?.last_name || 'غير محدد'}</p>
+                  </div>
+                  
+                  <div>
+                    <p className="text-sm text-muted-foreground">البريد الإلكتروني</p>
+                    <p className="font-medium">{user?.email || 'غير محدد'}</p>
+                  </div>
+                  
+                  <div>
+                    <p className="text-sm text-muted-foreground">رقم الهاتف</p>
+                    <p className="font-medium">{user?.phone || 'غير محدد'}</p>
+                  </div>
+                </div>
+                
+                <div>
+                  <p className="text-sm text-muted-foreground">نبذة عني</p>
+                  <p className="mt-1">{user?.bio || 'لا توجد معلومات إضافية.'}</p>
+                </div>
+                
+                <div className="pt-4">
+                  <Button onClick={() => setIsEditing(true)}>تعديل الملف الشخصي</Button>
+                </div>
               </div>
             )}
           </div>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Profile Picture */}
-          <div className="flex items-center gap-4">
-            <div className="w-20 h-20 bg-muted rounded-full overflow-hidden">
-              {user.avatar_url ? (
-                <img 
-                  src={user.avatar_url} 
-                  alt="صورة الملف الشخصي"
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full bg-muted flex items-center justify-center">
-                  <User className="h-8 w-8 text-muted-foreground" />
-                </div>
-              )}
-            </div>
-            <div>
-              <h3 className="font-semibold text-card-foreground">
-                {user.first_name} {user.last_name}
-              </h3>
-              <p className="text-sm text-muted-foreground">{user.email}</p>
-            </div>
-          </div>
-
-          {/* Form Fields */}
-          <div className="grid md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="first_name" className="text-card-foreground">الاسم الأول</Label>
-              <Input
-                id="first_name"
-                value={formData.first_name}
-                onChange={(e) => handleInputChange('first_name', e.target.value)}
-                disabled={!isEditing}
-                className="bg-background border-border text-foreground disabled:bg-muted"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="last_name" className="text-card-foreground">الاسم الأخير</Label>
-              <Input
-                id="last_name"
-                value={formData.last_name}
-                onChange={(e) => handleInputChange('last_name', e.target.value)}
-                disabled={!isEditing}
-                className="bg-background border-border text-foreground disabled:bg-muted"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-card-foreground">البريد الإلكتروني</Label>
-              <Input
-                id="email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => handleInputChange('email', e.target.value)}
-                disabled={!isEditing}
-                className="bg-background border-border text-foreground disabled:bg-muted"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="phone" className="text-card-foreground">رقم الهاتف</Label>
-              <Input
-                id="phone"
-                value={formData.phone}
-                onChange={(e) => handleInputChange('phone', e.target.value)}
-                disabled={!isEditing}
-                className="bg-background border-border text-foreground disabled:bg-muted"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="city" className="text-card-foreground">المدينة</Label>
-              <Input
-                id="city"
-                value={formData.city}
-                onChange={(e) => handleInputChange('city', e.target.value)}
-                disabled={!isEditing}
-                className="bg-background border-border text-foreground disabled:bg-muted"
-              />
-            </div>
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="bio" className="text-card-foreground">نبذة عني</Label>
-            <Textarea
-              id="bio"
-              value={formData.bio}
-              onChange={(e) => handleInputChange('bio', e.target.value)}
-              disabled={!isEditing}
-              rows={3}
-              className="bg-background border-border text-foreground disabled:bg-muted"
-              placeholder="اكتب نبذة قصيرة عنك..."
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Account Stats */}
-      <Card className="bg-card border-border">
-        <CardHeader>
-          <CardTitle className="text-card-foreground">إحصائيات الحساب</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="text-center p-4 bg-accent/20 rounded-lg border border-border">
-              <div className="text-2xl font-bold text-brand">0</div>
-              <div className="text-sm text-muted-foreground">إعلان نشط</div>
-            </div>
-            <div className="text-center p-4 bg-accent/20 rounded-lg border border-border">
-              <div className="text-2xl font-bold text-brand">0</div>
-              <div className="text-sm text-muted-foreground">مشاهدة</div>
-            </div>
-            <div className="text-center p-4 bg-accent/20 rounded-lg border border-border">
-              <div className="text-2xl font-bold text-brand">0</div>
-              <div className="text-sm text-muted-foreground">إعجاب</div>
-            </div>
-            <div className="text-center p-4 bg-accent/20 rounded-lg border border-border">
-              <div className="text-2xl font-bold text-brand">{user.wallet_balance || 0}</div>
-              <div className="text-sm text-muted-foreground">رصيد المحفظة</div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

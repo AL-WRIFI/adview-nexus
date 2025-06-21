@@ -1,19 +1,18 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { promotionAPI } from '@/services/promotions-api';
+import { promotionAPI } from '@/services/promotion-api';
+import { toast } from '@/hooks/use-toast';
+import { isAuthenticated } from '@/services/api';
 
+// Promotion hooks
 export function usePromotionPackages() {
   return useQuery({
     queryKey: ['promotion-packages'],
     queryFn: async () => {
-      try {
-        const response = await promotionAPI.getPromotionPackages();
-        return response.data;
-      } catch (error) {
-        console.error('Error fetching promotion packages:', error);
-        return [];
-      }
+      const response = await promotionAPI.getPromotionPackages();
+      return response.data;
     },
+    staleTime: 30 * 60 * 1000, // 30 minutes - packages don't change often
   });
 }
 
@@ -21,13 +20,39 @@ export function useUserPromotions() {
   return useQuery({
     queryKey: ['user-promotions'],
     queryFn: async () => {
-      try {
-        const response = await promotionAPI.getUserPromotions();
-        return response;
-      } catch (error) {
-        console.error('Error fetching user promotions:', error);
-        return { data: [] };
-      }
+      const response = await promotionAPI.getUserPromotions();
+      return response;
+    },
+    enabled: isAuthenticated(),
+  });
+}
+
+export function usePromoteListing() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ listingId, data }: {
+      listingId: number;
+      data: {
+        promotion_package_id: number;
+        payment_method: 'bank_transfer' | 'stripe';
+        bank_transfer_proof?: File;
+      };
+    }) => promotionAPI.promoteListing(listingId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user-promotions'] });
+      queryClient.invalidateQueries({ queryKey: ['listings'] });
+      toast({
+        title: "تم إرسال طلب الترقية بنجاح",
+        description: "سيتم مراجعة طلبك وتفعيل الترقية قريباً",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        variant: "destructive",
+        title: "خطأ في ترقية الإعلان",
+        description: error.message,
+      });
     },
   });
 }
@@ -60,7 +85,7 @@ export function usePromoteWithStripe() {
       listingId: number; 
       data: { promotion_package_id: number; payment_method: 'stripe' } 
     }) => {
-      const response = await promotionAPI.promoteListingWithStripe(listingId, data.promotion_package_id);
+      const response = await promotionAPI.promoteListingWithStripe(listingId, data);
       return response.data;
     },
     onSuccess: () => {
@@ -77,7 +102,7 @@ export function usePromoteWithWallet() {
       listingId: number; 
       data: { promotion_package_id: number; payment_method: 'wallet' } 
     }) => {
-      const response = await promotionAPI.promoteListingWithWallet(listingId, data.promotion_package_id);
+      const response = await promotionAPI.promoteListingWithWallet(listingId, data);
       return response.data;
     },
     onSuccess: () => {
@@ -85,14 +110,4 @@ export function usePromoteWithWallet() {
       queryClient.invalidateQueries({ queryKey: ['user-promotions'] });
     },
   });
-}
-
-export interface PromotionPackage {
-  id: number;
-  name: string;
-  description: string;
-  price: number;
-  duration_days: number;
-  is_active: boolean;
-  stripe_price_id: string | null;
 }

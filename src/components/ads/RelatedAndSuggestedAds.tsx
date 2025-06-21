@@ -5,6 +5,17 @@ import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Listing } from '@/types';
 import { useRelatedAds, useAds } from '@/hooks/use-api';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import 'swiper/css';
+
+// دالة لتقسيم المصفوفة إلى مجموعات صغيرة (chunks) بحجم معين
+function chunkArray<T>(arr: T[], size: number): T[][] {
+  const result: T[][] = [];
+  for (let i = 0; i < arr.length; i += size) {
+    result.push(arr.slice(i, i + size));
+  }
+  return result;
+}
 
 interface RelatedAndSuggestedAdsProps {
   categoryId?: number;
@@ -20,10 +31,11 @@ interface HorizontalAdsSectionProps {
 
 function HorizontalAdsSection({ title, ads, sectionId }: HorizontalAdsSectionProps) {
   const scrollContainer = React.useRef<HTMLDivElement>(null);
+  const swiperRef = React.useRef<any>(null);
 
   const scroll = (direction: 'left' | 'right') => {
     if (scrollContainer.current) {
-      const scrollAmount = 320; // Width of one card plus gap
+      const scrollAmount = 320; // عرض بطاقة واحدة + الفجوة بينها
       const currentScroll = scrollContainer.current.scrollLeft;
       const targetScroll = direction === 'left' 
         ? currentScroll - scrollAmount 
@@ -36,10 +48,36 @@ function HorizontalAdsSection({ title, ads, sectionId }: HorizontalAdsSectionPro
     }
   };
 
+  // دالة الحصول على رابط الصورة بشكل آمن
+  const getImageUrl = (ad: Listing): string => {
+    if (ad.image) {
+      if (typeof ad.image === 'string') {
+        return ad.image;
+      }
+      if (typeof ad.image === 'object' && 'image_url' in ad.image) {
+        return ad.image.image_url;
+      }
+      if (typeof ad.image === 'object' && 'url' in ad.image) {
+        return (ad.image as any).url;
+      }
+    }
+    
+    if (ad.images && Array.isArray(ad.images) && ad.images.length > 0) {
+      const firstImage = ad.images[0];
+      if (typeof firstImage === 'string') {
+        return firstImage;
+      }
+      if (typeof firstImage === 'object' && 'url' in firstImage) {
+        return (firstImage as any).url;
+      }
+    }
+    return 'https://placehold.co/200x200';
+  };
+
   if (ads.length === 0) return null;
 
   return (
-    <div className="mb-8">
+    <div className="mb-8 relative">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl lg:text-2xl font-bold text-foreground">{title}</h2>
         <div className="hidden md:flex gap-2">
@@ -48,21 +86,22 @@ function HorizontalAdsSection({ title, ads, sectionId }: HorizontalAdsSectionPro
             size="icon"
             onClick={() => scroll('left')}
             className="h-8 w-8"
+            aria-label="السابق"
           >
-            <ChevronRight className="h-4 w-4" />
+            <ChevronLeft className="h-4 w-4" />
           </Button>
           <Button
             variant="outline"
             size="icon"
             onClick={() => scroll('right')}
             className="h-8 w-8"
+            aria-label="التالي"
           >
-            <ChevronLeft className="h-4 w-4" />
+            <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
       </div>
       
-      {/* Desktop Horizontal Scroll */}
       <div className="hidden md:block relative">
         <div
           ref={scrollContainer}
@@ -80,53 +119,91 @@ function HorizontalAdsSection({ title, ads, sectionId }: HorizontalAdsSectionPro
         </div>
       </div>
 
-      {/* Mobile Grid */}
-      <div className="md:hidden">
-        <div className="grid grid-cols-3 gap-3">
-          {ads.slice(0, 6).map((ad) => {
-            // Get the image URL with proper type handling
-            const getImageUrl = (ad: Listing): string => {
-              if (typeof ad.main_image_url === 'string') {
-                return ad.main_image_url;
-              }
-              if (ad.main_image_url && typeof ad.main_image_url === 'object' && 'image_url' in ad.main_image_url) {
-                return (ad.main_image_url as any).image_url;
-              }
-              if (ad.image) {
-                if (typeof ad.image === 'string') {
-                  return ad.image;
-                }
-                if (typeof ad.image === 'object' && ad.image !== null && 'image_url' in ad.image) {
-                  return (ad.image as any).image_url;
-                }
-              }
-              return 'https://placehold.co/200x200';
-            };
-
-            return (
-              <div key={ad.id} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-border overflow-hidden">
-                <div className="aspect-square overflow-hidden">
-                  <img
-                    src={getImageUrl(ad)}
-                    alt={ad.title}
-                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                  />
-                </div>
-                <div className="p-2">
-                  <h3 className="font-semibold text-xs line-clamp-2 mb-1 text-foreground">
-                    {ad.title}
-                  </h3>
-                  <p className="text-brand font-bold text-xs">
-                    {ad.price.toLocaleString()} ريال
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {ad.location}
-                  </p>
-                </div>
-              </div>
-            );
-          })}
+      {/* موبايل: سلايدر بـ Swiper مع 6 إعلانات لكل صفحة + الأسهم فوق يمين */}
+      <div className="md:hidden relative">
+        {/* الأسهم فوق يمين */}
+        <div className="absolute top-1 right-2 flex space-x-1 z-20">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => {
+              // هذا التعامل مع السوايبر عبر ref لو احتجت تحكم
+              if (swiperRef.current) swiperRef.current.slidePrev();
+            }}
+            aria-label="السابق"
+            className="h-6 w-6 p-1"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => {
+              if (swiperRef.current) swiperRef.current.slideNext();
+            }}
+            aria-label="التالي"
+            className="h-6 w-6 p-1"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
         </div>
+
+        <Swiper
+          slidesPerView={1}
+          slidesPerGroup={1}
+          spaceBetween={10}
+          className="w-full"
+          navigation={false}
+          onSwiper={(swiper) => (swiperRef.current = swiper)}
+        >
+          {chunkArray(ads, 6).map((adsChunk, index) => (
+            <SwiperSlide key={index}>
+              <div className="grid grid-cols-3 gap-3">
+                {adsChunk.map((ad) => (
+                  <div key={ad.id}
+                      className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm flex flex-col"
+                    >
+                      {/* صورة الإعلان أو صورة افتراضية */}
+                      <div className="relative w-full aspect-square overflow-hidden bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                        {getImageUrl(ad) ? (
+                          <img
+                            src={getImageUrl(ad)}
+                            alt={ad.title}
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-12 w-12 text-gray-400"
+                            viewBox="0 0 24 24"
+                            fill="currentColor"
+                          >
+                            <path d="M5 3a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V9.83a2 2 0 00-.59-1.42l-4.82-4.82A2 2 0 0014.17 3H5zm9 1.5V9h4.5L14 4.5zM5 5h7v5h5v10H5V5zm2 7a2 2 0 100 4 2 2 0 000-4zm7.5 2.5l-2.25 3-1.75-2.25-2.5 3.75h10l-3.5-4.5z" />
+                          </svg>
+                        )}
+                      </div>
+
+                      {/* معلومات الإعلان */}
+                      <div className="p-2 flex flex-col gap-1 text-xs text-gray-700 dark:text-gray-300">
+                        <h3 className="font-medium truncate">{ad.title}</h3>
+
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-500">{ad.city_name || 'غير محدد'}</span>
+                          {ad.price && (
+                            <span className="font-semibold text-green-600 dark:text-green-400">
+                              {ad.price.toLocaleString()} ريال
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                ))}
+              </div>
+            </SwiperSlide>
+          ))}
+        </Swiper>
       </div>
     </div>
   );
@@ -141,33 +218,29 @@ export function RelatedAndSuggestedAds({
   const { data: suggestedAdsResponse } = useAds({ 
     category_id: categoryId, 
     per_page: 12,
-    sort_by: 'newest'
+    sort: 'newest'
   });
 
-  // Extract suggested ads from response
-  const suggestedAds = React.useMemo(() => {
+  const filteredSuggestedAds = React.useMemo(() => {
     if (!suggestedAdsResponse) return [];
     
+    let adsList: Listing[] = [];
     if (Array.isArray(suggestedAdsResponse)) {
-      return suggestedAdsResponse;
+      adsList = suggestedAdsResponse;
+    } else if (typeof suggestedAdsResponse === 'object' && suggestedAdsResponse.data && Array.isArray(suggestedAdsResponse.data)) {
+      adsList = suggestedAdsResponse.data;
     }
     
-    if (suggestedAdsResponse && typeof suggestedAdsResponse === 'object') {
-      if ('data' in suggestedAdsResponse && Array.isArray(suggestedAdsResponse.data)) {
-        return suggestedAdsResponse.data;
-      }
-    }
-    
-    return [];
-  }, [suggestedAdsResponse]);
+    return adsList.filter(ad => ad.id !== excludeId);
+  }, [suggestedAdsResponse, excludeId]);
 
-  // Filter out current ad from suggested ads
-  const filteredSuggestedAds = suggestedAds.filter(ad => ad.id !== excludeId);
-  const filteredRelatedAds = relatedAds?.filter(ad => ad.id !== excludeId) || [];
+  const filteredRelatedAds = React.useMemo(() => {
+    if (!relatedAds) return [];
+    return relatedAds.filter(ad => ad.id !== excludeId);
+  }, [relatedAds, excludeId]);
 
   return (
     <div className="space-y-8">
-      {/* Related Ads */}
       {filteredRelatedAds.length > 0 && (
         <HorizontalAdsSection
           title="إعلانات مشابهة"
@@ -176,7 +249,6 @@ export function RelatedAndSuggestedAds({
         />
       )}
       
-      {/* Suggested Ads */}
       {filteredSuggestedAds.length > 0 && (
         <HorizontalAdsSection
           title="إعلانات مقترحة"
@@ -187,3 +259,4 @@ export function RelatedAndSuggestedAds({
     </div>
   );
 }
+

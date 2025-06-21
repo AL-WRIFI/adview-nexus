@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { CategoryIcon } from './CategoryIcon';
 import { MobilePagination } from './MobilePagination';
@@ -168,3 +169,4 @@ export function CategoryGrid({
     </div>
   );
 }
+
