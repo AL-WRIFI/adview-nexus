@@ -21,6 +21,7 @@ export interface Listing {
   viewCount?: number;
   negotiable?: boolean;
   is_negotiable?: boolean;
+  main_image_url?: string;
 }
 
 export interface ListingImage {

@@ -16,7 +16,15 @@ export interface SearchFilters {
   // Additional properties used in components
   city_id?: number;
   state_id?: number;
+  district_id?: number;
   product_condition?: string;
   listing_type?: string;
   sort?: string;
+  search?: string;
+  lat?: number;
+  lon?: number;
+  radius?: number;
+  featured?: boolean;
+  verified_user?: boolean;
+  with_images?: boolean;
 }

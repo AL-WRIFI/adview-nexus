@@ -9,4 +9,10 @@ export interface Category {
   created_at: string;
   updated_at: string;
   subcategories?: Category[];
+  // Additional properties used in components
+  image_url?: string;
+  image?: string;
+  slug?: string;
+  count?: number;
+  children?: Category[];
 }
