@@ -70,19 +70,56 @@ export default function NewSearchPage() {
     page,
     per_page: itemsPerPage,
   });
-  
-  // Properly extract the listings data and handle both array and paginated response
-  const listings = Array.isArray(searchResults) 
-    ? searchResults 
-    : searchResults?.data || [];
-  
-  const totalPages = Array.isArray(searchResults) 
-    ? Math.ceil(searchResults.length / itemsPerPage)
-    : searchResults?.last_page || 1;
-  
-  const totalResults = Array.isArray(searchResults) 
-    ? searchResults.length 
-    : searchResults?.total || 0;
+
+  // Properly extract the listings data and handle different response formats
+  const extractedData = useMemo(() => {
+    if (!searchResults) {
+      return { listings: [], totalPages: 1, totalResults: 0 };
+    }
+
+    // Handle direct array response
+    if (Array.isArray(searchResults)) {
+      return {
+        listings: searchResults,
+        totalPages: Math.ceil(searchResults.length / itemsPerPage),
+        totalResults: searchResults.length
+      };
+    }
+
+    // Handle ApiResponse<PaginatedResponse<Listing>>
+    if (searchResults.data) {
+      // Check if data is an array
+      if (Array.isArray(searchResults.data)) {
+        return {
+          listings: searchResults.data,
+          totalPages: searchResults.last_page || Math.ceil((searchResults.total || searchResults.data.length) / itemsPerPage),
+          totalResults: searchResults.total || searchResults.data.length
+        };
+      }
+      // Handle PaginatedResponse format
+      else if (searchResults.data.data) {
+        return {
+          listings: searchResults.data.data,
+          totalPages: searchResults.data.last_page || 1,
+          totalResults: searchResults.data.total || 0
+        };
+      }
+    }
+
+    // Handle PaginatedResponse directly
+    if (searchResults.data && Array.isArray(searchResults.data)) {
+      return {
+        listings: searchResults.data,
+        totalPages: searchResults.last_page || 1,
+        totalResults: searchResults.total || 0
+      };
+    }
+
+    // Fallback
+    return { listings: [], totalPages: 1, totalResults: 0 };
+  }, [searchResults, itemsPerPage]);
+
+  const { listings, totalPages, totalResults } = extractedData;
   
   // Update URL when filters change
   useEffect(() => {
