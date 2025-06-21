@@ -8,10 +8,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useMutation } from '@tanstack/react-query';
-import { useRegister } from '@/hooks/use-api';
+import { useRegister } from '@/hooks/use-auth-api';
 import { useAllCities, useStates } from '@/hooks/use-api';
 import { isAuthenticated } from '@/services/api';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
+import { RegisterData } from '@/types/auth';
+import { authAPI } from '@/services/auth-api';
 
 export default function RegisterPage() {
   const navigate = useNavigate();
