@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Header } from '@/components/layout/header';
@@ -70,9 +71,18 @@ export default function NewSearchPage() {
     per_page: itemsPerPage,
   });
   
-  const listings = searchResults?.data || [];
-  const totalPages = searchResults?.last_page || 1;
-  const totalResults = searchResults?.total || 0;
+  // Properly extract the listings data and handle both array and paginated response
+  const listings = Array.isArray(searchResults) 
+    ? searchResults 
+    : searchResults?.data || [];
+  
+  const totalPages = Array.isArray(searchResults) 
+    ? Math.ceil(searchResults.length / itemsPerPage)
+    : searchResults?.last_page || 1;
+  
+  const totalResults = Array.isArray(searchResults) 
+    ? searchResults.length 
+    : searchResults?.total || 0;
   
   // Update URL when filters change
   useEffect(() => {
