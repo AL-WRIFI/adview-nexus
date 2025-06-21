@@ -174,13 +174,17 @@ export const ADS: Ad[] = [
     viewCount: 156,
     is_negotiable: true,
     main_image_url: '/lovable-uploads/1c8bb087-b7a3-4d42-989b-3942f1844df7.png',
-    image: '/lovable-uploads/1c8bb087-b7a3-4d42-989b-3942f1844df7.png'
+    image: '/lovable-uploads/1c8bb087-b7a3-4d42-989b-3942f1844df7.png',
+    listing_type: 'sell'
   },
   {
     id: 2,
     title: 'شقة فاخرة للإيجار',
     description: 'شقة فاخرة للإيجار، 3 غرف نوم، صالة كبيرة، مطبخ حديث، حمامين، مدخل خاص، موقف سيارة، في حي الروضة',
     price: 35000,
+    category_id: 2,
+    user_id: 2,
+    status: 'active',
     negotiable: false,
     condition: 'new',
     images: [
@@ -201,14 +205,16 @@ export const ADS: Ad[] = [
     comments_count: 1,
     listing_type: 'sell',
     created_at: new Date(2023, 5, 12).toISOString(),
-    updated_at: new Date(2023, 5, 12).toISOString(),
-    user_id: 2
+    updated_at: new Date(2023, 5, 12).toISOString()
   },
   {
     id: 3,
     title: 'ايفون 13 برو ماكس',
     description: 'ايفون 13 برو ماكس، 256 جيجا، لون أزرق، استخدام أسبوعين فقط، كامل الملحقات، ضمان سنة',
     price: 4800,
+    category_id: 3,
+    user_id: 3,
+    status: 'active',
     negotiable: true,
     condition: 'used',
     images: [
@@ -229,14 +235,16 @@ export const ADS: Ad[] = [
     comments_count: 5,
     listing_type: 'sell',
     created_at: new Date(2023, 5, 15).toISOString(),
-    updated_at: new Date(2023, 5, 15).toISOString(),
-    user_id: 3
+    updated_at: new Date(2023, 5, 15).toISOString()
   },
   {
     id: 4,
     title: 'قطط سيامي للبيع',
     description: 'قطط سيامي أصيلة للبيع، عمرها شهرين، مطعمة بالكامل، لون أزرق، ذكر وأنثى',
     price: 1200,
+    category_id: 4,
+    user_id: 4,
+    status: 'active',
     negotiable: true,
     condition: 'new',
     images: [
@@ -257,14 +265,16 @@ export const ADS: Ad[] = [
     comments_count: 2,
     listing_type: 'sell',
     created_at: new Date(2023, 5, 18).toISOString(),
-    updated_at: new Date(2023, 5, 18).toISOString(),
-    user_id: 4
+    updated_at: new Date(2023, 5, 18).toISOString()
   },
   {
     id: 5,
     title: 'مطلوب مبرمج تطبيقات',
     description: 'مطلوب مبرمج تطبيقات للعمل بدوام كامل، خبرة لا تقل عن 3 سنوات في مجال تطوير تطبيقات الجوال، رواتب مجزية',
     price: 0,
+    category_id: 5,
+    user_id: 5,
+    status: 'active',
     negotiable: false,
     condition: 'new',
     images: [],
@@ -277,14 +287,16 @@ export const ADS: Ad[] = [
     comments_count: 0,
     listing_type: 'buy',
     created_at: new Date(2023, 5, 20).toISOString(),
-    updated_at: new Date(2023, 5, 20).toISOString(),
-    user_id: 5
+    updated_at: new Date(2023, 5, 20).toISOString()
   },
   {
     id: 6,
     title: 'لكزس LX 570 موديل 2021',
     description: 'لكزس LX 570 موديل 2021، فل كامل، بلاك اديشن، ماشي 20 ألف كيلو، ضمان الوكالة، حالة ممتازة',
     price: 380000,
+    category_id: 1,
+    user_id: 1,
+    status: 'active',
     negotiable: true,
     condition: 'used',
     images: [
@@ -305,14 +317,16 @@ export const ADS: Ad[] = [
     comments_count: 4,
     listing_type: 'sell',
     created_at: new Date(2023, 5, 25).toISOString(),
-    updated_at: new Date(2023, 5, 25).toISOString(),
-    user_id: 1
+    updated_at: new Date(2023, 5, 25).toISOString()
   },
   {
     id: 7,
     title: 'لابتوب ماك بوك برو',
     description: 'لابتوب ماك بوك برو 2022، شاشة 16 بوصة، معالج M1 Max، 32 جيجا رام، تخزين 1 تيرا، استخدام خفيف جدا',
     price: 12000,
+    category_id: 3,
+    user_id: 2,
+    status: 'active',
     negotiable: true,
     condition: 'used',
     images: [
@@ -333,14 +347,16 @@ export const ADS: Ad[] = [
     comments_count: 1,
     listing_type: 'sell',
     created_at: new Date(2023, 5, 27).toISOString(),
-    updated_at: new Date(2023, 5, 27).toISOString(),
-    user_id: 2
+    updated_at: new Date(2023, 5, 27).toISOString()
   },
   {
     id: 8,
     title: 'فيلا فاخرة للبيع',
     description: 'فيلا فاخرة للبيع في حي الرحاب، 6 غرف نوم، 7 حمامات، صالتين، مطبخ كبير، مسبح خارجي، جراج لسيارتين، حديقة',
     price: 2500000,
+    category_id: 2,
+    user_id: 3,
+    status: 'active',
     negotiable: true,
     condition: 'new',
     images: [
@@ -361,14 +377,16 @@ export const ADS: Ad[] = [
     comments_count: 3,
     listing_type: 'sell',
     created_at: new Date(2023, 5, 30).toISOString(),
-    updated_at: new Date(2023, 5, 30).toISOString(),
-    user_id: 3
+    updated_at: new Date(2023, 5, 30).toISOString()
   },
   {
     id: 9,
     title: 'جلسة تصوير احترافية',
     description: 'جلسة تصوير احترافية للأفراد والعائلات والمناسبات، تصوير داخلي وخارجي، مع طباعة 10 صور بحجم كبير',
     price: 800,
+    category_id: 6,
+    user_id: 4,
+    status: 'active',
     negotiable: false,
     condition: 'new',
     images: [
@@ -389,14 +407,16 @@ export const ADS: Ad[] = [
     comments_count: 0,
     listing_type: 'service',
     created_at: new Date(2023, 6, 2).toISOString(),
-    updated_at: new Date(2023, 6, 2).toISOString(),
-    user_id: 4
+    updated_at: new Date(2023, 6, 2).toISOString()
   },
   {
     id: 10,
     title: 'كنب مودERN جديد',
     description: 'كنب مودERN جديد، 7 مقاعد، لون رمادي، قماش مستورد ضد البقع، ضمان سنتين، مع طاولة وسط زجاج',
     price: 5500,
+    category_id: 10,
+    user_id: 5,
+    status: 'active',
     negotiable: true,
     condition: 'new',
     images: [
@@ -417,8 +437,7 @@ export const ADS: Ad[] = [
     comments_count: 1,
     listing_type: 'sell',
     created_at: new Date(2023, 6, 5).toISOString(),
-    updated_at: new Date(2023, 6, 5).toISOString(),
-    user_id: 5
+    updated_at: new Date(2023, 6, 5).toISOString()
   }
 ];
 

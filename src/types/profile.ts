@@ -20,6 +20,9 @@ export interface ApiResponse<T = any> {
   message: string;
   data: T | null;
   errors?: any;
+  // Additional properties for pagination responses
+  total?: number;
+  last_page?: number;
 }
 
 export interface PaginatedResponse<T> {

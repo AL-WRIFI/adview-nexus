@@ -134,20 +134,34 @@ export default function EditAd() {
       setPhoneHidden(listing.phone_hidden || false);
       setProductCondition(listing.condition as 'new' | 'used' || 'used');
       
-      // Set location data if available
-      if (listing.lat && listing.lon) {
+      // Set location data if available - handle both lng and lon
+      if (listing.lat && (listing.lng || listing.lon)) {
         setLat(Number(listing.lat));
-        setLon(Number(listing.lon));
+        setLon(Number(listing.lng || listing.lon));
       }
       
-      // Set image data
+      // Set image data - handle different image formats
       if (listing.image) {
-        setMainImageData(listing.image as MainImage);
+        if (typeof listing.image === 'string') {
+          setMainImageData({
+            image_id: '1',
+            image_url: listing.image
+          });
+        } else if (typeof listing.image === 'object' && 'image_url' in listing.image) {
+          setMainImageData({
+            image_id: '1',
+            image_url: listing.image.image_url
+          });
+        }
       }
       
-      // Handle gallery images
+      // Handle gallery images - convert ListingImage[] to GalleryImage[]
       if (listing.images && Array.isArray(listing.images)) {
-        setGalleryImagesData(listing.images as GalleryImage[]);
+        const galleryImages: GalleryImage[] = listing.images.map((img, index) => ({
+          id: img.id.toString(), // Convert number to string
+          url: img.image_url || img.url || ''
+        }));
+        setGalleryImagesData(galleryImages);
       }
     }
   }, [listing]);

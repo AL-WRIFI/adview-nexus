@@ -73,6 +73,7 @@ export interface ListingDetails extends Listing {
   phone_hidden?: boolean;
   lat?: number;
   lng?: number;
+  lon?: number; // Added for backward compatibility
 }
 
 export interface Ad extends Listing {
@@ -83,4 +84,19 @@ export interface Ad extends Listing {
   district?: string;
   comments_count?: number;
   listing_type?: string;
+}
+
+export interface Favorite {
+  id: number;
+  user_id: string;
+  listing_id: number;
+  created_at: string;
+}
+
+export interface SubCategory {
+  id: number;
+  name: string;
+  category_id: number;
+  created_at: string;
+  updated_at: string;
 }
