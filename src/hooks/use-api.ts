@@ -1,9 +1,9 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
 import * as API from '@/services/api';
 import { Listing, ListingDetails, Category, Brand, User, SearchFilters, Comment, PaginatedResponse, ApiResponse } from '@/types';
 import { profileAPI } from '@/services/apis';
+import { authAPI as newAuthAPI } from '@/services/auth-api';
 
 // Auth Hooks
 export function useLogin() {
@@ -67,13 +67,15 @@ export function useRegister() {
       password_confirmation: string;
       city_id: number;
       state_id: number;
-    }) => API.authAPI.register(userData),
+    }) => newAuthAPI.register(userData),
     onSuccess: (data) => {
-      queryClient.setQueryData(['currentUser'], data.data.user);
-      toast({
-        title: "تم إنشاء الحساب بنجاح",
-        description: `مرحباً ${data.data.user.first_name} ${data.data.user.last_name}`,
-      });
+      if (data.success && data.data?.token) {
+        queryClient.setQueryData(['currentUser'], data.data.user);
+        toast({
+          title: "تم إنشاء الحساب بنجاح",
+          description: `مرحباً ${data.data.user.first_name} ${data.data.user.last_name}`,
+        });
+      }
     },
     meta: {
       onError: (error: Error) => {

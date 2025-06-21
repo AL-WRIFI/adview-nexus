@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Label } from '@/components/ui/label';
@@ -8,6 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useMutation } from '@tanstack/react-query';
 import { useRegister } from '@/hooks/use-api';
 import { useAllCities, useStates } from '@/hooks/use-api';
 import { isAuthenticated } from '@/services/api';
@@ -43,8 +43,39 @@ export default function RegisterPage() {
     }
   }, [navigate]);
   
-  // Register mutation
-  const registerMutation = useRegister();
+  // Register mutation with updated API
+  const registerMutation = useMutation({
+    mutationFn: async (userData: RegisterData) => {
+      const response = await authAPI.register(userData);
+      return response;
+    },
+    onSuccess: (data) => {
+      if (data.success && data.data?.email_verification_required) {
+        toast({
+          title: 'تم إنشاء الحساب بنجاح',
+          description: 'تم إرسال رمز التحقق إلى بريدك الإلكتروني',
+        });
+        
+        // التوجه لصفحة التحقق مع البريد الإلكتروني
+        navigate('/auth/verify-email', { 
+          state: { email },
+          replace: true 
+        });
+      } else if (data.success && data.data?.token) {
+        // في حالة عدم الحاجة للتحقق، سجل الدخول مباشرة
+        localStorage.setItem('authToken', data.data.token);
+        navigate('/dashboard', { replace: true });
+      }
+    },
+    onError: (error: any) => {
+      console.error('Registration error:', error);
+      toast({
+        variant: 'destructive',
+        title: 'خطأ في إنشاء الحساب',
+        description: error.message || 'حدث خطأ أثناء إنشاء الحساب',
+      });
+    }
+  });
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
