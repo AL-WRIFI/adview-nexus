@@ -50,6 +50,7 @@ export function AdsTab({ onPromote, onDelete }: AdsTabProps) {
   const { data: userListingsResponse, isLoading, error, refetch } = useQuery({
     queryKey: ['userListings', currentUser?.id, currentPage, selectedStatus, searchQuery, sortBy],
     queryFn: () => listingsAPI.getListings({ 
+      user_id: currentUser!.id,
       page: currentPage,
       per_page: itemsPerPage,
       search: searchQuery || undefined,
@@ -58,55 +59,8 @@ export function AdsTab({ onPromote, onDelete }: AdsTabProps) {
     enabled: !!currentUser?.id,
   });
 
-  // Properly extract the listings data and handle different response formats
-  const extractedData = React.useMemo(() => {
-    if (!userListingsResponse) {
-      return { listings: [], totalResults: 0, totalPages: 1 };
-    }
-
-    // Handle direct array response
-    if (Array.isArray(userListingsResponse)) {
-      return {
-        listings: userListingsResponse,
-        totalResults: userListingsResponse.length,
-        totalPages: Math.ceil(userListingsResponse.length / itemsPerPage)
-      };
-    }
-
-    // Handle ApiResponse<PaginatedResponse<Listing>>
-    if (userListingsResponse.data) {
-      // Check if data is an array
-      if (Array.isArray(userListingsResponse.data)) {
-        return {
-          listings: userListingsResponse.data,
-          totalResults: userListingsResponse.total || userListingsResponse.data.length,
-          totalPages: userListingsResponse.last_page || Math.ceil((userListingsResponse.total || userListingsResponse.data.length) / itemsPerPage)
-        };
-      }
-      // Handle PaginatedResponse format
-      else if (userListingsResponse.data.data) {
-        return {
-          listings: userListingsResponse.data.data,
-          totalResults: userListingsResponse.data.total || 0,
-          totalPages: userListingsResponse.data.last_page || 1
-        };
-      }
-    }
-
-    // Handle PaginatedResponse directly
-    if (userListingsResponse.data && Array.isArray(userListingsResponse.data)) {
-      return {
-        listings: userListingsResponse.data,
-        totalResults: userListingsResponse.total || 0,
-        totalPages: userListingsResponse.last_page || 1
-      };
-    }
-
-    // Fallback
-    return { listings: [], totalResults: 0, totalPages: 1 };
-  }, [userListingsResponse, itemsPerPage]);
-
-  const { listings, totalResults, totalPages } = extractedData;
+  const listings = userListingsResponse?.data || [];
+  const totalPages = Math.ceil((userListingsResponse?.total || 0) / itemsPerPage);
 
   const handleRefreshAd = async (adId: number) => {
     try {
@@ -138,26 +92,32 @@ export function AdsTab({ onPromote, onDelete }: AdsTabProps) {
       return listing.main_image_url;
     }
 
+    // Check if the 'image' property is an object with 'image_url'
     if (listing.image && typeof listing.image === 'object' && 'image_url' in listing.image) {
       return (listing.image as ListingImage).image_url;
     }
     
+    // Check if 'image' is a direct URL string
     if (typeof listing.image === 'string' && listing.image) {
       return listing.image;
     }
     
+    // Check the 'images' array for the first available image
     if (listing.images && Array.isArray(listing.images) && listing.images.length > 0) {
       const firstImage = listing.images[0];
       if (firstImage) {
         if (typeof firstImage === 'object') {
+          // It's a ListingImage object, check for 'url' or 'image_url'
           return (firstImage as ListingImage).url || (firstImage as ListingImage).image_url;
         }
         if (typeof firstImage === 'string') {
+          // It's a URL string
           return firstImage;
         }
       }
     }
     
+    // Fallback to a default placeholder if no image is found
     return 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=400&h=300&fit=crop';
   };
 
