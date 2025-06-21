@@ -87,7 +87,7 @@ export default function RegisterPage() {
     }
     
     try {
-      await registerMutation.mutateAsync({
+      const response = await registerMutation.mutateAsync({
         first_name: firstName,
         last_name: lastName,
         email,
@@ -98,8 +98,22 @@ export default function RegisterPage() {
         state_id: stateId
       });
       
-      // Redirect to dashboard
-      navigate('/dashboard', { replace: true });
+      // Check if email verification is required
+      if (response.data?.email_verification_required) {
+        toast({
+          title: 'تم إنشاء الحساب بنجاح',
+          description: response.message || 'تحقق من بريدك الإلكتروني للتفعيل',
+        });
+        
+        // Navigate to verification page with email
+        navigate('/auth/verify-email', { 
+          state: { email },
+          replace: true 
+        });
+      } else {
+        // Direct login if no verification required
+        navigate('/dashboard', { replace: true });
+      }
     } catch (error) {
       // Error is handled in the mutation
     }

@@ -66,6 +66,25 @@ export function useLogin() {
   });
 }
 
+export function useRegister() {
+  const { toast } = useToast();
+  
+  return useMutation({
+    mutationFn: useCallback(async (userData: any) => {
+      // Use the verification API for registration
+      const response = await API.authAPI.register(userData);
+      return response;
+    }, []),
+    onError: useCallback((error: Error) => {
+      toast({
+        variant: "destructive",
+        title: "خطأ في إنشاء الحساب",
+        description: error.message,
+      });
+    }, [toast])
+  });
+}
+
 export function useCurrentUser() {
   return useQuery({
     queryKey: queryKeys.auth.currentUser(),
@@ -428,5 +447,27 @@ export function useDeleteListing() {
         description: error.message,
       });
     },
+  });
+}
+
+export function useStates() {
+  return useQuery({
+    queryKey: ['states'],
+    queryFn: useCallback(async () => {
+      const response = await API.locationAPI.getStates();
+      return response.data;
+    }, []),
+    staleTime: 24 * 60 * 60 * 1000, // 24 hours
+  });
+}
+
+export function useAllCities() {
+  return useQuery({
+    queryKey: ['allCities'],
+    queryFn: useCallback(async () => {
+      const response = await API.locationAPI.getCities();
+      return response.data;
+    }, []),
+    staleTime: 24 * 60 * 60 * 1000, // 24 hours
   });
 }

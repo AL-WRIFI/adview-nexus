@@ -32,6 +32,7 @@ import FavoritesPage from './pages/favorites';
 // Auth pages
 import LoginPage from './pages/auth/login';
 import RegisterPage from './pages/auth/register';
+import VerifyEmailPage from './pages/auth/verify-email';
 import NewSearchPage from './pages/search/NewSearchPage';
 
 // Create a client with optimized cache config
@@ -68,6 +69,7 @@ function AppContent() {
       {/* Auth Routes */}
       <Route path="/auth/login" element={<LoginPage />} />
       <Route path="/auth/register" element={<RegisterPage />} />
+      <Route path="/auth/verify-email" element={<VerifyEmailPage />} />
       
       {/* Protected Routes */}
       <Route path="/dashboard" element={
