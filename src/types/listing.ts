@@ -43,8 +43,21 @@ export interface ListingDetails extends Listing {
     id: number;
     name: string;
   };
+  // Additional properties used in AdDetails component
+  related?: Listing[];
+  comments?: any[];
+  category_name?: string;
+  sub_category_name?: string;
+  address?: string;
+  state?: string;
+  listing_type?: string;
 }
 
 export interface Ad extends Listing {
   // Ad is an alias for Listing
+  // Additional properties for backward compatibility
+  category?: string;
+  subcategory?: string;
+  district?: string;
+  comments_count?: number;
 }

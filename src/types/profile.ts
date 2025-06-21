@@ -38,6 +38,7 @@ export interface Comment {
   rating?: number;
   created_at: string;
   updated_at: string;
+  parent_id?: number;
   user: {
     id: number;
     name: string;
@@ -55,6 +56,9 @@ export interface Conversation {
   last_message?: Message;
   created_at: string;
   updated_at: string;
+  listing?: any;
+  other_user?: User;
+  unread_count?: number;
 }
 
 export interface Message {

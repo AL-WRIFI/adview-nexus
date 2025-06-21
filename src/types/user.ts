@@ -19,4 +19,5 @@ export interface User {
   bio?: string;
   city?: string;
   wallet_balance?: number;
+  verified?: boolean;
 }
