@@ -20,9 +20,6 @@ export interface ApiResponse<T = any> {
   message: string;
   data: T | null;
   errors?: any;
-  // Additional properties for pagination responses
-  total?: number;
-  last_page?: number;
 }
 
 export interface PaginatedResponse<T> {
@@ -31,12 +28,6 @@ export interface PaginatedResponse<T> {
   per_page: number;
   current_page: number;
   last_page: number;
-  meta?: {
-    total: number;
-    per_page: number;
-    current_page: number;
-    last_page: number;
-  };
 }
 
 export interface Comment {
@@ -47,16 +38,11 @@ export interface Comment {
   rating?: number;
   created_at: string;
   updated_at: string;
-  parent_id?: number;
   user: {
     id: number;
     name: string;
     avatar?: string;
-    image?: string;
-    first_name?: string;
-    last_name?: string;
   };
-  replies?: Comment[];
 }
 
 export interface Conversation {
@@ -65,9 +51,6 @@ export interface Conversation {
   last_message?: Message;
   created_at: string;
   updated_at: string;
-  listing?: any;
-  other_user?: User;
-  unread_count?: number;
 }
 
 export interface Message {
@@ -77,8 +60,4 @@ export interface Message {
   content: string;
   created_at: string;
   sender: User;
-  receiver_id?: number;
 }
-
-// Import User from the user types
-import { User } from './user';

@@ -13,13 +13,10 @@ export interface User {
   email_verified: boolean;
   verified_status: number | null;
   is_suspend: number | null;
-  created_at: string;
-  updated_at: string;
   // Additional properties for compatibility
   name?: string;
   avatar?: string;
   bio?: string;
   city?: string;
   wallet_balance?: number;
-  verified?: boolean;
 }
