@@ -117,7 +117,7 @@ export default function EditAd() {
       setCategoryId(listing.category_id || null);
       
       // Handle sub_category_id and child_category_id conversion
-      const subCatId = listing.sub_category_id;
+      const subCatId = listing.subcategory_id || listing.sub_category_id;
       const childCatId = listing.child_category_id;
       
       setSubCategoryId(subCatId ? (typeof subCatId === 'string' ? parseInt(subCatId) : subCatId) : null);
@@ -127,7 +127,7 @@ export default function EditAd() {
       setAdTitle(listing.title || '');
       setAdDescription(listing.description || '');
       setAdPrice(listing.price ? listing.price.toString() : '');
-      setIsNegotiable(listing.is_negotiable || false);
+      setIsNegotiable(listing.is_negotiable || listing.negotiable || false);
       setStateId(listing.state_id || null);
       setCityId(listing.city_id || null);
       setAddress(listing.address || '');
@@ -135,19 +135,40 @@ export default function EditAd() {
       setProductCondition(listing.condition as 'new' | 'used' || 'used');
       
       // Set location data if available
-      if (listing.lat && listing.lon) {
+      if (listing.lat && (listing.lng || listing.lon)) {
         setLat(Number(listing.lat));
-        setLon(Number(listing.lon));
+        setLon(Number(listing.lng || listing.lon));
       }
       
-      // Set image data
-      if (listing.image) {
-        setMainImageData(listing.image as MainImage);
+      // Set image data - check main_image_url first
+      if (listing.main_image_url) {
+        setMainImageData({
+          image_id: '1',
+          image_url: listing.main_image_url
+        });
       }
       
-      // Handle gallery images
+      // Handle gallery images - convert from string array to GalleryImage array
       if (listing.images && Array.isArray(listing.images)) {
-        setGalleryImagesData(listing.images as GalleryImage[]);
+        const galleryImages = listing.images.map((image, index) => {
+          if (typeof image === 'string') {
+            return {
+              id: `existing-${index}`,
+              url: image
+            };
+          } else if (typeof image === 'object' && image !== null) {
+            return {
+              id: `existing-${index}`,
+              url: (image as any).url || (image as any).image_url || ''
+            };
+          }
+          return {
+            id: `existing-${index}`,
+            url: ''
+          };
+        }).filter(img => img.url); // Filter out empty URLs
+        
+        setGalleryImagesData(galleryImages as GalleryImage[]);
       }
     }
   }, [listing]);

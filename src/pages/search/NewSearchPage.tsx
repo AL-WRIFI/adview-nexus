@@ -1,409 +1,244 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { AdCard } from '@/components/ads/ad-card';
+import { SearchFilters, Listing } from '@/types';
+import { useAds } from '@/hooks/use-api';
+import { AdFilters } from '@/components/filters/ad-filters';
+import { MobileFilterSheet } from '@/components/filters/MobileFilterSheet';
+import { Button } from '@/components/ui/button';
+import { Grid2X2, List } from 'lucide-react';
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { MobileNav } from '@/components/layout/mobile-nav';
-import { AdCard } from '@/components/ads/ad-card';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Card } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { AdvancedFilters } from '@/components/filters/AdvancedFilters';
-import { useListings, useCategories } from '@/hooks/use-api';
-import { SearchFilters } from '@/types';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Pagination } from '@/components/custom/pagination';
-import { 
-  Search, 
-  Grid2X2, 
-  List, 
-  SlidersHorizontal,
-  X,
-  Filter,
-  MapPin,
-  DollarSign,
-  Calendar,
-  Star,
-  TrendingUp,
-  Clock,
-  ArrowUpDown
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
 
 export default function NewSearchPage() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const navigate = useNavigate();
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const isMobile = useIsMobile();
-  const { data: categories } = useCategories();
   
-  // Search state
-  const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
-  const [filters, setFilters] = useState<SearchFilters>({
-    search: searchParams.get('search') || '',
-    category_id: searchParams.get('category_id') ? parseInt(searchParams.get('category_id')!) : undefined,
-    sub_category_id: searchParams.get('sub_category_id') ? parseInt(searchParams.get('sub_category_id')!) : undefined,
-    city_id: searchParams.get('city_id') ? parseInt(searchParams.get('city_id')!) : undefined,
-    state_id: searchParams.get('state_id') ? parseInt(searchParams.get('state_id')!) : undefined,
-    brand_id: searchParams.get('brand_id') ? parseInt(searchParams.get('brand_id')!) : undefined,
-    min_price: searchParams.get('min_price') ? parseInt(searchParams.get('min_price')!) : undefined,
-    max_price: searchParams.get('max_price') ? parseInt(searchParams.get('max_price')!) : undefined,
-    condition: (searchParams.get('condition') as any) || undefined,
-    product_condition: (searchParams.get('product_condition') as any) || undefined,
-    listing_type: (searchParams.get('listing_type') as any) || undefined,
-    featured: searchParams.get('featured') === 'true' || undefined,
-    sort_by: (searchParams.get('sort_by') as any) || 'newest',
-    lat: searchParams.get('lat') ? parseFloat(searchParams.get('lat')!) : undefined,
-    lon: searchParams.get('lon') ? parseFloat(searchParams.get('lon')!) : undefined,
-    radius: searchParams.get('radius') ? parseInt(searchParams.get('radius')!) : undefined,
-  });
-  
-  const [adLayout, setAdLayout] = useState<'grid' | 'list'>('grid');
-  const [page, setPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(12);
-  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
-  
-  // Fetch results with improved error handling
-  const { data: searchResults, isLoading, error, refetch } = useListings({
-    ...filters,
-    page,
-    per_page: itemsPerPage,
-  });
-  
-  const listings = searchResults?.data || [];
-  const totalPages = searchResults?.last_page || 1;
-  const totalResults = searchResults?.total || 0;
-  
-  // Update URL when filters change
+  const initialFilters: SearchFilters = {};
+  for (const [key, value] of searchParams.entries()) {
+    initialFilters[key] = value;
+  }
+
+  const [filters, setFilters] = useState<SearchFilters>(initialFilters);
+
   useEffect(() => {
-    const params: Record<string, string> = {};
-    
-    Object.entries(filters).forEach(([key, value]) => {
-      if (value !== undefined && value !== '' && value !== null) {
-        params[key] = value.toString();
+    const newParams = new URLSearchParams();
+    for (const key in filters) {
+      if (filters[key] !== undefined) {
+        newParams.set(key, String(filters[key]));
       }
-    });
-    
-    setSearchParams(params);
+    }
+    setSearchParams(newParams);
   }, [filters, setSearchParams]);
   
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    setFilters(prev => ({ ...prev, search: searchQuery }));
-    setPage(1);
-  };
-  
-  const handleFilterChange = (newFilters: Partial<SearchFilters>) => {
-    setFilters(prev => ({ ...prev, ...newFilters }));
-    setPage(1);
-  };
-  
-  const clearFilter = (filterKey: keyof SearchFilters) => {
-    setFilters(prev => {
-      const newFilters = { ...prev };
-      delete newFilters[filterKey];
-      return newFilters;
-    });
-  };
-  
-  const clearAllFilters = () => {
-    setFilters({ sort_by: 'newest' });
-    setSearchQuery('');
-    setPage(1);
-  };
-  
-  const activeFilters = useMemo(() => {
-    return Object.entries(filters).filter(([key, value]) => 
-      value !== undefined && value !== '' && value !== null && 
-      !['sort_by', 'page', 'per_page'].includes(key)
-    );
-  }, [filters]);
+  useEffect(() => {
+    const items = searchParams.get('per_page');
+    if (items) {
+      setItemsPerPage(parseInt(items));
+    }
+  }, [searchParams]);
 
-  const quickFilters = [
-    { label: 'مميز', key: 'featured', value: true },
-    { label: 'جديد', key: 'condition', value: 'new' },
-    { label: 'مستعمل', key: 'condition', value: 'used' },
-    { label: 'للبيع', key: 'listing_type', value: 'sell' },
-    { label: 'للإيجار', key: 'listing_type', value: 'rent' },
-  ];
+  const handleFilterChange = (newFilters: SearchFilters) => {
+    setFilters(prevFilters => ({ ...prevFilters, ...newFilters }));
+  };
+  
+  const { data: adsResponse, isLoading: isLoadingAds, error: adsError } = useAds(searchParams);
 
-  const sortOptions = [
-    { value: 'newest', label: 'الأحدث', icon: Clock },
-    { value: 'oldest', label: 'الأقدم', icon: Calendar },
-    { value: 'price_asc', label: 'السعر من الأقل', icon: ArrowUpDown },
-    { value: 'price_desc', label: 'السعر من الأعلى', icon: ArrowUpDown },
-    { value: 'popular', label: 'الأكثر مشاهدة', icon: TrendingUp },
-  ];
+  const totalPages = adsResponse?.data?.last_page || Math.ceil((adsResponse?.data?.total || 0) / (searchParams.per_page || 10));
+  const totalResults = adsResponse?.data?.total || 0;
+
+  const handleItemsPerPageChange = (value: string) => {
+    setItemsPerPage(parseInt(value));
+    setFilters(prevFilters => ({ ...prevFilters, per_page: parseInt(value) }));
+  };
+
+  const adData = Array.isArray(adsResponse?.data?.data) ? adsResponse.data.data : 
+                 Array.isArray(adsResponse?.data) ? adsResponse.data : [];
+
   
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-dark-background">
+    <div className="min-h-screen flex flex-col">
       <Header />
       
-      {/* Advanced Search Header */}
-      <div className="bg-white dark:bg-dark-card border-b border-border dark:border-dark-border">
-        <div className="container px-4 mx-auto py-8">
-          <div className="max-w-6xl mx-auto">
-            {/* Title and Stats */}
-            <div className="text-center mb-8">
-              <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-                البحث المتقدم في الإعلانات
-              </h1>
-              <p className="text-lg text-muted-foreground mb-6">
-                ابحث عن كل ما تحتاجه بسهولة وسرعة
-              </p>
-              
-              {/* Quick Stats */}
-              <div className="flex justify-center gap-8 text-sm text-muted-foreground">
-                <div className="flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4" />
-                  <span>{totalResults} إعلان متاح</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Star className="w-4 h-4" />
-                  <span>{categories?.length || 0} تصنيف</span>
-                </div>
-              </div>
-            </div>
-            
-            {/* Main Search Bar */}
-            <form onSubmit={handleSearch} className="relative mb-6">
-              <div className="relative">
-                <Search className="absolute right-4 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5" />
-                <Input
-                  type="text"
-                  placeholder="ابحث عن أي منتج، خدمة، أو كلمة مفتاحية..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-16 pr-12 h-14 text-lg border-2 focus:border-brand"
-                />
-                <Button 
-                  type="submit"
-                  size="lg"
-                  className="absolute left-2 top-1/2 transform -translate-y-1/2 h-10"
-                >
-                  بحث متقدم
-                </Button>
-              </div>
-            </form>
-            
-            {/* Quick Action Filters */}
-            <div className="flex flex-wrap items-center gap-3 mb-6">
-              <span className="text-sm font-medium text-muted-foreground">فلاتر سريعة:</span>
-              {quickFilters.map((filter) => (
-                <Button
-                  key={filter.label}
-                  variant={filters[filter.key as keyof SearchFilters] === filter.value ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => handleFilterChange({ [filter.key]: filter.value })}
-                  className="h-8"
-                >
-                  {filter.label}
-                </Button>
-              ))}
-              
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-                className="h-8 mr-2"
-              >
-                <SlidersHorizontal className="w-4 h-4 ml-1" />
-                فلترة متقدمة
-              </Button>
-            </div>
-
-            {/* Advanced Filters Panel */}
-            {showAdvancedFilters && (
-              <Card className="p-6 mb-6">
-                <AdvancedFilters 
-                  onFilterChange={handleFilterChange}
-                  currentFilters={filters}
-                />
-              </Card>
-            )}
-          </div>
+      <div className="bg-muted py-3">
+        <div className="container px-4 mx-auto">
+          <h2 className="text-lg font-semibold">
+            {totalResults > 0 ? `نتائج البحث: ${totalResults}` : 'لا توجد نتائج'}
+          </h2>
         </div>
       </div>
       
       <main className="flex-1 pb-20 md:pb-0">
         <div className="container px-4 mx-auto py-6">
-          {/* Active Filters */}
-          {activeFilters.length > 0 && (
-            <div className="mb-6">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="font-medium text-sm">الفلاتر المطبقة ({activeFilters.length})</h3>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={clearAllFilters}
-                  className="text-red-500 hover:text-red-600"
-                >
-                  <X className="w-4 h-4 ml-1" />
-                  مسح الكل
-                </Button>
-              </div>
-              <div className="flex gap-2 flex-wrap">
-                {activeFilters.map(([key, value]) => (
-                  <Badge 
-                    key={key}
-                    variant="outline" 
-                    className="flex items-center gap-2 px-3 py-1"
-                  >
-                    <span className="text-xs">
-                      {key === 'search' ? `"${value}"` : `${key}: ${value}`}
-                    </span>
-                    <X 
-                      className="w-3 h-3 cursor-pointer hover:text-red-500" 
-                      onClick={() => clearFilter(key as keyof SearchFilters)}
-                    />
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          )}
-          
-          {/* Results Header */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-            <div>
-              <h2 className="text-xl font-bold">
-                {searchQuery ? `نتائج البحث عن "${searchQuery}"` : 'نتائج البحث'}
-              </h2>
-              <p className="text-sm text-muted-foreground">
-                عرض {listings.length} من أصل {totalResults} إعلان
-              </p>
-            </div>
-            
-            <div className="flex items-center gap-3">
-              {/* Items per page */}
-              <Select
-                value={itemsPerPage.toString()}
-                onValueChange={(value) => {
-                  setItemsPerPage(parseInt(value, 10));
-                  setPage(1);
-                }}
-              >
-                <SelectTrigger className="w-20 h-9 text-sm">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="12">12</SelectItem>
-                  <SelectItem value="24">24</SelectItem>
-                  <SelectItem value="36">36</SelectItem>
-                  <SelectItem value="48">48</SelectItem>
-                </SelectContent>
-              </Select>
-              
-              {/* Sort */}
-              <Select
-                value={filters.sort_by || 'newest'}
-                onValueChange={(value) => setFilters(prev => ({ ...prev, sort_by: value as any }))}
-              >
-                <SelectTrigger className="w-40 h-9 text-sm">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {sortOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      <div className="flex items-center gap-2">
-                        <option.icon className="w-4 h-4" />
-                        {option.label}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              
-              {/* Layout Toggle */}
-              <div className="flex border border-border rounded-lg overflow-hidden">
-                <Button 
-                  variant={adLayout === 'grid' ? "default" : "ghost"} 
-                  size="sm"
-                  onClick={() => setAdLayout('grid')}
-                  className="h-9 w-9 rounded-none p-0"
-                >
-                  <Grid2X2 className="h-4 w-4" />
-                </Button>
-                <Button 
-                  variant={adLayout === 'list' ? "default" : "ghost"}
-                  size="sm" 
-                  onClick={() => setAdLayout('list')}
-                  className="h-9 w-9 rounded-none p-0"
-                >
-                  <List className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          </div>
-          
-          {/* Results */}
-          {isLoading ? (
-            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-              {Array.from({ length: 12 }).map((_, i) => (
-                <Card key={i} className="p-4">
-                  <div className="animate-pulse">
-                    <div className="bg-muted h-48 rounded-lg mb-3" />
-                    <div className="bg-muted h-4 rounded mb-2" />
-                    <div className="bg-muted h-4 rounded w-3/4" />
-                  </div>
-                </Card>
-              ))}
-            </div>
-          ) : error ? (
-            <div className="text-center py-12 bg-white dark:bg-dark-card rounded-lg">
-              <div className="w-16 h-16 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <X className="w-8 h-8 text-red-500" />
-              </div>
-              <h3 className="text-lg font-medium mb-2">حدث خطأ في البحث</h3>
-              <p className="text-muted-foreground mb-4">يرجى المحاولة مرة أخرى أو التأكد من الاتصال بالإنترنت</p>
-              <Button onClick={() => refetch()}>
-                إعادة المحاولة
-              </Button>
-            </div>
-          ) : listings.length > 0 ? (
-            <>
-              <div className={cn(
-                "grid gap-4",
-                adLayout === 'grid' 
-                  ? "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4" 
-                  : "grid-cols-1"
-              )}>
-                {listings.map((listing) => (
-                  <AdCard 
-                    key={listing.id} 
-                    ad={listing} 
-                    layout={adLayout}
-                  />
-                ))}
-              </div>
-              
-              {/* Pagination */}
-              <div className="mt-8">
-                <Pagination 
-                  currentPage={page} 
-                  totalPages={totalPages}
-                  onPageChange={setPage}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            {/* Desktop Filter Sidebar */}
+            {!isMobile && (
+              <div className="col-span-1 hidden md:block">
+                <AdFilters 
+                  layout="sidebar" 
+                  onLayoutChange={setViewMode} 
+                  currentLayout={viewMode}
+                  onFilterChange={handleFilterChange}
                 />
               </div>
-            </>
-          ) : (
-            <div className="text-center py-16 bg-white dark:bg-dark-card rounded-lg">
-              <div className="w-20 h-20 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Search className="w-10 h-10 text-gray-400" />
+            )}
+            
+            <div className="col-span-1 md:col-span-3">
+              {/* View toggle buttons and items per page */}
+              <div className="flex justify-end mb-4 gap-3 items-center">
+                <div className="flex items-center w-full justify-between">
+                  {isMobile ? (
+                    <div className="flex items-center w-full justify-between">
+                      {/* Mobile Filter Button */}
+                      <MobileFilterSheet 
+                        onFilterChange={handleFilterChange}
+                        currentFilters={filters}
+                      />
+                      
+                      {/* Items per page and view toggle */}
+                      <div className="flex items-center border rounded-md overflow-hidden bg-white dark:bg-dark-card">
+                        <Select
+                          value={itemsPerPage.toString()}
+                          onValueChange={handleItemsPerPageChange}
+                        >
+                          <SelectTrigger className="w-12 h-8 border-0 focus:ring-0">
+                            <SelectValue placeholder="10" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="5">5</SelectItem>
+                            <SelectItem value="10">10</SelectItem>
+                            <SelectItem value="20">20</SelectItem>
+                            <SelectItem value="50">50</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        
+                        <div className="flex border-r border-border dark:border-dark-border">
+                          <Button 
+                            variant={viewMode === 'grid' ? "default" : "ghost"} 
+                            size="icon"
+                            onClick={() => setViewMode('grid')}
+                            className="h-8 w-8 rounded-none"
+                            aria-label="Grid view"
+                            title="عرض شبكي"
+                          >
+                            <Grid2X2 className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant={viewMode === 'list' ? "default" : "ghost"}
+                            size="icon" 
+                            onClick={() => setViewMode('list')}
+                            className="h-8 w-8 rounded-none"
+                            aria-label="List view"
+                            title="عرض قائمة"
+                          >
+                            <List className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex items-center">
+                        <span className="text-sm ml-2">عرض</span>
+                        <Select
+                          value={itemsPerPage.toString()}
+                          onValueChange={handleItemsPerPageChange}
+                        >
+                          <SelectTrigger className="w-16 h-8">
+                            <SelectValue placeholder="10" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="5">5</SelectItem>
+                            <SelectItem value="10">10</SelectItem>
+                            <SelectItem value="20">20</SelectItem>
+                            <SelectItem value="50">50</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div className="flex border rounded-sm overflow-hidden">
+                        <Button 
+                          variant={viewMode === 'grid' ? "default" : "ghost"} 
+                          size="icon"
+                          onClick={() => setViewMode('grid')}
+                          className="h-8 w-8 rounded-none"
+                          aria-label="Grid view"
+                          title="عرض شبكي"
+                        >
+                          <Grid2X2 className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant={viewMode === 'list' ? "default" : "ghost"}
+                          size="icon" 
+                          onClick={() => setViewMode('list')}
+                          className="h-8 w-8 rounded-none"
+                          aria-label="List view"
+                          title="عرض قائمة"
+                        >
+                          <List className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
-              <h3 className="text-xl font-medium mb-4">لم يتم العثور على نتائج</h3>
-              <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                جرب تعديل معايير البحث أو استخدم كلمات مفتاحية مختلفة للحصول على نتائج أفضل
-              </p>
-              <div className="flex justify-center gap-3">
-                <Button onClick={clearAllFilters}>
-                  إعادة ضبط البحث
-                </Button>
-                <Button variant="outline" onClick={() => navigate('/categories')}>
-                  تصفح التصنيفات
-                </Button>
-              </div>
+              
+              {!isLoadingAds && !adsError && adData.length > 0 && (
+                <div className={`grid gap-4 ${
+                  viewMode === 'grid' 
+                    ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' 
+                    : 'grid-cols-1'
+                }`}>
+                  {adData.map((ad: Listing) => (
+                    <AdCard 
+                      key={ad.id} 
+                      ad={ad} 
+                      layout={viewMode}
+                    />
+                  ))}
+                </div>
+              )}
+              
+              {!isLoadingAds && !adsError && adData.length === 0 && (
+                <div className="text-center py-12 bg-gray-50 dark:bg-dark-surface">
+                  <p className="text-muted-foreground mb-4">لا توجد إعلانات مطابقة لبحثك</p>
+                </div>
+              )}
+              
+              {adsError && (
+                <div className="text-center py-12 bg-gray-50 dark:bg-dark-surface">
+                  <p className="text-red-500 mb-4">حدث خطأ أثناء تحميل الإعلانات</p>
+                  <Button onClick={() => window.location.reload()}>إعادة المحاولة</Button>
+                </div>
+              )}
+              
+              {!isLoadingAds && !adsError && adsResponse && (
+                <div className="flex justify-center mt-8">
+                  {totalPages > 1 && (
+                    [...Array(totalPages)].map((_, i) => (
+                      <Button
+                        key={i + 1}
+                        variant={Number(searchParams.get('page')) === i + 1 || (!searchParams.get('page') && i === 0) ? 'default' : 'outline'}
+                        onClick={() => {
+                          const newParams = new URLSearchParams(searchParams);
+                          newParams.set('page', String(i + 1));
+                          setSearchParams(newParams);
+                        }}
+                        className="mx-1"
+                      >
+                        {i + 1}
+                      </Button>
+                    ))
+                  )}
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
       </main>
       

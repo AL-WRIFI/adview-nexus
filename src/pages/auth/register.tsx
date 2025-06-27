@@ -51,7 +51,7 @@ export default function Register() {
   const onSubmit = async (formData: z.infer<typeof formSchema>) => {
     setIsLoading(true);
     try {
-      const response = await api.post('/auth/register', formData);
+      const response = await listingsAPI.post('/auth/register', formData);
 
       if (response.success) {
         console.log('Registration successful:', response);
