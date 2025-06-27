@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -87,13 +86,6 @@ export function PromoteListingDialog({ open, onOpenChange, listing }: PromoteLis
       if (typeof listing.main_image_url === 'object' && listing.main_image_url && 'image_url' in listing.main_image_url) {
         return (listing.main_image_url as any).image_url;
       }
-    }
-    
-    if (typeof listing.image === 'string' && listing.image) {
-      return listing.image;
-    }
-    if (listing.image && typeof listing.image === 'object' && 'image_url' in listing.image) {
-      return (listing.image as any).image_url;
     }
     
     if (listing.images && Array.isArray(listing.images) && listing.images.length > 0) {

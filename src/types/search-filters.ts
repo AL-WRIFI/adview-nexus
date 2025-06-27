@@ -27,4 +27,5 @@ export interface SearchFilters {
   page?: number;
   per_page?: number;
   limit?: number;
+  user_id?: string; // For filtering user's own ads
 }

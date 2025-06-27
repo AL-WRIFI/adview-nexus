@@ -22,6 +22,7 @@ export interface Listing {
   address?: string;
   lat?: number;
   lng?: number;
+  lon?: number; // Alias for lng
   user_id: string;
   user?: User;
   created_at: string;
@@ -34,11 +35,19 @@ export interface Listing {
   location?: string;
   viewCount?: number; // Alias for views_count
   is_negotiable?: boolean; // Alias for negotiable
+  category_name?: string;
+  sub_category_name?: string;
+  state?: string;
+  state_id?: number;
+  city_id?: number;
+  // Alias properties
+  sub_category_id?: number; // Alias for subcategory_id
 }
 
 export interface ListingDetails extends Listing {
   seller: User;
   related_ads?: Listing[];
+  related?: Listing[]; // Alias for related_ads
   comments?: Comment[];
 }
 
@@ -46,9 +55,13 @@ export interface ListingImage {
   id: number;
   listing_id: number;
   image_url: string;
+  url?: string; // Alias for image_url
   is_primary: boolean;
   order: number;
 }
 
 // Legacy alias for backward compatibility
 export type Ad = Listing;
+
+import { User } from './user';
+import { Comment } from './comment';

@@ -1,4 +1,7 @@
 
+import { Listing } from './listing';
+import { User } from './user';
+
 export interface ApiResponse<T = any> {
   success: boolean;
   message: string;
@@ -24,6 +27,11 @@ export interface PaginatedResponse<T> {
     label: string;
     active: boolean;
   }>;
+  // For backward compatibility
+  meta?: {
+    last_page: number;
+    total: number;
+  };
 }
 
 export interface Conversation {

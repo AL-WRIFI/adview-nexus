@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,9 +8,14 @@ import { Badge } from '@/components/ui/badge';
 import { useAccountSettings, useUpdateAccountSettings } from '@/hooks/use-verification';
 import { Loader2, Shield, Bell, Settings, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useQuery } from '@tanstack/react-query';
+import { api } from '@/lib/api';
 
 export default function AccountSettingsPage() {
-  const { data: settings, isLoading } = useAccountSettings();
+  const { data: settings, isLoading } = useQuery({
+    queryKey: ['account-settings'],
+    queryFn: () => api.get('/user/account/account-settings')
+  });
   const updateSettings = useUpdateAccountSettings();
   const { toast } = useToast();
   const [localSettings, setLocalSettings] = useState(settings);

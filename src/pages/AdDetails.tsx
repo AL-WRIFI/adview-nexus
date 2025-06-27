@@ -191,19 +191,21 @@ export default function AdDetails() {
     const images: string[] = [];
     
     // Add main image if available
-    if (ad.image && typeof ad.image === 'object' && ad.image.image_url) {
-      images.push(ad.image.image_url);
-    } else if (typeof ad.image === 'string' && ad.image) {
-      images.push(ad.image);
+    if (ad.main_image_url) {
+      if (typeof ad.main_image_url === 'string') {
+        images.push(ad.main_image_url);
+      } else if (typeof ad.main_image_url === 'object' && ad.main_image_url && 'image_url' in ad.main_image_url) {
+        images.push((ad.main_image_url as any).image_url);
+      }
     }
     
     // Add gallery images
     if (ad.images && Array.isArray(ad.images)) {
       ad.images.forEach(img => {
-        if (typeof img === 'object' && img.url) {
-          images.push(img.url);
-        } else if (typeof img === 'string') {
+        if (typeof img === 'string') {
           images.push(img);
+        } else if (img && typeof img === 'object' && 'url' in img) {
+          images.push((img as any).url);
         }
       });
     }
@@ -215,10 +217,10 @@ export default function AdDetails() {
   const allImages = processImages();
   
   // Prepare related ads - convert ListingDetails to Listing format if needed
-  const relatedAds = ad.related || [];
+  const relatedAds = ad.related_ads || ad.related || [];
   
   // Process comments
-  const comments: Comment[] = ad.comments || [];
+  const comments = ad.comments || [];
 
   return (
     <div className="min-h-screen flex flex-col bg-white dark:bg-neutral-900 transition-colors">
