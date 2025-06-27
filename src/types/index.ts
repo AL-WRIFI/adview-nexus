@@ -14,5 +14,5 @@ export type { User as AuthUser } from './auth';
 export type { Comment as CommentType } from './comment';
 
 // Re-export User from auth for backward compatibility
-export type { User } from './auth';
-export type { Comment } from './comment';
+export { User } from './auth';
+export { Comment } from './comment';

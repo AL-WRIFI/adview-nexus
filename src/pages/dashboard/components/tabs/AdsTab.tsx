@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { AdCard } from '@/components/ads/ad-card';
 import { Button } from '@/components/ui/button';
@@ -13,12 +12,7 @@ import {
 import { useListings } from '@/hooks/use-api';
 import { Listing } from '@/types';
 
-interface AdsTabProps {
-  onPromote?: (id: number) => void;
-  onDelete?: (id: number) => void;
-}
-
-export function AdsTab({ onPromote, onDelete }: AdsTabProps) {
+export function AdsTab() {
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -70,17 +64,8 @@ export function AdsTab({ onPromote, onDelete }: AdsTabProps) {
     return <div>Error loading ads. Please try again.</div>;
   }
 
-  // Handle different data structures
-  let ads: Listing[] = [];
-  let totalCount = 0;
-
-  if (Array.isArray(adsData)) {
-    ads = adsData;
-    totalCount = adsData.length;
-  } else if (adsData && typeof adsData === 'object' && 'data' in adsData) {
-    ads = (adsData as any).data || [];
-    totalCount = (adsData as any).total || 0;
-  }
+  const ads = Array.isArray(adsData) ? adsData : adsData?.data || [];
+  const totalCount = Array.isArray(adsData) ? adsData.length : adsData?.total || 0;
 
   return (
     <div className="space-y-6">
@@ -146,6 +131,7 @@ export function AdsTab({ onPromote, onDelete }: AdsTabProps) {
         <div className="flex items-center space-x-2">
           <Label htmlFor="itemsPerPage">إعلانات لكل صفحة:</Label>
           <Select
+            id="itemsPerPage"
             value={itemsPerPage.toString()}
             onValueChange={(value) => setItemsPerPage(parseInt(value))}
           >

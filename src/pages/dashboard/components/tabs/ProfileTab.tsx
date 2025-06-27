@@ -42,8 +42,8 @@ export function ProfileTab() {
           {/* Avatar section */}
           <div className="flex flex-col items-center">
             <div className="w-32 h-32 bg-gray-200 rounded-full overflow-hidden mb-4">
-              {user?.avatar_url ? (
-                <img src={user.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+              {user?.avatar ? (
+                <img src={user.avatar} alt="Profile" className="w-full h-full object-cover" />
               ) : (
                 <UserCircle className="w-full h-full text-gray-400" />
               )}
