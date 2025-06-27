@@ -95,9 +95,6 @@ export function PromoteListingDialog({ open, onOpenChange, listing }: PromoteLis
     if (listing.image && typeof listing.image === 'object' && 'image_url' in listing.image) {
       return (listing.image as any).image_url;
     }
-    if (listing.image && typeof listing.image === 'object' && 'url' in listing.image) {
-      return (listing.image as any).url;
-    }
     
     if (listing.images && Array.isArray(listing.images) && listing.images.length > 0) {
       const firstImage = listing.images[0];

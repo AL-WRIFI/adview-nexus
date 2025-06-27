@@ -2,8 +2,8 @@
 import { PaginatedResponse, Ad, Comment, User, Category, Brand, Listing, ListingDetails, SearchFilters, ApiResponse } from '@/types';
 
 // Base API URL for the application
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://haraj-syria.test/api/v1';
-// const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://admin2.mixsyria.com/api/v1';
+// const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://haraj-syria.test/api/v1';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://admin2.mixsyria.com/api/v1';
 
 // Helper function to get the auth token from storage (localStorage or sessionStorage)
 const getAuthToken = () => {
@@ -244,7 +244,7 @@ export const listingsAPI = {
     return fetchAPI(`/listings?${queryParams.toString()}`);
   },
   
-  // Get a single listing by ID
+
   getListing: async (id: number): Promise<ApiResponse<ListingDetails>> => {
     return fetchAPI(`/listing/${id}`);
   },
@@ -378,6 +378,10 @@ export const locationAPI = {
     return fetchAPI('/cities');
   },
   
+    getDistrictsByCity: async (cityId: number): Promise<ApiResponse<{ id: number; name: string }[]>> => {
+    return fetchAPI(`/cities/${cityId}/districts`);
+  },
+
   // Get user's current location
   getCurrentLocation: async (): Promise<{ lat: number; lng: number }> => {
     return new Promise((resolve, reject) => {

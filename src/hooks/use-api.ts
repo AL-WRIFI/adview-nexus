@@ -540,6 +540,23 @@ export function useCities(stateId: number | undefined) {
   });
 }
 
+export function useDistricts(cityId: number | undefined) {
+  return useQuery({
+    queryKey: ['districts', cityId],
+    
+    queryFn: async () => {
+      if (!cityId) return []; 
+
+      const response = await API.locationAPI.getDistrictsByCity(cityId);
+      return response.data;
+    },
+
+    enabled: !!cityId,
+    
+    staleTime: 24 * 60 * 60 * 1000,
+  });
+}
+
 export function useAllCities() {
   return useQuery({
     queryKey: ['allCities'],

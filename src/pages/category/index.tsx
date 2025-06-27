@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { Header } from '@/components/layout/header';
@@ -23,7 +24,6 @@ export default function CategoryPage() {
   
   const [filters, setFilters] = useState<SearchFilters>({
     category_id: numericCategoryId,
-    subcategory_id: searchParams.get('subcategory') ? parseInt(searchParams.get('subcategory')!, 10) : undefined,
     sub_category_id: searchParams.get('subcategory') ? parseInt(searchParams.get('subcategory')!, 10) : undefined,
     child_category_id: searchParams.get('childcategory') ? parseInt(searchParams.get('childcategory')!, 10) : undefined,
   });
@@ -50,7 +50,6 @@ export default function CategoryPage() {
       setFilters(prev => ({
         ...prev,
         category_id: numericCategoryId,
-        subcategory_id: searchParams.get('subcategory') ? parseInt(searchParams.get('subcategory')!, 10) : undefined,
         sub_category_id: searchParams.get('subcategory') ? parseInt(searchParams.get('subcategory')!, 10) : undefined,
         child_category_id: searchParams.get('childcategory') ? parseInt(searchParams.get('childcategory')!, 10) : undefined,
       }));
@@ -63,7 +62,6 @@ export default function CategoryPage() {
       ...prev,
       ...newFilters,
       category_id: numericCategoryId,
-      subcategory_id: searchParams.get('subcategory') ? parseInt(searchParams.get('subcategory')!, 10) : undefined,
       sub_category_id: searchParams.get('subcategory') ? parseInt(searchParams.get('subcategory')!, 10) : undefined,
       child_category_id: searchParams.get('childcategory') ? parseInt(searchParams.get('childcategory')!, 10) : undefined,
     }));
@@ -71,8 +69,8 @@ export default function CategoryPage() {
   };
   
   // Get the listings from the response, ensure it's an array even if undefined
-  const listings = listingsResponse?.data?.data || [];
-  const totalPages = listingsResponse?.data?.last_page || 1;
+  const listings = listingsResponse?.data || [];
+  const totalPages = listingsResponse?.last_page || 1;
   const totalResults = listingsResponse?.data?.total || 0;
   
   return (

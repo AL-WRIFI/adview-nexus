@@ -200,8 +200,8 @@ export default function AdDetails() {
     // Add gallery images
     if (ad.images && Array.isArray(ad.images)) {
       ad.images.forEach(img => {
-        if (typeof img === 'object' && img && 'url' in img) {
-          images.push((img as any).url);
+        if (typeof img === 'object' && img.url) {
+          images.push(img.url);
         } else if (typeof img === 'string') {
           images.push(img);
         }
@@ -215,7 +215,7 @@ export default function AdDetails() {
   const allImages = processImages();
   
   // Prepare related ads - convert ListingDetails to Listing format if needed
-  const relatedAds = ad.related_listings || ad.related || [];
+  const relatedAds = ad.related || [];
   
   // Process comments
   const comments: Comment[] = ad.comments || [];
@@ -230,7 +230,7 @@ export default function AdDetails() {
             <Link to="/" className="hover:text-black dark:hover:text-neutral-200">الرئيسية</Link>
             {' > '}
             <Link to={`/category/${ad.category_id}`} className="hover:text-black dark:hover:text-neutral-200">
-              {ad.category?.name || ad.category_name || 'تصنيف'}
+              {ad.category_name || 'تصنيف'}
             </Link>
             {' > '}
             <span className="dark:text-neutral-300">{ad.title}</span>
@@ -243,8 +243,8 @@ export default function AdDetails() {
               <div className="mb-6">
               <h1 className="text-xl md:text-2xl font-bold text-neutral-800 dark:text-white mb-2">{ad.title}</h1>
               <div className="flex items-center text-neutral-600 dark:text-neutral-400 text-sm gap-4">
-                <div className="flex items-center gap-1"><Eye className="w-4 h-4" /> {ad.views_count || ad.viewCount || 0} مشاهدة</div>
-                <div className="flex items-center gap-1"><MapPin className="w-4 h-4" /> <span className="truncate max-w-[80px]">{ad.city || ad.city_name || ad.address || "غير معروف"}</span></div>
+                <div className="flex items-center gap-1"><Eye className="w-4 h-4" /> {ad.viewCount} مشاهدة</div>
+                <div className="flex items-center gap-1"><MapPin className="w-4 h-4" /> <span className="truncate max-w-[80px]">{ad.city ?? "غير معروف"}</span></div>
                 <div className="flex items-center gap-1"><Clock className="w-4 h-4" /> {timeAgo}</div>
               </div>
             </div>
@@ -281,17 +281,17 @@ export default function AdDetails() {
                     <div className="grid grid-cols-2 gap-4 text-neutral-700 dark:text-neutral-300">
                       <div className="flex items-center">
                         <span className="text-neutral-500 dark:text-neutral-400 ml-2"> التصنيف : </span>
-                        <span>{ad.category?.name || ad.category_name || "غير محدد"}</span>
+                        <span>{ad.category_name || "غير محدد"}</span>
                       </div>
-                      {(ad.subcategory?.name || ad.sub_category_name) && (
+                      {ad.sub_category_name && (
                         <div className="flex items-center">
                           <span className="text-neutral-500 dark:text-neutral-400 ml-2"> التصنيف الفرعي : </span>
-                          <span>{ad.subcategory?.name || ad.sub_category_name}</span>
+                          <span>{ad.sub_category_name}</span>
                         </div>
                       )}
                       <div className="flex items-center">
                         <span className="text-neutral-500 dark:text-neutral-400 ml-2"> المدينة : </span>
-                        <span>{ad.city || ad.city_name || ad.address || "غير محدد"}</span>
+                        <span>{ad.city || ad.address || "غير محدد"}</span>
                       </div>
                       {ad.state && (
                         <div className="flex items-center">
@@ -303,15 +303,13 @@ export default function AdDetails() {
                         <span className="text-neutral-500 dark:text-neutral-400 ml-2">نوع الإعلان  :  </span>
                         <span>
                           {ad.listing_type === 'sell' ? ' بيع' : 
-                           ad.listing_type === 'rent' ? ' إيجار' : 
-                           ad.listing_type === 'exchange' ? ' تبادل' : 
-                           ad.listing_type === 'wanted' ? ' مطلوب' : 
-                           ' خدمة'}
+                           ad.listing_type === 'buy' ? ' شراء' : 
+                           ad.listing_type === 'exchange' ? ' تبادل' : ' خدمة'}
                         </span>
                       </div>
                       <div className="flex items-center">
                         <span className="text-neutral-500 dark:text-neutral-400 ml-2">تاريخ النشر : </span>
-                        <span>{new Date(ad.created_at || '').toLocaleDateString('ar-SA')}</span>
+                        <span>{new Date(ad.created_at).toLocaleDateString('ar-SA')}</span>
                       </div>
                       {ad.condition && (
                         <div className="flex items-center">
@@ -326,7 +324,7 @@ export default function AdDetails() {
                 {/* Comments tab */}
                 <TabsContent value="comments" className="pt-4">
                   <CommentsList 
-                    listingId={numId}
+                    comments={comments}
                     onAddComment={handleAddComment}
                     onAddReply={handleAddReply}
                     onDeleteComment={handleDeleteComment}

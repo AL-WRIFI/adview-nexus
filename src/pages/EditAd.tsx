@@ -115,14 +115,8 @@ export default function EditAd() {
       // Set form data from listing
       setAdType(listing.listing_type as any || 'sell');
       setCategoryId(listing.category_id || null);
-      
-      // Handle sub_category_id and child_category_id conversion
-      const subCatId = listing.sub_category_id;
-      const childCatId = listing.child_category_id;
-      
-      setSubCategoryId(subCatId ? (typeof subCatId === 'string' ? parseInt(subCatId) : subCatId) : null);
-      setChildCategoryId(childCatId ? (typeof childCatId === 'string' ? parseInt(childCatId) : childCatId) : null);
-      
+      setSubCategoryId(listing.sub_category_id || null);
+      setChildCategoryId(listing.child_category_id || null);
       setBrandId(listing.brand_id || null);
       setAdTitle(listing.title || '');
       setAdDescription(listing.description || '');

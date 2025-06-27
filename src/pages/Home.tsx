@@ -41,8 +41,8 @@ export default function Home() {
   };
   
   const adData = adsResponse?.data || [];
-  const totalPages = adsResponse?.data?.meta?.last_page || 
-                    Math.ceil((adsResponse?.data?.total || 0) / itemsPerPage) || 1;
+  const totalPages = adsResponse?.meta?.last_page || 
+                    Math.ceil((adsResponse?.total || 0) / itemsPerPage) || 1;
   
   const featuredAds = Array.isArray(adData) ? adData.filter((ad: Listing) => ad.featured) : [];
   const regularAds = Array.isArray(adData) ? adData.filter((ad: Listing) => !ad.featured) : [];

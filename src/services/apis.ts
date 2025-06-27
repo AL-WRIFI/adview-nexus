@@ -1,9 +1,13 @@
 
-import { ApiResponse, PaginatedResponse, Listing, Comment, User, SearchFilters, Favorite, Category, SubCategory, Brand, State, City } from '@/types';
-
+import { 
+  ApiResponse, PaginatedResponse, Listing, Comment, User, SearchFilters, 
+  Favorite, Category, SubCategory, Brand, State, City, 
+  ChangePasswordPayload, DeleteAccountPayload, AccountSettings, UserSettings
+} from '@/types';
 // Configuration - Update to use the correct API URL
 const API_CONFIG = {
-  BASE_URL: 'http://haraj-syria.test/api/v1',
+  BASE_URL: 'https://admin2.mixsyria.com/api/v1',
+  // BASE_URL: 'http://haraj-syria.test/api/v1',
   TIMEOUT: 30000,
   RETRY_ATTEMPTS: 3,
   RETRY_DELAY: 1000,
@@ -68,7 +72,7 @@ class ApiClient {
         ...(options.headers || {}),
       },
       mode: 'cors',
-      credentials: 'omit', // Changed from 'include' to fix CORS issue
+      credentials: 'include',
     };
 
     const currentRetryCount = this.retryCount.get(requestId) || 0;
@@ -232,7 +236,25 @@ export const listingsAPI = {
 
   getListing: (id: number): Promise<ApiResponse<Listing>> => 
     ApiClient.get(`/listings/${id}`),
-
+  getCurrentUserListings: (
+    filters?: Omit<SearchFilters, 'user_id'> // Exclude user_id, it's implicit
+  ): Promise<ApiResponse<PaginatedResponse<Listing>>> => {
+    const params = new URLSearchParams();
+    if (filters) {
+      // Ensure all relevant filter properties are handled
+      (Object.keys(filters) as Array<keyof typeof filters>).forEach(key => {
+        const value = filters[key];
+        if (value !== undefined && value !== null && value !== '') {
+          params.append(key, String(value));
+        }
+      });
+    }
+    const queryString = params.toString();
+    // This endpoint should match the one defined in your Laravel routes for UserListingController@fetch
+    // e.g., /user/listings (which is already set up in your routes/api.php)
+    const endpoint = queryString ? `/user/listings?${queryString}` : '/user/listings';
+    return ApiClient.get(endpoint);
+  },
   createListing: (data: FormData): Promise<ApiResponse<Listing>> => 
     ApiClient.post('/listings', data),
 
@@ -270,6 +292,12 @@ export const authAPI = {
 
   refreshToken: (): Promise<ApiResponse<{ token: string }>> => 
     ApiClient.post('/auth/refresh'),
+
+  changePassword: (data: ChangePasswordPayload): Promise<ApiResponse<void>> =>
+    ApiClient.post('/user/change-password', data),
+
+  deleteAccount: (data: DeleteAccountPayload): Promise<ApiResponse<void>> =>
+    ApiClient.post('/user/account/delete-account', data),
 };
 
 export const profileAPI = {
@@ -278,6 +306,18 @@ export const profileAPI = {
 
   updateProfile: (data: FormData): Promise<ApiResponse<User>> => 
     ApiClient.post('/user/profile', data),
+
+ getAccountSettings: (): Promise<ApiResponse<AccountSettings>> =>
+    ApiClient.get('/user/account/account-settings'), // <-- تم تعديل المسار هنا
+    
+  updateSecuritySettings: (data: Partial<UserSettings['security']>): Promise<ApiResponse<UserSettings>> =>
+    ApiClient.put('/user/account/security-settings', data),
+    
+  updateNotificationSettings: (data: Partial<UserSettings['notifications']>): Promise<ApiResponse<UserSettings>> =>
+    ApiClient.put('/user/account/notification-settings', data),
+    
+  updateGeneralSettings: (data: Partial<UserSettings['general']>): Promise<ApiResponse<UserSettings>> =>
+    ApiClient.put('/user/account/general-settings', data),
 
   getUserStats: (): Promise<ApiResponse<any>> => 
     ApiClient.get('/user/stats'),

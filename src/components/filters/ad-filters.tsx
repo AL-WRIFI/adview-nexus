@@ -2,22 +2,33 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
-import { Card, CardContent } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { 
   Search, 
+  Filter, 
+  Grid2X2, 
+  List, 
   MapPin, 
+  Star, 
+  Calendar,
+  DollarSign,
   ChevronDown,
   ChevronUp,
   X,
-  Navigation,
-  Calendar,
-  DollarSign
+  Layers,
+  Grid3X3,
+  Package
 } from 'lucide-react';
 import { SearchFilters } from '@/types';
-import { useCategories, useBrands, useStates, useCities } from '@/hooks/use-api';
+import { useCategories, useBrands } from '@/hooks/use-api';
 import { cn } from '@/lib/utils';
 
 interface AdFiltersProps {
@@ -28,43 +39,6 @@ interface AdFiltersProps {
   selectedCategory?: any;
 }
 
-// Mock data for missing APIs
-const mockAnimals = [
-  { id: 1, name: 'طيور', icon: '🐦' },
-  { id: 2, name: 'قطط', icon: '🐱' },
-  { id: 3, name: 'كلاب', icon: '🐕' },
-  { id: 4, name: 'أسماك', icon: '🐟' },
-];
-
-const mockRealEstate = [
-  { id: 1, name: 'شقق للبيع', icon: '🏠' },
-  { id: 2, name: 'شقق للإيجار', icon: '🏢' },
-  { id: 3, name: 'فيلات', icon: '🏘️' },
-  { id: 4, name: 'أراضي', icon: '🏞️' },
-];
-
-const mockBrands = [
-  { id: 1, name: 'فورد', logo_url: 'https://1000logos.net/wp-content/uploads/2017/03/Ford-Logo.png' },
-  { id: 2, name: 'نيسان', logo_url: 'https://1000logos.net/wp-content/uploads/2017/03/Nissan-Logo.png' },
-  { id: 3, name: 'تويوتا', logo_url: 'https://1000logos.net/wp-content/uploads/2017/03/Toyota-Logo.png' },
-  { id: 4, name: 'مرسيدس', logo_url: 'https://1000logos.net/wp-content/uploads/2017/03/Mercedes-Logo.png' },
-  { id: 5, name: 'شيفروليه', logo_url: 'https://1000logos.net/wp-content/uploads/2017/03/Chevrolet-Logo.png' },
-  { id: 6, name: 'لكزس', logo_url: 'https://1000logos.net/wp-content/uploads/2017/03/Lexus-Logo.png' },
-  { id: 7, name: 'دودج', logo_url: 'https://1000logos.net/wp-content/uploads/2017/03/Dodge-Logo.png' },
-  { id: 8, name: 'بي إم دبليو', logo_url: 'https://1000logos.net/wp-content/uploads/2017/03/BMW-Logo.png' },
-  { id: 9, name: 'جي إم سي', logo_url: 'https://1000logos.net/wp-content/uploads/2017/03/GMC-Logo.png' },
-];
-
-const mockTechBrands = [
-  { id: 10, name: 'كانون', logo_url: 'https://1000logos.net/wp-content/uploads/2017/03/Canon-Logo.png' },
-  { id: 11, name: 'سامسونج', logo_url: 'https://1000logos.net/wp-content/uploads/2017/03/Samsung-Logo.png' },
-  { id: 12, name: 'آبل', logo_url: 'https://1000logos.net/wp-content/uploads/2017/03/Apple-Logo.png' },
-  { id: 13, name: 'نوكيا', logo_url: 'https://1000logos.net/wp-content/uploads/2017/03/Nokia-Logo.png' },
-  { id: 14, name: 'مايكروسوفت', logo_url: 'https://1000logos.net/wp-content/uploads/2017/03/Microsoft-Logo.png' },
-  { id: 15, name: 'سوني', logo_url: 'https://1000logos.net/wp-content/uploads/2017/03/Sony-Logo.png' },
-  { id: 16, name: 'إل جي', logo_url: 'https://1000logos.net/wp-content/uploads/2017/03/LG-Logo.png' },
-];
-
 export function AdFilters({ 
   layout, 
   onLayoutChange, 
@@ -74,44 +48,48 @@ export function AdFilters({
 }: AdFiltersProps) {
   const [filters, setFilters] = useState<SearchFilters>({});
   const [priceRange, setPriceRange] = useState([0, 100000]);
-  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
-  const [selectedBrandId, setSelectedBrandId] = useState<number | null>(null);
-  const [showMoreBrands, setShowMoreBrands] = useState(false);
-  const [showMoreSubcategories, setShowMoreSubcategories] = useState(false);
-  const [currentLocation, setCurrentLocation] = useState<{lat: number, lon: number} | null>(null);
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [categoryViewMode, setCategoryViewMode] = useState<'grid' | 'list'>('grid');
+  const [brandViewMode, setBrandViewMode] = useState<'grid' | 'list'>('grid');
+  const [subcategoryViewMode, setSubcategoryViewMode] = useState<'grid' | 'list'>('grid');
+  const [openSections, setOpenSections] = useState({
+    categories: true,
+    subcategories: true,
+    brands: true,
+    price: true,
+    location: false,
+    features: false
+  });
 
   const { data: categories } = useCategories();
   const { data: brands } = useBrands();
-  const { data: states } = useStates();
-  const { data: cities } = useCities(filters.state_id);
 
-  // Get stored location
-  useEffect(() => {
-    const storedLocation = localStorage.getItem('userLocation');
-    if (storedLocation) {
-      setCurrentLocation(JSON.parse(storedLocation));
+  const getCategoryImage = (category: any) => {
+    if (category.image_url) return category.image_url;
+    if (category.image) return category.image;
+    
+    const defaultImages: Record<string, string> = {
+      'سيارات': 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=160&h=160&fit=crop',
+      'عقارات': 'https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=160&h=160&fit=crop',
+      'إلكترونيات': 'https://images.unsplash.com/photo-1498049794561-7780e7231661?w=160&h=160&fit=crop',
+      'أثاث': 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=160&h=160&fit=crop',
+      'أزياء': 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=160&h=160&fit=crop',
+      'وظائف': 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=160&h=160&fit=crop',
+      'خدمات': 'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?w=160&h=160&fit=crop',
+      'رياضة': 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=160&h=160&fit=crop',
+    };
+    
+    for (const [key, image] of Object.entries(defaultImages)) {
+      if (category.name.includes(key)) return image;
     }
-  }, []);
+    
+    return 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=160&h=160&fit=crop';
+  };
 
-  // Get user location
-  const getCurrentLocation = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const location = {
-            lat: position.coords.latitude,
-            lon: position.coords.longitude
-          };
-          setCurrentLocation(location);
-          localStorage.setItem('userLocation', JSON.stringify(location));
-          updateFilters({ ...location, radius: 10 });
-        },
-        (error) => {
-          console.error('Error getting location:', error);
-        },
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 }
-      );
-    }
+  const getBrandImage = (brand: any) => {
+    if (brand.logo_url) return brand.logo_url;
+    if (brand.image) return brand.image;
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(brand.name)}&size=80&background=f8fafc&color=1e293b&font-size=0.4`;
   };
 
   const updateFilters = (newFilters: Partial<SearchFilters>) => {
@@ -120,71 +98,102 @@ export function AdFilters({
     onFilterChange(updatedFilters);
   };
 
+  const toggleSection = (section: keyof typeof openSections) => {
+    setOpenSections(prev => ({ ...prev, [section]: !prev[section] }));
+  };
+
   const clearFilters = () => {
     setFilters({});
     setPriceRange([0, 100000]);
-    setSelectedCategoryId(null);
-    setSelectedBrandId(null);
     onFilterChange({});
   };
 
-  const selectedCategoryObj = categories?.find(cat => cat.id === selectedCategoryId);
-  const subcategories = selectedCategoryObj?.subcategories || [];
-  const visibleSubcategories = showMoreSubcategories ? subcategories : subcategories.slice(0, 6);
+  const selectedCategoryObj = categories?.find(cat => cat.id === filters.category_id);
 
-  // Determine brands to show based on selected category
-  const getBrandsForCategory = () => {
-    if (selectedCategoryId === 1) { // Cars category
-      return mockBrands;
-    } else if (selectedCategoryId === 2) { // Electronics category
-      return mockTechBrands;
+  // إعادة ترتيب التصنيفات الفرعية عند تغيير التصنيف الأب
+  const [displayedSubcategories, setDisplayedSubcategories] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (selectedCategoryObj?.subcategories) {
+      // ترتيب التصنيفات الفرعية حسب الاسم أو الأولوية
+      const sortedSubcategories = [...selectedCategoryObj.subcategories].sort((a, b) => {
+        return a.name.localeCompare(b.name, 'ar');
+      });
+      setDisplayedSubcategories(sortedSubcategories);
+    } else {
+      setDisplayedSubcategories([]);
     }
-    return [...mockBrands, ...mockTechBrands];
-  };
-
-  const currentBrands = getBrandsForCategory();
-  const visibleBrands = showMoreBrands ? currentBrands : currentBrands.slice(0, 9);
+  }, [selectedCategoryObj]);
 
   if (layout === 'horizontal') {
     return (
-      <div className="bg-white dark:bg-dark-card rounded-lg shadow-sm border border-gray-200 dark:border-dark-border p-4 mb-6">
-        <div className="flex flex-col gap-4">
-          {/* Search Bar */}
+      <div className="bg-white dark:bg-dark-card rounded-xl shadow-lg border border-border dark:border-dark-border p-6 mb-6">
+        <div className="flex flex-col gap-6">
           <div className="relative">
+            <Search className="absolute right-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             <Input
               placeholder="ابحث في الإعلانات..."
-              className="pr-10 h-12 rounded-lg border-2 focus:border-blue-500"
+              className="pr-12 h-12 rounded-xl border-2 focus:border-brand"
               value={filters.search || ''}
               onChange={(e) => updateFilters({ search: e.target.value })}
             />
-            <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
           </div>
 
-          {/* Quick Filters */}
-          <div className="flex flex-wrap gap-2">
-            <Button
-              variant={filters.sort === 'newest' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => updateFilters({ sort: filters.sort === 'newest' ? undefined : 'newest' })}
+          <div className="flex flex-wrap gap-3">
+            <Select value={filters.category_id?.toString() || 'all'} onValueChange={(value) => updateFilters({ category_id: value === 'all' ? undefined : parseInt(value) })}>
+              <SelectTrigger className="w-40 h-10 rounded-lg">
+                <SelectValue placeholder="التصنيف" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">كل التصنيفات</SelectItem>
+                {categories?.map((cat) => (
+                  <SelectItem key={cat.id} value={cat.id.toString()}>
+                    {cat.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select 
+              value={filters.sort || 'default'} 
+              onValueChange={(value) => updateFilters({ 
+                sort: value === 'default' ? undefined : value as 'newest' | 'oldest' | 'price_asc' | 'price_desc' | 'popular' | 'created_at' | 'updated_at'
+              })}
             >
-              الأحدث
-            </Button>
-            <Button
-              variant={filters.sort === 'oldest' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => updateFilters({ sort: filters.sort === 'oldest' ? undefined : 'oldest' })}
-            >
-              الأقدم
-            </Button>
-            <Button
-              variant={currentLocation ? 'default' : 'outline'}
-              size="sm"
-              onClick={getCurrentLocation}
-            >
-              <Navigation className="h-4 w-4 ml-1" />
-              الأقرب
-            </Button>
-            <Button variant="outline" size="sm" onClick={clearFilters}>
+              <SelectTrigger className="w-32 h-10 rounded-lg">
+                <SelectValue placeholder="الترتيب" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="default">الافتراضي</SelectItem>
+                <SelectItem value="newest">الأحدث</SelectItem>
+                <SelectItem value="oldest">الأقدم</SelectItem>
+                <SelectItem value="price_asc">السعر: من الأقل</SelectItem>
+                <SelectItem value="price_desc">السعر: من الأعلى</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {onLayoutChange && (
+              <div className="flex border border-border rounded-lg overflow-hidden bg-background">
+                <Button 
+                  variant={currentLayout === 'grid' ? "default" : "ghost"} 
+                  size="sm"
+                  onClick={() => onLayoutChange('grid')}
+                  className="rounded-none h-10"
+                >
+                  <Grid2X2 className="h-4 w-4" />
+                </Button>
+                <Button 
+                  variant={currentLayout === 'list' ? "default" : "ghost"}
+                  size="sm" 
+                  onClick={() => onLayoutChange('list')}
+                  className="rounded-none h-10"
+                >
+                  <List className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+
+            <Button variant="outline" size="sm" onClick={clearFilters} className="h-10 rounded-lg">
               <X className="h-4 w-4 ml-1" />
               مسح الفلاتر
             </Button>
@@ -195,399 +204,500 @@ export function AdFilters({
   }
 
   return (
-    <div className="w-80 bg-white dark:bg-dark-card h-fit">
-      {/* Search Bar */}
-      <div className="p-4 border-b border-gray-200 dark:border-dark-border">
-        <div className="relative">
-          <Input
-            placeholder="ابحث..."
-            className="pr-10 h-12 rounded-lg border-2 focus:border-blue-500"
-            value={filters.search || ''}
-            onChange={(e) => updateFilters({ search: e.target.value })}
-          />
-          <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-        </div>
-      </div>
+    <div className="space-y-4">
+      <Card className="shadow-lg border-2 border-brand/20 bg-gradient-to-br from-white to-brand/5 dark:from-dark-card dark:to-brand/5">
+        <CardHeader className="pb-4">
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Filter className="h-5 w-5 text-brand" />
+              التصفية 
+            </CardTitle>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => setIsCollapsed(!isCollapsed)}
+              className="h-8 w-8 p-0"
+            >
+              {isCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+            </Button>
+          </div>
+        </CardHeader>
+        
+        {!isCollapsed && (
+          <CardContent className="space-y-6">
+            <div className="relative">
+              <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="ابحث..."
+                className="pr-10 rounded-lg border-2 focus:border-brand"
+                value={filters.search || ''}
+                onChange={(e) => updateFilters({ search: e.target.value })}
+              />
+            </div>
 
-      {/* Filter Options */}
-      <div className="p-4 space-y-6">
-        {/* Classification Toggle */}
-        <div className="flex items-center justify-center">
-          <Button
-            variant="outline"
-            className="w-full justify-center text-blue-600 border-blue-600 hover:bg-blue-50"
-          >
-            تصنيف
-          </Button>
-        </div>
-
-        {/* Transfer Type */}
-        <div className="flex items-center justify-center">
-          <Button
-            variant="outline"
-            className="w-full justify-center text-blue-600 border-blue-600 hover:bg-blue-50"
-          >
-            نقل السيارة
-          </Button>
-        </div>
-
-        {/* Categories Grid */}
-        <div>
-          <div className="grid grid-cols-3 gap-3 mb-4">
-            {categories?.slice(0, 9).map((category) => (
-              <div
-                key={category.id}
-                className={cn(
-                  "flex flex-col items-center p-3 cursor-pointer transition-all hover:bg-gray-50 dark:hover:bg-dark-surface rounded-lg",
-                  selectedCategoryId === category.id && "ring-2 ring-blue-500"
-                )}
-                onClick={() => {
-                  const newCategoryId = selectedCategoryId === category.id ? null : category.id;
-                  setSelectedCategoryId(newCategoryId);
-                  updateFilters({ category_id: newCategoryId || undefined });
-                }}
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={clearFilters}
+              className="w-full rounded-lg border-2 hover:bg-red-50 hover:border-red-200 hover:text-red-600"
+            >
+              <X className="h-4 w-4 ml-1" />
+              مسح جميع الفلاتر
+            </Button>
+          </CardContent>
+        )}
+      </Card>
+  <Collapsible open={openSections.price} onOpenChange={() => toggleSection('price')}>
+        <Card className="shadow-lg border border-border dark:border-dark-border">
+          <CollapsibleTrigger className="w-full">
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center justify-between text-base">
+                <div className="flex items-center gap-2">
+                  <DollarSign className="h-4 w-4 text-brand" />
+                  نطاق السعر
+                </div>
+                <ChevronDown className={cn("h-4 w-4 transition-transform", openSections.price && "rotate-180")} />
+              </CardTitle>
+            </CardHeader>
+          </CollapsibleTrigger>
+          
+          <CollapsibleContent>
+            <CardContent className="space-y-4">
+              <div className="px-2">
+                <Slider
+                  value={priceRange}
+                  onValueChange={setPriceRange}
+                  max={100000}
+                  min={0}
+                  step={1000}
+                  className="w-full"
+                />
+              </div>
+              <div className="flex items-center justify-between text-sm text-muted-foreground">
+                <span>{priceRange[0].toLocaleString()} ر.س</span>
+                <span>{priceRange[1].toLocaleString()} ر.س</span>
+              </div>
+              <Button 
+                size="sm" 
+                onClick={() => updateFilters({ min_price: priceRange[0], max_price: priceRange[1] })}
+                className="w-full rounded-lg bg-brand hover:bg-brand-dark"
               >
-                <div className="w-full h-16 flex items-center justify-center mb-2">
-                  {category.image_url ? (
-                    <img
-                      src={category.image_url}
-                      alt={category.name}
-                      className="w-12 h-12 object-contain"
-                    />
+                تطبيق نطاق السعر
+              </Button>
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
+      {displayedSubcategories.length > 0 && (
+        <Collapsible open={openSections.subcategories} onOpenChange={() => toggleSection('subcategories')}>
+          <Card className="shadow-lg border border-border dark:border-dark-border">
+            <CollapsibleTrigger className="w-full">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center justify-between text-base">
+                  <div className="flex items-center gap-2">
+                    <Layers className="h-4 w-4 text-brand" />
+                    التصنيفات الفرعية ({displayedSubcategories.length})
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="flex border border-border rounded-md overflow-hidden">
+                      <Button 
+                        variant={subcategoryViewMode === 'grid' ? "default" : "ghost"} 
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSubcategoryViewMode('grid');
+                        }}
+                        className="h-6 w-6 p-0 rounded-none"
+                      >
+                        <Grid3X3 className="h-3 w-3" />
+                      </Button>
+                      <Button 
+                        variant={subcategoryViewMode === 'list' ? "default" : "ghost"}
+                        size="sm" 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSubcategoryViewMode('list');
+                        }}
+                        className="h-6 w-6 p-0 rounded-none"
+                      >
+                        <List className="h-3 w-3" />
+                      </Button>
+                    </div>
+                    <ChevronDown className={cn("h-4 w-4 transition-transform", openSections.subcategories && "rotate-180")} />
+                  </div>
+                </CardTitle>
+              </CardHeader>
+            </CollapsibleTrigger>
+            
+            <CollapsibleContent>
+              <CardContent>
+                <ScrollArea className="h-60">
+                  {subcategoryViewMode === 'grid' ? (
+                    <div className="grid grid-cols-3 gap-2">
+                      {displayedSubcategories.map((subcategory) => (
+                        <div 
+                          key={subcategory.id}
+                          className={cn(
+                            "flex flex-col items-center gap-1 p-2 cursor-pointer transition-all hover:bg-muted/50 rounded-lg",
+                            filters.sub_category_id === subcategory.id && "bg-brand/10 border-2 border-brand/30"
+                          )}
+                          onClick={() => updateFilters({ 
+                            sub_category_id: filters.sub_category_id === subcategory.id ? undefined : subcategory.id 
+                          })}
+                        >
+                          <div className="w-20 h-16 overflow-hidden flex-shrink-0 rounded-lg">
+                            <img
+                              src={getCategoryImage(subcategory)}
+                              alt={subcategory.name}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.src = 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=160&h=160&fit=crop';
+                              }}
+                            />
+                          </div>
+                          <div className="text-center">
+                            <div className="font-medium text-[10px] truncate w-full leading-tight">{subcategory.name}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   ) : (
-                    <div className="w-12 h-12 bg-gray-200 dark:bg-dark-surface rounded-lg flex items-center justify-center">
-                      <span className="text-xs text-gray-500">{category.name.charAt(0)}</span>
+                    <div className="space-y-2">
+                      {displayedSubcategories.map((subcategory) => (
+                        <div 
+                          key={subcategory.id}
+                          className={cn(
+                            "flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-all hover:bg-muted/50",
+                            filters.sub_category_id === subcategory.id && "bg-brand/10"
+                          )}
+                          onClick={() => updateFilters({ 
+                            sub_category_id: filters.sub_category_id === subcategory.id ? undefined : subcategory.id 
+                          })}
+                        >
+                          <div className="w-16 h-14 overflow-hidden flex-shrink-0 rounded-lg">
+                            <img
+                              src={getCategoryImage(subcategory)}
+                              alt={subcategory.name}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium text-sm truncate">{subcategory.name}</div>
+                          </div>
+                          <Checkbox 
+                            checked={filters.sub_category_id === subcategory.id}
+                            onChange={() => {}}
+                            className="pointer-events-none"
+                          />
+                        </div>
+                      ))}
                     </div>
                   )}
+                </ScrollArea>
+              </CardContent>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
+      )}
+
+      <Collapsible open={openSections.brands} onOpenChange={() => toggleSection('brands')}>
+        <Card className="shadow-lg border border-border dark:border-dark-border">
+          <CollapsibleTrigger className="w-full">
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center justify-between text-base">
+                <div className="flex items-center gap-2">
+                  <Package className="h-4 w-4 text-brand" />
+                  العلامات التجارية
                 </div>
-                <span className="text-xs text-center text-gray-700 dark:text-gray-300">
-                  {category.name}
-                </span>
-              </div>
-            ))}
-          </div>
-
-          {/* Show More Categories Button */}
-          {categories && categories.length > 9 && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full mb-4"
-              onClick={() => {/* Implement show more categories */}}
-            >
-              <ChevronDown className="h-4 w-4 ml-1" />
-              عرض المزيد
-            </Button>
-          )}
-        </div>
-
-        {/* Subcategories */}
-        {subcategories.length > 0 && (
-          <div>
-            <div className="grid grid-cols-3 gap-3 mb-4">
-              {visibleSubcategories.map((subcategory) => (
-                <div
-                  key={subcategory.id}
-                  className={cn(
-                    "flex flex-col items-center p-3 cursor-pointer transition-all hover:bg-gray-50 dark:hover:bg-dark-surface rounded-lg",
-                    filters.subcategory_id === subcategory.id && "ring-2 ring-blue-500"
-                  )}
-                  onClick={() => {
-                    const newSubcategoryId = filters.subcategory_id === subcategory.id ? undefined : subcategory.id;
-                    updateFilters({ subcategory_id: newSubcategoryId });
-                  }}
-                >
-                  <div className="w-full h-16 flex items-center justify-center mb-2">
-                    {subcategory.image_url ? (
-                      <img
-                        src={subcategory.image_url}
-                        alt={subcategory.name}
-                        className="w-12 h-12 object-contain"
-                      />
-                    ) : (
-                      <div className="w-12 h-12 bg-gray-200 dark:bg-dark-surface rounded-lg flex items-center justify-center">
-                        <span className="text-xs text-gray-500">{subcategory.name.charAt(0)}</span>
-                      </div>
-                    )}
+                <div className="flex items-center gap-2">
+                  <div className="flex border border-border rounded-md overflow-hidden">
+                    <Button 
+                      variant={brandViewMode === 'grid' ? "default" : "ghost"} 
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setBrandViewMode('grid');
+                      }}
+                      className="h-6 w-6 p-0 rounded-none"
+                    >
+                      <Grid3X3 className="h-3 w-3" />
+                    </Button>
+                    <Button 
+                      variant={brandViewMode === 'list' ? "default" : "ghost"}
+                      size="sm" 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setBrandViewMode('list');
+                      }}
+                      className="h-6 w-6 p-0 rounded-none"
+                    >
+                      <List className="h-3 w-3" />
+                    </Button>
                   </div>
-                  <span className="text-xs text-center text-gray-700 dark:text-gray-300">
-                    {subcategory.name}
-                  </span>
+                  <ChevronDown className={cn("h-4 w-4 transition-transform", openSections.brands && "rotate-180")} />
                 </div>
-              ))}
-            </div>
-
-            {/* Show More Subcategories Button */}
-            {subcategories.length > 6 && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full mb-4"
-                onClick={() => setShowMoreSubcategories(!showMoreSubcategories)}
-              >
-                {showMoreSubcategories ? (
-                  <>
-                    <ChevronUp className="h-4 w-4 ml-1" />
-                    عرض أقل
-                  </>
-                ) : (
-                  <>
-                    <ChevronDown className="h-4 w-4 ml-1" />
-                    عرض المزيد
-                  </>
-                )}
-              </Button>
-            )}
-          </div>
-        )}
-
-        {/* Brands */}
-        <div>
-          <div className="grid grid-cols-3 gap-3 mb-4">
-            {visibleBrands.map((brand) => (
-              <div
-                key={brand.id}
-                className={cn(
-                  "flex flex-col items-center p-3 cursor-pointer transition-all hover:bg-gray-50 dark:hover:bg-dark-surface rounded-lg",
-                  selectedBrandId === brand.id && "ring-2 ring-blue-500"
-                )}
-                onClick={() => {
-                  const newBrandId = selectedBrandId === brand.id ? null : brand.id;
-                  setSelectedBrandId(newBrandId);
-                  updateFilters({ brand_id: newBrandId || undefined });
-                }}
-              >
-                <div className="w-full h-16 flex items-center justify-center mb-2">
-                  <img
-                    src={brand.logo_url}
-                    alt={brand.name}
-                    className="w-12 h-12 object-contain"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.src = '/placeholder.svg';
-                    }}
-                  />
-                </div>
-                <span className="text-xs text-center text-gray-700 dark:text-gray-300">
-                  {brand.name}
-                </span>
-              </div>
-            ))}
-          </div>
-
-          {/* Show More Brands Button */}
-          {currentBrands.length > 9 && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full mb-4"
-              onClick={() => setShowMoreBrands(!showMoreBrands)}
-            >
-              {showMoreBrands ? (
-                <>
-                  <ChevronUp className="h-4 w-4 ml-1" />
-                  عرض أقل
-                </>
-              ) : (
-                <>
-                  <ChevronDown className="h-4 w-4 ml-1" />
-                  عرض المزيد
-                </>
-              )}
-            </Button>
-          )}
-        </div>
-
-        {/* Animals Section */}
-        <div>
-          <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">الحيوانات</h3>
-          <div className="grid grid-cols-3 gap-3 mb-4">
-            {mockAnimals.map((animal) => (
-              <div
-                key={animal.id}
-                className="flex flex-col items-center p-3 cursor-pointer transition-all hover:bg-gray-50 dark:hover:bg-dark-surface rounded-lg"
-                onClick={() => updateFilters({ category_id: animal.id })}
-              >
-                <div className="w-full h-16 flex items-center justify-center mb-2 text-2xl">
-                  {animal.icon}
-                </div>
-                <span className="text-xs text-center text-gray-700 dark:text-gray-300">
-                  {animal.name}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Real Estate Section */}
-        <div>
-          <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">العقارات</h3>
-          <div className="grid grid-cols-3 gap-3 mb-4">
-            {mockRealEstate.map((item) => (
-              <div
-                key={item.id}
-                className="flex flex-col items-center p-3 cursor-pointer transition-all hover:bg-gray-50 dark:hover:bg-dark-surface rounded-lg"
-                onClick={() => updateFilters({ category_id: item.id })}
-              >
-                <div className="w-full h-16 flex items-center justify-center mb-2 text-2xl">
-                  {item.icon}
-                </div>
-                <span className="text-xs text-center text-gray-700 dark:text-gray-300">
-                  {item.name}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Location Filters */}
-        <div className="space-y-3">
-          <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">الموقع</h3>
+              </CardTitle>
+            </CardHeader>
+          </CollapsibleTrigger>
           
-          <Select
-            value={filters.state_id?.toString() || ''}
-            onValueChange={(value) => updateFilters({ 
-              state_id: value ? parseInt(value) : undefined,
-              city_id: undefined 
-            })}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="اختر المحافظة" />
-            </SelectTrigger>
-            <SelectContent>
-              {states?.map((state) => (
-                <SelectItem key={state.id} value={state.id.toString()}>
-                  {state.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <CollapsibleContent>
+            <CardContent>
+              <ScrollArea className="h-60">
+                {brandViewMode === 'grid' ? (
+                  <div className="grid grid-cols-3 gap-2">
+                    {brands?.slice(0, 24).map((brand) => (
+                      <div 
+                        key={brand.id}
+                        className={cn(
+                          "flex flex-col items-center gap-1 p-2 cursor-pointer transition-all hover:bg-muted/50 rounded-lg",
+                          filters.brand_id === brand.id && "bg-brand/10 border-2 border-brand/30"
+                        )}
+                        onClick={() => updateFilters({ 
+                          brand_id: filters.brand_id === brand.id ? undefined : brand.id 
+                        })}
+                      >
+                        <div className="w-16 h-16 overflow-hidden flex-shrink-0 bg-gray-50 rounded-lg">
+                          <img
+                            src={getBrandImage(brand)}
+                            alt={brand.name}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <div className="text-[10px] text-center font-medium truncate w-full leading-tight">
+                          {brand.name}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {brands?.slice(0, 20).map((brand) => (
+                      <div 
+                        key={brand.id}
+                        className={cn(
+                          "flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-all hover:bg-muted/50",
+                          filters.brand_id === brand.id && "bg-brand/10"
+                        )}
+                        onClick={() => updateFilters({ 
+                          brand_id: filters.brand_id === brand.id ? undefined : brand.id 
+                        })}
+                      >
+                        <div className="w-16 h-16 overflow-hidden flex-shrink-0 bg-gray-50 rounded-lg">
+                          <img
+                            src={getBrandImage(brand)}
+                            alt={brand.name}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium truncate">{brand.name}</div>
+                        </div>
+                        <Checkbox 
+                          checked={filters.brand_id === brand.id}
+                          onChange={() => {}}
+                          className="pointer-events-none"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </ScrollArea>
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
 
-          <Select
-            value={filters.city_id?.toString() || ''}
-            onValueChange={(value) => updateFilters({ 
-              city_id: value ? parseInt(value) : undefined 
-            })}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="اختر المدينة" />
-            </SelectTrigger>
-            <SelectContent>
-              {cities?.map((city) => (
-                <SelectItem key={city.id} value={city.id.toString()}>
-                  {city.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+      <Collapsible open={openSections.categories} onOpenChange={() => toggleSection('categories')}>
+        <Card className="shadow-lg border border-border dark:border-dark-border">
+          <CollapsibleTrigger className="w-full">
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center justify-between text-base">
+                <div className="flex items-center gap-2">
+                  <Layers className="h-4 w-4 text-brand" />
+                  التصنيفات
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="flex border border-border rounded-md overflow-hidden">
+                    <Button 
+                      variant={categoryViewMode === 'grid' ? "default" : "ghost"} 
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setCategoryViewMode('grid');
+                      }}
+                      className="h-6 w-6 p-0 rounded-none"
+                    >
+                      <Grid3X3 className="h-3 w-3" />
+                    </Button>
+                    <Button 
+                      variant={categoryViewMode === 'list' ? "default" : "ghost"}
+                      size="sm" 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setCategoryViewMode('list');
+                      }}
+                      className="h-6 w-6 p-0 rounded-none"
+                    >
+                      <List className="h-3 w-3" />
+                    </Button>
+                  </div>
+                  <ChevronDown className={cn("h-4 w-4 transition-transform", openSections.categories && "rotate-180")} />
+                </div>
+              </CardTitle>
+            </CardHeader>
+          </CollapsibleTrigger>
+          
+          <CollapsibleContent>
+            <CardContent>
+              <ScrollArea className="h-80">
+                {categoryViewMode === 'grid' ? (
+                  <div className="grid grid-cols-3 gap-2">
+                    {categories?.map((category) => (
+                      <div 
+                        key={category.id}
+                        className={cn(
+                          "flex flex-col items-center gap-1 p-2 cursor-pointer transition-all hover:bg-muted/50 rounded-lg",
+                          filters.category_id === category.id && "bg-brand/10 border-2 border-brand/30"
+                        )}
+                        onClick={() => updateFilters({ 
+                          category_id: filters.category_id === category.id ? undefined : category.id 
+                        })}
+                      >
+                        <div className="w-20 h-16 overflow-hidden flex-shrink-0 rounded-lg">
+                          <img
+                            src={getCategoryImage(category)}
+                            alt={category.name}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.src = 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=160&h=160&fit=crop';
+                            }}
+                          />
+                        </div>
+                        <div className="text-center">
+                          <div className="font-medium text-[10px] truncate w-full leading-tight">{category.name}</div>
+                          <div className="text-[8px] text-muted-foreground">
+                            {category.count || Math.floor(Math.random() * 500 + 50)} إعلان
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {categories?.map((category) => (
+                      <div 
+                        key={category.id}
+                        className={cn(
+                          "flex items-center gap-3 p-3 cursor-pointer transition-all hover:bg-muted/50 rounded-lg",
+                          filters.category_id === category.id && "bg-brand/10"
+                        )}
+                        onClick={() => updateFilters({ 
+                          category_id: filters.category_id === category.id ? undefined : category.id 
+                        })}
+                      >
+                        <div className="w-20 h-16 overflow-hidden flex-shrink-0 rounded-lg">
+                          <img
+                            src={getCategoryImage(category)}
+                            alt={category.name}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.src = 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=160&h=160&fit=crop';
+                            }}
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-sm truncate">{category.name}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {category.count || Math.floor(Math.random() * 500 + 50)} إعلان
+                          </div>
+                        </div>
+                        <Checkbox 
+                          checked={filters.category_id === category.id}
+                          onChange={() => {}}
+                          className="pointer-events-none"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </ScrollArea>
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
 
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full"
-            onClick={getCurrentLocation}
-          >
-            <Navigation className="h-4 w-4 ml-1" />
-            استخدام موقعي الحالي
-          </Button>
-        </div>
+      
+      
+    
 
-        {/* Price Range */}
-        <div className="space-y-3">
-          <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">نطاق السعر</h3>
-          <div className="px-2">
-            <Slider
-              value={priceRange}
-              onValueChange={setPriceRange}
-              max={100000}
-              min={0}
-              step={1000}
-              className="w-full"
-            />
-          </div>
-          <div className="flex justify-between text-sm text-gray-500">
-            <span>{priceRange[0].toLocaleString()} ل.س</span>
-            <span>{priceRange[1].toLocaleString()} ل.س</span>
-          </div>
-          <Button
-            size="sm"
-            onClick={() => updateFilters({ min_price: priceRange[0], max_price: priceRange[1] })}
-            className="w-full"
-          >
-            تطبيق نطاق السعر
-          </Button>
-        </div>
+      <Collapsible open={openSections.location} onOpenChange={() => toggleSection('location')}>
+        <Card className="shadow-lg border border-border dark:border-dark-border">
+          <CollapsibleTrigger className="w-full">
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center justify-between text-base">
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4 text-brand" />
+                  الموقع
+                </div>
+                <ChevronDown className={cn("h-4 w-4 transition-transform", openSections.location && "rotate-180")} />
+              </CardTitle>
+            </CardHeader>
+          </CollapsibleTrigger>
+          
+          <CollapsibleContent>
+            <CardContent className="space-y-4">
+              <Select value={filters.city_id?.toString() || 'all'} onValueChange={(value) => updateFilters({ city_id: value === 'all' ? undefined : parseInt(value) })}>
+                <SelectTrigger className="rounded-lg border-2 focus:border-brand">
+                  <SelectValue placeholder="اختر المدينة" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">كل المدن</SelectItem>
+                  <SelectItem value="1">دمشق</SelectItem>
+                  <SelectItem value="2">حلب</SelectItem>
+                  <SelectItem value="3">حمص</SelectItem>
+                  <SelectItem value="4">حماة</SelectItem>
+                </SelectContent>
+              </Select>
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
 
-        {/* Sort Options */}
-        <div className="space-y-3">
-          <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">الترتيب</h3>
-          <div className="flex flex-col gap-2">
-            <Button
-              variant={filters.sort === 'newest' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => updateFilters({ sort: filters.sort === 'newest' ? undefined : 'newest' })}
-            >
-              <Calendar className="h-4 w-4 ml-1" />
-              الأحدث
-            </Button>
-            <Button
-              variant={filters.sort === 'oldest' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => updateFilters({ sort: filters.sort === 'oldest' ? undefined : 'oldest' })}
-            >
-              <Calendar className="h-4 w-4 ml-1" />
-              الأقدم
-            </Button>
-            <Button
-              variant={filters.sort === 'price_asc' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => updateFilters({ sort: filters.sort === 'price_asc' ? undefined : 'price_asc' })}
-            >
-              <DollarSign className="h-4 w-4 ml-1" />
-              السعر: من الأقل
-            </Button>
-            <Button
-              variant={filters.sort === 'price_desc' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => updateFilters({ sort: filters.sort === 'price_desc' ? undefined : 'price_desc' })}
-            >
-              <DollarSign className="h-4 w-4 ml-1" />
-              السعر: من الأعلى
-            </Button>
-          </div>
-        </div>
-
-        {/* Active Filters */}
-        {Object.keys(filters).length > 0 && (
-          <div className="space-y-2">
-            <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">الفلاتر النشطة</h3>
-            <div className="flex flex-wrap gap-2">
-              {Object.entries(filters).map(([key, value]) => (
-                value && (
-                  <Badge key={key} variant="secondary" className="text-xs">
-                    {key}: {value.toString()}
-                    <X
-                      className="h-3 w-3 ml-1 cursor-pointer"
-                      onClick={() => updateFilters({ [key]: undefined })}
-                    />
-                  </Badge>
-                )
-              ))}
+      {onLayoutChange && (
+        <Card className="shadow-lg border border-border dark:border-dark-border">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Grid2X2 className="h-4 w-4 text-brand" />
+              نوع العرض
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex border border-border rounded-lg overflow-hidden bg-background">
+              <Button 
+                variant={currentLayout === 'grid' ? "default" : "ghost"} 
+                size="sm"
+                onClick={() => onLayoutChange('grid')}
+                className="flex-1 rounded-none"
+              >
+                <Grid2X2 className="h-4 w-4 ml-1" />
+                شبكة
+              </Button>
+              <Button 
+                variant={currentLayout === 'list' ? "default" : "ghost"}
+                size="sm" 
+                onClick={() => onLayoutChange('list')}
+                className="flex-1 rounded-none"
+              >
+                <List className="h-4 w-4 ml-1" />
+                قائمة
+              </Button>
             </div>
-          </div>
-        )}
-
-        {/* Clear All Filters */}
-        <Button
-          variant="outline"
-          size="sm"
-          className="w-full"
-          onClick={clearFilters}
-        >
-          <X className="h-4 w-4 ml-1" />
-          مسح جميع الفلاتر
-        </Button>
-      </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

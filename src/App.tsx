@@ -22,7 +22,7 @@ import EditAd from './pages/EditAd';
 import SearchPage from './pages/search';
 import DashboardPage from './pages/dashboard';
 import UserDashboard from './pages/dashboard/UserDashboard';
-import ProfilePage from './pages/profile';
+import ProfilePage from './pages/Index';
 import StatisticsPage from './pages/statistics';
 import SettingsPage from './pages/settings';
 import MessagesPage from './pages/messages';
@@ -33,6 +33,8 @@ import FavoritesPage from './pages/favorites';
 import LoginPage from './pages/auth/login';
 import RegisterPage from './pages/auth/register';
 import NewSearchPage from './pages/search/NewSearchPage';
+import ForgotPasswordPage from './pages/auth/ForgotPasswordPage'; 
+import ResetPasswordPage from './pages/auth/ResetPasswordPage';
 
 // Create a client with optimized cache config
 const queryClient = new QueryClient({
@@ -68,6 +70,8 @@ function AppContent() {
       {/* Auth Routes */}
       <Route path="/auth/login" element={<LoginPage />} />
       <Route path="/auth/register" element={<RegisterPage />} />
+      <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/auth/reset-password" element={<ResetPasswordPage />} />
       
       {/* Protected Routes */}
       <Route path="/dashboard" element={

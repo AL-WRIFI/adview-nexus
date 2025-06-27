@@ -1,261 +1,239 @@
-
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
-import { Camera, Edit, Star, MapPin, Phone, Mail, Calendar, Shield } from 'lucide-react';
+import { Label } from '@/components/ui/label';
+import { UserCircle, Upload, Loader2 } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
-import { useToast } from '@/hooks/use-toast';
+import { profileAPI } from '@/services/apis'; // سنستخدم النسخة المحسنة من apis.ts
+import { toast } from 'sonner'; // مكتبة احترافية لإظهار التنبيهات
 
 export function ProfileTab() {
-  const { user } = useAuth();
-  const { toast } = useToast();
+  const { user, refreshUser } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // State for form data, matches backend fields from UserResource
   const [formData, setFormData] = useState({
-    first_name: user?.first_name || '',
-    last_name: user?.last_name || '',
-    email: user?.email || '',
-    phone: user?.phone || '',
-    bio: user?.bio || '',
+    first_name: '',
+    last_name: '',
+    email: '',
+    phone: '',
+    about: '', // Note: Backend uses 'about', not 'bio'
   });
+
+  // State for avatar management
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Effect to populate form data when user data is available or editing starts
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        first_name: user.first_name || '',
+        last_name: user.last_name || '',
+        email: user.email || '',
+        phone: user.phone || '',
+        about: user.about || '', // Matched with UserResource
+      });
+      // Reset avatar changes if editing is cancelled
+      setAvatarFile(null);
+      setAvatarPreview(null);
+    }
+  }, [user, isEditing]);
+
+  if (!user) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>الملف الشخصي</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center p-8">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            <p className="mr-4">جاري تحميل بيانات المستخدم...</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSave = async () => {
-    try {
-      // Implement profile update logic here
-      toast({
-        title: "تم الحفظ",
-        description: "تم تحديث معلومات الملف الشخصي بنجاح",
-      });
-      setIsEditing(false);
-    } catch (error) {
-      toast({
-        title: "خطأ",
-        description: "حدث خطأ أثناء تحديث الملف الشخصي",
-        variant: "destructive",
-      });
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setAvatarFile(file);
+      setAvatarPreview(URL.createObjectURL(file));
     }
   };
 
   const handleCancel = () => {
-    setFormData({
-      first_name: user?.first_name || '',
-      last_name: user?.last_name || '',
-      email: user?.email || '',
-      phone: user?.phone || '',
-      bio: user?.bio || '',
-    });
     setIsEditing(false);
+    setError(null);
+    // The useEffect will handle resetting the form data
   };
 
-  const getAvatarUrl = () => {
-    if (user?.avatar_url) return user.avatar_url;
-    return null;
-  };
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError(null);
 
-  const getUserInitials = () => {
-    const firstName = user?.first_name || '';
-    const lastName = user?.last_name || '';
-    return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'U';
+    // Use FormData to send data, which is essential for file uploads
+    const submissionData = new FormData();
+    submissionData.append('first_name', formData.first_name);
+    submissionData.append('last_name', formData.last_name);
+    submissionData.append('email', formData.email);
+    submissionData.append('phone', formData.phone);
+    submissionData.append('about', formData.about);
+    
+    // Add other fields from your backend if they are in the form
+    // submissionData.append('state_id', user.state_id || '');
+    // submissionData.append('city_id', user.city_id || '');
+
+    if (avatarFile) {
+      submissionData.append('image', avatarFile);
+    }
+
+    try {
+      const response = await profileAPI.updateProfile(submissionData);
+      
+      if (response.success) {
+        toast.success('تم تحديث الملف الشخصي بنجاح!');
+        await refreshUser(); // This is the key: refresh user data globally
+        setIsEditing(false);
+      }
+    } catch (err: any) {
+      const errorMessage = err.message || 'حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.';
+      setError(errorMessage);
+      toast.error(errorMessage);
+      console.error("Profile update failed:", err);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <div className="space-y-6">
-      {/* Profile Header */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Shield className="h-5 w-5" />
-            الملف الشخصي
-          </CardTitle>
-          <CardDescription>
-            إدارة معلومات حسابك الشخصي
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center gap-6 mb-6">
-            <div className="relative">
-              <Avatar className="h-24 w-24">
-                <AvatarImage src={getAvatarUrl() || undefined} alt={getUserInitials()} />
-                <AvatarFallback className="text-lg font-semibold">
-                  {getUserInitials()}
-                </AvatarFallback>
-              </Avatar>
-              <Button
-                size="sm"
-                variant="outline"
-                className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full p-0"
-              >
-                <Camera className="h-4 w-4" />
-              </Button>
+    <Card>
+      <CardHeader>
+        <CardTitle>الملف الشخصي</CardTitle>
+        <CardDescription>عرض وتعديل معلومات الملف الشخصي</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit}>
+          <div className="flex flex-col md:flex-row gap-8">
+            {/* Avatar section */}
+            <div className="flex flex-col items-center gap-4 flex-shrink-0">
+              <div className="w-32 h-32 bg-muted rounded-full overflow-hidden flex items-center justify-center">
+                <img 
+                  src={avatarPreview || user.image || undefined} 
+                  alt="Profile" 
+                  className="w-full h-full object-cover"
+                  // Show placeholder if no image is available
+                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                />
+                {!avatarPreview && !user.image && <UserCircle className="w-full h-full text-gray-400" />}
+              </div>
+              {isEditing && (
+                <>
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleAvatarChange}
+                    accept="image/png, image/jpeg, image/gif"
+                    className="hidden"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isLoading}
+                  >
+                    <Upload className="ml-2 h-4 w-4" />
+                    تغيير الصورة
+                  </Button>
+                </>
+              )}
             </div>
             
+            {/* Profile info section */}
             <div className="flex-1">
-              <div className="flex items-center gap-2 mb-2">
-                <h2 className="text-xl font-semibold">
-                  {user?.first_name} {user?.last_name}
-                </h2>
-                {user?.verified && (
-                  <Badge variant="secondary" className="bg-green-100 text-green-800">
-                    <Shield className="h-3 w-3 mr-1" />
-                    موثق
-                  </Badge>
-                )}
-              </div>
-              
-              <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                <div className="flex items-center gap-1">
-                  <Mail className="h-4 w-4" />
-                  {user?.email}
-                </div>
-                {user?.phone && (
-                  <div className="flex items-center gap-1">
-                    <Phone className="h-4 w-4" />
-                    {user.phone}
+              {isEditing ? (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="first_name">الاسم الأول</Label>
+                      <Input id="first_name" name="first_name" value={formData.first_name} onChange={handleInputChange} required />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="last_name">الاسم الأخير</Label>
+                      <Input id="last_name" name="last_name" value={formData.last_name} onChange={handleInputChange} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="email">البريد الإلكتروني</Label>
+                      <Input id="email" name="email" type="email" value={formData.email} onChange={handleInputChange} required />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="phone">رقم الهاتف</Label>
+                      <Input id="phone" name="phone" value={formData.phone} onChange={handleInputChange} required />
+                    </div>
                   </div>
-                )}
-                <div className="flex items-center gap-1">
-                  <Calendar className="h-4 w-4" />
-                  عضو منذ {new Date(user?.created_at || '').getFullYear()}
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="about">نبذة عني</Label>
+                    <Textarea id="about" name="about" value={formData.about} onChange={handleInputChange} rows={4} />
+                  </div>
+                  
+                  {error && <p className="text-sm font-medium text-destructive">{error}</p>}
+                  
+                  <div className="flex justify-end gap-2">
+                    <Button type="button" variant="outline" onClick={handleCancel} disabled={isLoading}>
+                      إلغاء
+                    </Button>
+                    <Button type="submit" disabled={isLoading}>
+                      {isLoading && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
+                      حفظ التغييرات
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            </div>
-            
-            <Button 
-              variant="outline" 
-              onClick={() => setIsEditing(!isEditing)}
-            >
-              <Edit className="h-4 w-4 mr-2" />
-              {isEditing ? 'إلغاء' : 'تعديل'}
-            </Button>
-          </div>
-
-          {/* Profile Form */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="first_name">الاسم الأول</Label>
-              <Input
-                id="first_name"
-                name="first_name"
-                value={formData.first_name}
-                onChange={handleInputChange}
-                disabled={!isEditing}
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="last_name">الاسم الأخير</Label>
-              <Input
-                id="last_name"
-                name="last_name"
-                value={formData.last_name}
-                onChange={handleInputChange}
-                disabled={!isEditing}
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="email">البريد الإلكتروني</Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                disabled={!isEditing}
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="phone">رقم الهاتف</Label>
-              <Input
-                id="phone"
-                name="phone"
-                value={formData.phone}
-                onChange={handleInputChange}
-                disabled={!isEditing}
-              />
-            </div>
-            
-            <div className="md:col-span-2">
-              <Label htmlFor="bio">نبذة عنك</Label>
-              <Textarea
-                id="bio"
-                name="bio"
-                value={formData.bio}
-                onChange={handleInputChange}
-                disabled={!isEditing}
-                rows={3}
-                placeholder="اكتب نبذة مختصرة عنك..."
-              />
+              ) : (
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                    <div>
+                      <p className="text-sm text-muted-foreground">الاسم الكامل</p>
+                      <p className="font-medium">{user.first_name} {user.last_name}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">البريد الإلكتروني</p>
+                      <p className="font-medium">{user.email || 'غير محدد'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">رقم الهاتف</p>
+                      <p className="font-medium">{user.phone || 'غير محدد'}</p>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <p className="text-sm text-muted-foreground">نبذة عني</p>
+                    <p className="mt-1 whitespace-pre-wrap">{user.about || 'لا توجد معلومات إضافية.'}</p>
+                  </div>
+                  
+                  <div className="pt-4">
+                    <Button onClick={() => setIsEditing(true)}>تعديل الملف الشخصي</Button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
-
-          {isEditing && (
-            <div className="flex gap-2 mt-4">
-              <Button onClick={handleSave}>
-                حفظ التغييرات
-              </Button>
-              <Button variant="outline" onClick={handleCancel}>
-                إلغاء
-              </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-2xl font-bold">0</p>
-                <p className="text-sm text-muted-foreground">الإعلانات النشطة</p>
-              </div>
-              <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
-                <Star className="h-4 w-4 text-blue-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-2xl font-bold">0</p>
-                <p className="text-sm text-muted-foreground">إجمالي المشاهدات</p>
-              </div>
-              <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
-                <Star className="h-4 w-4 text-green-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-2xl font-bold">0</p>
-                <p className="text-sm text-muted-foreground">الإعلانات المباعة</p>
-              </div>
-              <div className="h-8 w-8 rounded-full bg-purple-100 flex items-center justify-center">
-                <Star className="h-4 w-4 text-purple-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+        </form>
+      </CardContent>
+    </Card>
   );
 }

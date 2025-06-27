@@ -2,7 +2,6 @@
 import { Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/context/theme-provider";
-import { useThemeStore } from "@/store/theme-store";
 
 interface ThemeToggleProps {
   variant?: "default" | "outline" | "secondary" | "ghost" | "link" | "destructive";
@@ -16,15 +15,10 @@ export function ThemeToggle({
   className = ""
 }: ThemeToggleProps) {
   const { setTheme, theme } = useTheme();
-  const { applyTheme } = useThemeStore();
 
   const handleToggle = () => {
     const newTheme = theme === "dark" ? "light" : "dark";
     setTheme(newTheme);
-    // Force immediate theme application
-    setTimeout(() => {
-      applyTheme();
-    }, 50);
   };
 
   return (
