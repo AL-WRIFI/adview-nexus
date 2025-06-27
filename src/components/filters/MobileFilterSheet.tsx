@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
@@ -125,16 +126,13 @@ export function MobileFilterSheet({ onFilterChange, currentFilters = {}, trigger
                 <Label className="text-sm font-medium">التصنيف</Label>
               </div>
               <Select 
-                // FIX: Fall back to 'all' instead of ''
                 value={filters.category_id?.toString() || 'all'} 
-                // FIX: Check for the 'all' value to reset the filter
                 onValueChange={(value) => handleFilterUpdate('category_id', value === 'all' ? undefined : parseInt(value))}
               >
                 <SelectTrigger className="text-right">
                   <SelectValue placeholder="اختر التصنيف" />
                 </SelectTrigger>
                 <SelectContent>
-                  {/* FIX: Use a non-empty string for the value */}
                   <SelectItem value="all">جميع التصنيفات</SelectItem>
                   {categories?.map((category) => (
                     <SelectItem key={category.id} value={category.id.toString()}>
@@ -256,16 +254,17 @@ export function MobileFilterSheet({ onFilterChange, currentFilters = {}, trigger
                 <Label className="text-sm font-medium">ترتيب النتائج</Label>
               </div>
               <Select 
-                // FIX: Fall back to 'default' instead of ''
-                value={filters.sort || 'default'} 
-                // FIX: Check for the 'default' value to reset the filter
-                onValueChange={(value) => handleFilterUpdate('sort', value === 'default' ? undefined : value)}
+                value={filters.sort || filters.sort_by || 'default'} 
+                onValueChange={(value) => {
+                  const sortValue = value === 'default' ? undefined : value;
+                  handleFilterUpdate('sort', sortValue);
+                  handleFilterUpdate('sort_by', sortValue);
+                }}
               >
                 <SelectTrigger className="text-right">
                   <SelectValue placeholder="اختر طريقة الترتيب" />
                 </SelectTrigger>
                 <SelectContent>
-                  {/* FIX: Use a non-empty string for the value */}
                   <SelectItem value="default">افتراضي</SelectItem>
                   <SelectItem value="newest">الأحدث أولاً</SelectItem>
                   <SelectItem value="oldest">الأقدم أولاً</SelectItem>

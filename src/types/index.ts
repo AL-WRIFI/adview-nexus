@@ -9,3 +9,5 @@ export * from './state';
 export * from './city';
 export * from './search-filters';
 export * from './verification';
+export * from './comment';
+export * from './api';

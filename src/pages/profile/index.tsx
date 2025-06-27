@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Textarea } from '@/components/ui/textarea';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useCurrentUser } from '@/hooks/use-api';
 import { profileAPI } from '@/services/apis';
 import { useToast } from '@/hooks/use-toast';
@@ -29,12 +30,7 @@ export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(false);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    reset,
-  } = useForm<ProfileFormData>({
+  const form = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
       first_name: user?.first_name || '',
@@ -94,83 +90,113 @@ export default function ProfilePage() {
           <CardTitle>الملف الشخصي</CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            {/* Avatar Section */}
-            <div className="flex items-center gap-4">
-              <Avatar className="h-20 w-20">
-                <AvatarImage 
-                  src={avatarFile ? URL.createObjectURL(avatarFile) : user?.avatar} 
-                  alt={user?.first_name} 
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              {/* Avatar Section */}
+              <div className="flex items-center gap-4">
+                <Avatar className="h-20 w-20">
+                  <AvatarImage 
+                    src={avatarFile ? URL.createObjectURL(avatarFile) : user?.avatar || user?.avatar_url} 
+                    alt={user?.first_name} 
+                  />
+                  <AvatarFallback>
+                    {user?.first_name?.[0]}{user?.last_name?.[0]}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <Label htmlFor="avatar">صورة الملف الشخصي</Label>
+                  <Input
+                    id="avatar"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarChange}
+                    className="mt-1"
+                  />
+                </div>
+              </div>
+
+              {/* Form Fields */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="first_name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>الاسم الأول</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-                <AvatarFallback>
-                  {user?.first_name?.[0]}{user?.last_name?.[0]}
-                </AvatarFallback>
-              </Avatar>
-              <div>
-                <Label htmlFor="avatar">صورة الملف الشخصي</Label>
-                <Input
-                  id="avatar"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleAvatarChange}
-                  className="mt-1"
+                
+                <FormField
+                  control={form.control}
+                  name="last_name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>اسم العائلة</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
               </div>
-            </div>
 
-            {/* Form Fields */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="first_name">الاسم الأول</Label>
-                <Input
-                  id="first_name"
-                  {...register('first_name')}
-                  error={errors.first_name?.message}
-                />
-              </div>
-              <div>
-                <Label htmlFor="last_name">اسم العائلة</Label>
-                <Input
-                  id="last_name"
-                  {...register('last_name')}
-                  error={errors.last_name?.message}
-                />
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="email">البريد الإلكتروني</Label>
-              <Input
-                id="email"
-                type="email"
-                {...register('email')}
-                error={errors.email?.message}
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>البريد الإلكتروني</FormLabel>
+                    <FormControl>
+                      <Input {...field} type="email" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
 
-            <div>
-              <Label htmlFor="phone">رقم الهاتف</Label>
-              <Input
-                id="phone"
-                {...register('phone')}
-                error={errors.phone?.message}
+              <FormField
+                control={form.control}
+                name="phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>رقم الهاتف</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
 
-            <div>
-              <Label htmlFor="bio">نبذة شخصية</Label>
-              <Textarea
-                id="bio"
-                {...register('bio')}
-                rows={4}
-                placeholder="اكتب نبذة عن نفسك..."
+              <FormField
+                control={form.control}
+                name="bio"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>نبذة شخصية</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        {...field}
+                        rows={4}
+                        placeholder="اكتب نبذة عن نفسك..."
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
 
-            <Button type="submit" disabled={isLoading} className="w-full">
-              {isLoading ? 'جاري الحفظ...' : 'حفظ التغييرات'}
-            </Button>
-          </form>
+              <Button type="submit" disabled={isLoading} className="w-full">
+                {isLoading ? 'جاري الحفظ...' : 'حفظ التغييرات'}
+              </Button>
+            </form>
+          </Form>
         </CardContent>
       </Card>
     </div>
