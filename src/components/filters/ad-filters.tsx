@@ -25,10 +25,12 @@ import {
   X,
   Layers,
   Grid3X3,
-  Package
+  Package,
+  Tag,
+  Building
 } from 'lucide-react';
 import { SearchFilters } from '@/types';
-import { useCategories, useBrands } from '@/hooks/use-api';
+import { useCategories, useBrands, useStates, useCities } from '@/hooks/use-api';
 import { cn } from '@/lib/utils';
 
 interface AdFiltersProps {
@@ -53,43 +55,53 @@ export function AdFilters({
   const [brandViewMode, setBrandViewMode] = useState<'grid' | 'list'>('grid');
   const [subcategoryViewMode, setSubcategoryViewMode] = useState<'grid' | 'list'>('grid');
   const [openSections, setOpenSections] = useState({
-    categories: true,
+    search: true,
     subcategories: true,
-    brands: true,
+    brands: true,  
+    categories: true,
     price: true,
-    location: false,
-    features: false
+    location: true,
+    condition: true,
+    listingType: true,
+    features: true
   });
 
   const { data: categories } = useCategories();
   const { data: brands } = useBrands();
+  const { data: states } = useStates();
+  const { data: cities } = useCities(filters.state_id);
 
   const getCategoryImage = (category: any) => {
     if (category.image_url) return category.image_url;
     if (category.image) return category.image;
+    if (category.icon_url) return category.icon_url;
     
+    // Default images based on category name
     const defaultImages: Record<string, string> = {
-      'سيارات': 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=160&h=160&fit=crop',
-      'عقارات': 'https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=160&h=160&fit=crop',
-      'إلكترونيات': 'https://images.unsplash.com/photo-1498049794561-7780e7231661?w=160&h=160&fit=crop',
-      'أثاث': 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=160&h=160&fit=crop',
-      'أزياء': 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=160&h=160&fit=crop',
-      'وظائف': 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=160&h=160&fit=crop',
-      'خدمات': 'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?w=160&h=160&fit=crop',
-      'رياضة': 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=160&h=160&fit=crop',
+      'سيارات': 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=200&h=150&fit=crop&crop=center',
+      'عقارات': 'https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=200&h=150&fit=crop&crop=center',
+      'إلكترونيات': 'https://images.unsplash.com/photo-1498049794561-7780e7231661?w=200&h=150&fit=crop&crop=center',
+      'أثاث': 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=200&h=150&fit=crop&crop=center',
+      'أزياء': 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=200&h=150&fit=crop&crop=center',
+      'وظائف': 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=150&fit=crop&crop=center',
+      'خدمات': 'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?w=200&h=150&fit=crop&crop=center',
+      'رياضة': 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=200&h=150&fit=crop&crop=center',
+      'هواتف': 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=200&h=150&fit=crop&crop=center',
+      'كتب': 'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=200&h=150&fit=crop&crop=center'
     };
     
     for (const [key, image] of Object.entries(defaultImages)) {
       if (category.name.includes(key)) return image;
     }
     
-    return 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=160&h=160&fit=crop';
+    return 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=200&h=150&fit=crop&crop=center';
   };
 
   const getBrandImage = (brand: any) => {
     if (brand.logo_url) return brand.logo_url;
     if (brand.image) return brand.image;
-    return `https://ui-avatars.com/api/?name=${encodeURIComponent(brand.name)}&size=80&background=f8fafc&color=1e293b&font-size=0.4`;
+    if (brand.logo) return brand.logo;
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(brand.name)}&size=120&background=f8fafc&color=1e293b&font-size=0.4`;
   };
 
   const updateFilters = (newFilters: Partial<SearchFilters>) => {
@@ -109,13 +121,10 @@ export function AdFilters({
   };
 
   const selectedCategoryObj = categories?.find(cat => cat.id === filters.category_id);
-
-  // إعادة ترتيب التصنيفات الفرعية عند تغيير التصنيف الأب
   const [displayedSubcategories, setDisplayedSubcategories] = useState<any[]>([]);
 
   useEffect(() => {
     if (selectedCategoryObj?.subcategories) {
-      // ترتيب التصنيفات الفرعية حسب الاسم أو الأولوية
       const sortedSubcategories = [...selectedCategoryObj.subcategories].sort((a, b) => {
         return a.name.localeCompare(b.name, 'ar');
       });
@@ -204,50 +213,49 @@ export function AdFilters({
   }
 
   return (
-    <div className="space-y-4">
-      <Card className="shadow-lg border-2 border-brand/20 bg-gradient-to-br from-white to-brand/5 dark:from-dark-card dark:to-brand/5">
-        <CardHeader className="pb-4">
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Filter className="h-5 w-5 text-brand" />
-              فلترة متقدمة
-            </CardTitle>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => setIsCollapsed(!isCollapsed)}
-              className="h-8 w-8 p-0"
-            >
-              {isCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
-            </Button>
-          </div>
-        </CardHeader>
-        
-        {!isCollapsed && (
-          <CardContent className="space-y-6">
-            <div className="relative">
-              <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="ابحث..."
-                className="pr-10 rounded-lg border-2 focus:border-brand"
-                value={filters.search || ''}
-                onChange={(e) => updateFilters({ search: e.target.value })}
-              />
-            </div>
+    <div className="space-y-6 w-80">
+      {/* Search Section */}
+      <Collapsible open={openSections.search} onOpenChange={() => toggleSection('search')}>
+        <Card className="shadow-lg border-2 border-brand/20 bg-gradient-to-br from-white to-brand/5 dark:from-dark-card dark:to-brand/5">
+          <CollapsibleTrigger className="w-full">
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center justify-between text-lg">
+                <div className="flex items-center gap-2">
+                  <Search className="h-5 w-5 text-brand" />
+                  البحث والفلترة
+                </div>
+                <ChevronDown className={cn("h-4 w-4 transition-transform", openSections.search && "rotate-180")} />
+              </CardTitle>
+            </CardHeader>
+          </CollapsibleTrigger>
+          
+          <CollapsibleContent>
+            <CardContent className="space-y-4">
+              <div className="relative">
+                <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="ابحث عن أي منتج أو خدمة..."
+                  className="pr-10 rounded-lg border-2 focus:border-brand"
+                  value={filters.search || ''}
+                  onChange={(e) => updateFilters({ search: e.target.value })}
+                />
+              </div>
 
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={clearFilters}
-              className="w-full rounded-lg border-2 hover:bg-red-50 hover:border-red-200 hover:text-red-600"
-            >
-              <X className="h-4 w-4 ml-1" />
-              مسح جميع الفلاتر
-            </Button>
-          </CardContent>
-        )}
-      </Card>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={clearFilters}
+                className="w-full rounded-lg border-2 hover:bg-red-50 hover:border-red-200 hover:text-red-600"
+              >
+                <X className="h-4 w-4 ml-1" />
+                مسح جميع الفلاتر
+              </Button>
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
 
+      {/* Subcategories Section */}
       {displayedSubcategories.length > 0 && (
         <Collapsible open={openSections.subcategories} onOpenChange={() => toggleSection('subcategories')}>
           <Card className="shadow-lg border border-border dark:border-dark-border">
@@ -291,51 +299,51 @@ export function AdFilters({
             
             <CollapsibleContent>
               <CardContent>
-                <ScrollArea className="h-60">
+                <ScrollArea className="h-80">
                   {subcategoryViewMode === 'grid' ? (
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-2 gap-3">
                       {displayedSubcategories.map((subcategory) => (
                         <div 
                           key={subcategory.id}
                           className={cn(
-                            "flex flex-col items-center gap-1 p-2 cursor-pointer transition-all hover:bg-muted/50 rounded-lg",
-                            filters.sub_category_id === subcategory.id && "bg-brand/10 border-2 border-brand/30"
+                            "flex flex-col items-center gap-2 p-3 cursor-pointer transition-all hover:bg-muted/50 rounded-xl border-2 border-transparent hover:border-brand/30",
+                            filters.subcategory_id === subcategory.id && "bg-brand/10 border-brand/50"
                           )}
                           onClick={() => updateFilters({ 
-                            sub_category_id: filters.sub_category_id === subcategory.id ? undefined : subcategory.id 
+                            subcategory_id: filters.subcategory_id === subcategory.id ? undefined : subcategory.id 
                           })}
                         >
-                          <div className="w-20 h-16 overflow-hidden flex-shrink-0 rounded-lg">
+                          <div className="w-20 h-16 overflow-hidden flex-shrink-0 rounded-lg shadow-sm">
                             <img
                               src={getCategoryImage(subcategory)}
                               alt={subcategory.name}
                               className="w-full h-full object-cover"
                               onError={(e) => {
                                 const target = e.target as HTMLImageElement;
-                                target.src = 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=160&h=160&fit=crop';
+                                target.src = 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=200&h=150&fit=crop';
                               }}
                             />
                           </div>
                           <div className="text-center">
-                            <div className="font-medium text-[10px] truncate w-full leading-tight">{subcategory.name}</div>
+                            <div className="font-medium text-xs truncate w-full leading-tight">{subcategory.name}</div>
                           </div>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       {displayedSubcategories.map((subcategory) => (
                         <div 
                           key={subcategory.id}
                           className={cn(
-                            "flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-all hover:bg-muted/50",
-                            filters.sub_category_id === subcategory.id && "bg-brand/10"
+                            "flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all hover:bg-muted/50 border-2 border-transparent hover:border-brand/30",
+                            filters.subcategory_id === subcategory.id && "bg-brand/10 border-brand/50"
                           )}
                           onClick={() => updateFilters({ 
-                            sub_category_id: filters.sub_category_id === subcategory.id ? undefined : subcategory.id 
+                            subcategory_id: filters.subcategory_id === subcategory.id ? undefined : subcategory.id 
                           })}
                         >
-                          <div className="w-16 h-14 overflow-hidden flex-shrink-0 rounded-lg">
+                          <div className="w-16 h-14 overflow-hidden flex-shrink-0 rounded-lg shadow-sm">
                             <img
                               src={getCategoryImage(subcategory)}
                               alt={subcategory.name}
@@ -346,7 +354,7 @@ export function AdFilters({
                             <div className="font-medium text-sm truncate">{subcategory.name}</div>
                           </div>
                           <Checkbox 
-                            checked={filters.sub_category_id === subcategory.id}
+                            checked={filters.subcategory_id === subcategory.id}
                             onChange={() => {}}
                             className="pointer-events-none"
                           />
@@ -361,6 +369,7 @@ export function AdFilters({
         </Collapsible>
       )}
 
+      {/* Brands Section */}
       <Collapsible open={openSections.brands} onOpenChange={() => toggleSection('brands')}>
         <Card className="shadow-lg border border-border dark:border-dark-border">
           <CollapsibleTrigger className="w-full">
@@ -403,47 +412,47 @@ export function AdFilters({
           
           <CollapsibleContent>
             <CardContent>
-              <ScrollArea className="h-60">
+              <ScrollArea className="h-80">
                 {brandViewMode === 'grid' ? (
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-2 gap-3">
                     {brands?.slice(0, 24).map((brand) => (
                       <div 
                         key={brand.id}
                         className={cn(
-                          "flex flex-col items-center gap-1 p-2 cursor-pointer transition-all hover:bg-muted/50 rounded-lg",
-                          filters.brand_id === brand.id && "bg-brand/10 border-2 border-brand/30"
+                          "flex flex-col items-center gap-2 p-3 cursor-pointer transition-all hover:bg-muted/50 rounded-xl border-2 border-transparent hover:border-brand/30",
+                          filters.brand_id === brand.id && "bg-brand/10 border-brand/50"
                         )}
                         onClick={() => updateFilters({ 
                           brand_id: filters.brand_id === brand.id ? undefined : brand.id 
                         })}
                       >
-                        <div className="w-16 h-16 overflow-hidden flex-shrink-0 bg-gray-50 rounded-lg">
+                        <div className="w-16 h-16 overflow-hidden flex-shrink-0 bg-gray-50 rounded-lg shadow-sm">
                           <img
                             src={getBrandImage(brand)}
                             alt={brand.name}
                             className="w-full h-full object-cover"
                           />
                         </div>
-                        <div className="text-[10px] text-center font-medium truncate w-full leading-tight">
+                        <div className="text-xs text-center font-medium truncate w-full leading-tight">
                           {brand.name}
                         </div>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {brands?.slice(0, 20).map((brand) => (
                       <div 
                         key={brand.id}
                         className={cn(
-                          "flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-all hover:bg-muted/50",
-                          filters.brand_id === brand.id && "bg-brand/10"
+                          "flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all hover:bg-muted/50 border-2 border-transparent hover:border-brand/30",
+                          filters.brand_id === brand.id && "bg-brand/10 border-brand/50"
                         )}
                         onClick={() => updateFilters({ 
                           brand_id: filters.brand_id === brand.id ? undefined : brand.id 
                         })}
                       >
-                        <div className="w-16 h-16 overflow-hidden flex-shrink-0 bg-gray-50 rounded-lg">
+                        <div className="w-16 h-16 overflow-hidden flex-shrink-0 bg-gray-50 rounded-lg shadow-sm">
                           <img
                             src={getBrandImage(brand)}
                             alt={brand.name}
@@ -468,6 +477,7 @@ export function AdFilters({
         </Card>
       </Collapsible>
 
+      {/* Categories Section */}
       <Collapsible open={openSections.categories} onOpenChange={() => toggleSection('categories')}>
         <Card className="shadow-lg border border-border dark:border-dark-border">
           <CollapsibleTrigger className="w-full">
@@ -475,7 +485,7 @@ export function AdFilters({
               <CardTitle className="flex items-center justify-between text-base">
                 <div className="flex items-center gap-2">
                   <Layers className="h-4 w-4 text-brand" />
-                  التصنيفات
+                  التصنيفات الرئيسية
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="flex border border-border rounded-md overflow-hidden">
@@ -510,33 +520,34 @@ export function AdFilters({
           
           <CollapsibleContent>
             <CardContent>
-              <ScrollArea className="h-80">
+              <ScrollArea className="h-96">
                 {categoryViewMode === 'grid' ? (
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-2 gap-3">
                     {categories?.map((category) => (
                       <div 
                         key={category.id}
                         className={cn(
-                          "flex flex-col items-center gap-1 p-2 cursor-pointer transition-all hover:bg-muted/50 rounded-lg",
-                          filters.category_id === category.id && "bg-brand/10 border-2 border-brand/30"
+                          "flex flex-col items-center gap-2 p-3 cursor-pointer transition-all hover:bg-muted/50 rounded-xl border-2 border-transparent hover:border-brand/30",
+                          filters.category_id === category.id && "bg-brand/10 border-brand/50"
                         )}
                         onClick={() => updateFilters({ 
-                          category_id: filters.category_id === category.id ? undefined : category.id 
+                          category_id: filters.category_id === category.id ? undefined : category.id,
+                          subcategory_id: undefined // Reset subcategory when changing category
                         })}
                       >
-                        <div className="w-20 h-16 overflow-hidden flex-shrink-0 rounded-lg">
+                        <div className="w-20 h-16 overflow-hidden flex-shrink-0 rounded-lg shadow-sm">
                           <img
                             src={getCategoryImage(category)}
                             alt={category.name}
                             className="w-full h-full object-cover"
                             onError={(e) => {
                               const target = e.target as HTMLImageElement;
-                              target.src = 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=160&h=160&fit=crop';
+                              target.src = 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=200&h=150&fit=crop';
                             }}
                           />
                         </div>
                         <div className="text-center">
-                          <div className="font-medium text-[10px] truncate w-full leading-tight">{category.name}</div>
+                          <div className="font-medium text-xs truncate w-full leading-tight">{category.name}</div>
                           <div className="text-[8px] text-muted-foreground">
                             {category.count || Math.floor(Math.random() * 500 + 50)} إعلان
                           </div>
@@ -550,21 +561,22 @@ export function AdFilters({
                       <div 
                         key={category.id}
                         className={cn(
-                          "flex items-center gap-3 p-3 cursor-pointer transition-all hover:bg-muted/50 rounded-lg",
-                          filters.category_id === category.id && "bg-brand/10"
+                          "flex items-center gap-3 p-3 cursor-pointer transition-all hover:bg-muted/50 rounded-xl border-2 border-transparent hover:border-brand/30",
+                          filters.category_id === category.id && "bg-brand/10 border-brand/50"
                         )}
                         onClick={() => updateFilters({ 
-                          category_id: filters.category_id === category.id ? undefined : category.id 
+                          category_id: filters.category_id === category.id ? undefined : category.id,
+                          subcategory_id: undefined
                         })}
                       >
-                        <div className="w-20 h-16 overflow-hidden flex-shrink-0 rounded-lg">
+                        <div className="w-20 h-16 overflow-hidden flex-shrink-0 rounded-lg shadow-sm">
                           <img
                             src={getCategoryImage(category)}
                             alt={category.name}
                             className="w-full h-full object-cover"
                             onError={(e) => {
                               const target = e.target as HTMLImageElement;
-                              target.src = 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=160&h=160&fit=crop';
+                              target.src = 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=200&h=150&fit=crop';
                             }}
                           />
                         </div>
@@ -589,8 +601,7 @@ export function AdFilters({
         </Card>
       </Collapsible>
 
-      
-      
+      {/* Price Range Section */}
       <Collapsible open={openSections.price} onOpenChange={() => toggleSection('price')}>
         <Card className="shadow-lg border border-border dark:border-dark-border">
           <CollapsibleTrigger className="w-full">
@@ -607,6 +618,23 @@ export function AdFilters({
           
           <CollapsibleContent>
             <CardContent className="space-y-4">
+              <div className="flex gap-2">
+                <Input
+                  type="number"
+                  placeholder="من"
+                  value={filters.min_price || ''}
+                  onChange={(e) => updateFilters({ min_price: e.target.value ? parseInt(e.target.value) : undefined })}
+                  className="rounded-lg"
+                />
+                <Input
+                  type="number"
+                  placeholder="إلى"
+                  value={filters.max_price || ''}
+                  onChange={(e) => updateFilters({ max_price: e.target.value ? parseInt(e.target.value) : undefined })}
+                  className="rounded-lg"
+                />
+              </div>
+              
               <div className="px-2">
                 <Slider
                   value={priceRange}
@@ -633,6 +661,7 @@ export function AdFilters({
         </Card>
       </Collapsible>
 
+      {/* Location Section */}
       <Collapsible open={openSections.location} onOpenChange={() => toggleSection('location')}>
         <Card className="shadow-lg border border-border dark:border-dark-border">
           <CollapsibleTrigger className="w-full">
@@ -640,7 +669,7 @@ export function AdFilters({
               <CardTitle className="flex items-center justify-between text-base">
                 <div className="flex items-center gap-2">
                   <MapPin className="h-4 w-4 text-brand" />
-                  الموقع
+                  الموقع الجغرافي
                 </div>
                 <ChevronDown className={cn("h-4 w-4 transition-transform", openSections.location && "rotate-180")} />
               </CardTitle>
@@ -649,51 +678,283 @@ export function AdFilters({
           
           <CollapsibleContent>
             <CardContent className="space-y-4">
-              <Select value={filters.city_id?.toString() || 'all'} onValueChange={(value) => updateFilters({ city_id: value === 'all' ? undefined : parseInt(value) })}>
+              <Select value={filters.state_id?.toString() || 'all'} onValueChange={(value) => updateFilters({ 
+                state_id: value === 'all' ? undefined : parseInt(value),
+                city_id: undefined // Reset city when changing state
+              })}>
                 <SelectTrigger className="rounded-lg border-2 focus:border-brand">
-                  <SelectValue placeholder="اختر المدينة" />
+                  <SelectValue placeholder="اختر المحافظة" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">كل المدن</SelectItem>
-                  <SelectItem value="1">دمشق</SelectItem>
-                  <SelectItem value="2">حلب</SelectItem>
-                  <SelectItem value="3">حمص</SelectItem>
-                  <SelectItem value="4">حماة</SelectItem>
+                  <SelectItem value="all">كل المحافظات</SelectItem>
+                  {states?.map((state) => (
+                    <SelectItem key={state.id} value={state.id.toString()}>
+                      {state.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
+
+              {filters.state_id && (
+                <Select value={filters.city_id?.toString() || 'all'} onValueChange={(value) => updateFilters({ 
+                  city_id: value === 'all' ? undefined : parseInt(value) 
+                })}>
+                  <SelectTrigger className="rounded-lg border-2 focus:border-brand">
+                    <SelectValue placeholder="اختر المدينة" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">كل المدن</SelectItem>
+                    {cities?.map((city) => (
+                      <SelectItem key={city.id} value={city.id.toString()}>
+                        {city.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+
+              <div className="flex gap-2">
+                <Input
+                  type="number"
+                  step="any"
+                  placeholder="خط العرض"
+                  value={filters.lat || ''}
+                  onChange={(e) => updateFilters({ lat: e.target.value ? parseFloat(e.target.value) : undefined })}
+                  className="rounded-lg"
+                />
+                <Input
+                  type="number"
+                  step="any"
+                  placeholder="خط الطول"
+                  value={filters.lon || ''}
+                  onChange={(e) => updateFilters({ lon: e.target.value ? parseFloat(e.target.value) : undefined })}
+                  className="rounded-lg"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>نطاق البحث (كم)</Label>
+                <Select value={filters.radius?.toString() || '10'} onValueChange={(value) => updateFilters({ radius: parseInt(value) })}>
+                  <SelectTrigger className="rounded-lg">
+                    <SelectValue placeholder="اختر النطاق" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">1 كم</SelectItem>
+                    <SelectItem value="5">5 كم</SelectItem>
+                    <SelectItem value="10">10 كم</SelectItem>
+                    <SelectItem value="25">25 كم</SelectItem>
+                    <SelectItem value="50">50 كم</SelectItem>
+                    <SelectItem value="100">100 كم</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </CardContent>
           </CollapsibleContent>
         </Card>
       </Collapsible>
 
+      {/* Condition Section */}
+      <Collapsible open={openSections.condition} onOpenChange={() => toggleSection('condition')}>
+        <Card className="shadow-lg border border-border dark:border-dark-border">
+          <CollapsibleTrigger className="w-full">
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center justify-between text-base">
+                <div className="flex items-center gap-2">
+                  <Tag className="h-4 w-4 text-brand" />
+                  حالة المنتج
+                </div>
+                <ChevronDown className={cn("h-4 w-4 transition-transform", openSections.condition && "rotate-180")} />
+              </CardTitle>
+            </CardHeader>
+          </CollapsibleTrigger>
+          
+          <CollapsibleContent>
+            <CardContent className="space-y-3">
+              {[
+                { value: 'new', label: 'جديد' },
+                { value: 'used', label: 'مستعمل' },
+                { value: 'refurbished', label: 'مُجدد' }
+              ].map((condition) => (
+                <div 
+                  key={condition.value}
+                  className="flex items-center space-x-2 rtl:space-x-reverse cursor-pointer p-2 rounded-lg hover:bg-muted/50"
+                  onClick={() => updateFilters({ 
+                    condition: filters.condition === condition.value ? undefined : condition.value as any
+                  })}
+                >
+                  <Checkbox 
+                    checked={filters.condition === condition.value}
+                    onChange={() => {}}
+                    className="pointer-events-none"
+                  />
+                  <Label className="cursor-pointer">{condition.label}</Label>
+                </div>
+              ))}
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
+
+      {/* Listing Type Section */}
+      <Collapsible open={openSections.listingType} onOpenChange={() => toggleSection('listingType')}>
+        <Card className="shadow-lg border border-border dark:border-dark-border">
+          <CollapsibleTrigger className="w-full">
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center justify-between text-base">
+                <div className="flex items-center gap-2">
+                  <Building className="h-4 w-4 text-brand" />
+                  نوع الإعلان
+                </div>
+                <ChevronDown className={cn("h-4 w-4 transition-transform", openSections.listingType && "rotate-180")} />
+              </CardTitle>
+            </CardHeader>
+          </CollapsibleTrigger>
+          
+          <CollapsibleContent>
+            <CardContent className="space-y-3">
+              {[
+                { value: 'sell', label: 'للبيع' },
+                { value: 'rent', label: 'للإيجار' },
+                { value: 'wanted', label: 'مطلوب' },
+                { value: 'exchange', label: 'للمقايضة' },
+                { value: 'service', label: 'خدمة' }
+              ].map((type) => (
+                <div 
+                  key={type.value}
+                  className="flex items-center space-x-2 rtl:space-x-reverse cursor-pointer p-2 rounded-lg hover:bg-muted/50"
+                  onClick={() => updateFilters({ 
+                    listing_type: filters.listing_type === type.value ? undefined : type.value as any
+                  })}
+                >
+                  <Checkbox 
+                    checked={filters.listing_type === type.value}
+                    onChange={() => {}}
+                    className="pointer-events-none"
+                  />
+                  <Label className="cursor-pointer">{type.label}</Label>
+                </div>
+              ))}
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
+
+      {/* Features Section */}
+      <Collapsible open={openSections.features} onOpenChange={() => toggleSection('features')}>
+        <Card className="shadow-lg border border-border dark:border-dark-border">
+          <CollapsibleTrigger className="w-full">
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center justify-between text-base">
+                <div className="flex items-center gap-2">
+                  <Star className="h-4 w-4 text-brand" />
+                  المميزات الخاصة
+                </div>
+                <ChevronDown className={cn("h-4 w-4 transition-transform", openSections.features && "rotate-180")} />
+              </CardTitle>
+            </CardHeader>
+          </CollapsibleTrigger>
+          
+          <CollapsibleContent>
+            <CardContent className="space-y-3">
+              <div 
+                className="flex items-center space-x-2 rtl:space-x-reverse cursor-pointer p-2 rounded-lg hover:bg-muted/50"
+                onClick={() => updateFilters({ 
+                  featured: !filters.featured
+                })}
+              >
+                <Checkbox 
+                  checked={filters.featured || false}
+                  onChange={() => {}}
+                  className="pointer-events-none"
+                />
+                <Label className="cursor-pointer">إعلانات مميزة</Label>
+              </div>
+
+              <div 
+                className="flex items-center space-x-2 rtl:space-x-reverse cursor-pointer p-2 rounded-lg hover:bg-muted/50"
+                onClick={() => updateFilters({ 
+                  verified_user: !filters.verified_user
+                })}
+              >
+                <Checkbox 
+                  checked={filters.verified_user || false}
+                  onChange={() => {}}
+                  className="pointer-events-none"
+                />
+                <Label className="cursor-pointer">مستخدمين موثقين</Label>
+              </div>
+
+              <div 
+                className="flex items-center space-x-2 rtl:space-x-reverse cursor-pointer p-2 rounded-lg hover:bg-muted/50"
+                onClick={() => updateFilters({ 
+                  with_images: !filters.with_images
+                })}
+              >
+                <Checkbox 
+                  checked={filters.with_images || false}
+                  onChange={() => {}}
+                  className="pointer-events-none"
+                />
+                <Label className="cursor-pointer">مع صور فقط</Label>
+              </div>
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
+
+      {/* Sort and Layout Section */}
       {onLayoutChange && (
         <Card className="shadow-lg border border-border dark:border-dark-border">
           <CardHeader className="pb-4">
             <CardTitle className="text-base flex items-center gap-2">
               <Grid2X2 className="h-4 w-4 text-brand" />
-              نوع العرض
+              الترتيب والعرض
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="flex border border-border rounded-lg overflow-hidden bg-background">
-              <Button 
-                variant={currentLayout === 'grid' ? "default" : "ghost"} 
-                size="sm"
-                onClick={() => onLayoutChange('grid')}
-                className="flex-1 rounded-none"
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label>ترتيب النتائج</Label>
+              <Select 
+                value={filters.sort || 'newest'} 
+                onValueChange={(value) => updateFilters({ 
+                  sort: value as 'newest' | 'oldest' | 'price_asc' | 'price_desc' | 'popular' | 'created_at' | 'updated_at'
+                })}
               >
-                <Grid2X2 className="h-4 w-4 ml-1" />
-                شبكة
-              </Button>
-              <Button 
-                variant={currentLayout === 'list' ? "default" : "ghost"}
-                size="sm" 
-                onClick={() => onLayoutChange('list')}
-                className="flex-1 rounded-none"
-              >
-                <List className="h-4 w-4 ml-1" />
-                قائمة
-              </Button>
+                <SelectTrigger className="rounded-lg border-2 focus:border-brand">
+                  <SelectValue placeholder="اختر الترتيب" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="newest">الأحدث</SelectItem>
+                  <SelectItem value="oldest">الأقدم</SelectItem>
+                  <SelectItem value="price_asc">السعر: من الأقل للأعلى</SelectItem>
+                  <SelectItem value="price_desc">السعر: من الأعلى للأقل</SelectItem>
+                  <SelectItem value="popular">الأكثر مشاهدة</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>نوع العرض</Label>
+              <div className="flex border border-border rounded-lg overflow-hidden bg-background">
+                <Button 
+                  variant={currentLayout === 'grid' ? "default" : "ghost"} 
+                  size="sm"
+                  onClick={() => onLayoutChange('grid')}
+                  className="flex-1 rounded-none"
+                >
+                  <Grid2X2 className="h-4 w-4 ml-1" />
+                  شبكة
+                </Button>
+                <Button 
+                  variant={currentLayout === 'list' ? "default" : "ghost"}
+                  size="sm" 
+                  onClick={() => onLayoutChange('list')}
+                  className="flex-1 rounded-none"
+                >
+                  <List className="h-4 w-4 ml-1" />
+                  قائمة
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
