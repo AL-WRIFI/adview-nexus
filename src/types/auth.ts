@@ -1,4 +1,3 @@
-
 export interface LoginCredentials {
   email: string;
   password: string;
@@ -10,17 +9,13 @@ export interface RegisterData {
   email: string;
   phone: string;
   password: string;
-  password_confirmation: string;
+  confirm_password: string;
 }
 
 export interface AuthResponse {
-  success: boolean;
+  user: User;
+  token: string;
   message?: string;
-  data?: {
-    user: User;
-    token?: string;
-  };
-  errors?: Record<string, string[]>;
 }
 
 export interface User {
