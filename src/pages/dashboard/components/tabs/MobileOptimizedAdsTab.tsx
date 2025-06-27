@@ -31,7 +31,7 @@ export function MobileOptimizedAdsTab({ onPromote, onDelete }: MobileOptimizedAd
   const { data: userListingsResponse, isLoading, error, refetch } = useQuery({
     queryKey: ['userListings', currentUser?.id, currentPage, selectedStatus, searchQuery, sortBy],
     queryFn: () => listingsAPI.getListings({ 
-      user_id: currentUser!.id,
+      user_id: currentUser!.id.toString(),
       page: currentPage,
       per_page: itemsPerPage,
       search: searchQuery || undefined,
@@ -68,20 +68,27 @@ export function MobileOptimizedAdsTab({ onPromote, onDelete }: MobileOptimizedAd
   };
 
   const getAdImage = (listing: Listing) => {
-    if (listing.main_image_url) return listing.main_image_url;
-    if (listing.image && typeof listing.image === 'object' && 'image_url' in listing.image) {
-      return (listing.image as ListingImage).image_url;
+    // Check for a specific main image URL first
+    if (listing.main_image_url) {
+      return listing.main_image_url;
     }
-    if (typeof listing.image === 'string' && listing.image) return listing.image;
+    
+    // Check the 'images' array for the first available image
     if (listing.images && Array.isArray(listing.images) && listing.images.length > 0) {
       const firstImage = listing.images[0];
       if (firstImage) {
         if (typeof firstImage === 'object') {
-          return (firstImage as ListingImage).url || (firstImage as ListingImage).image_url;
+          // It's a ListingImage object, check for 'image_url'
+          return (firstImage as ListingImage).image_url;
         }
-        if (typeof firstImage === 'string') return firstImage;
+        if (typeof firstImage === 'string') {
+          // It's a URL string
+          return firstImage;
+        }
       }
     }
+    
+    // Fallback to a default placeholder if no image is found
     return 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=400&h=300&fit=crop';
   };
 

@@ -39,10 +39,11 @@ export default function Home() {
     setPage(1);
   };
   
-  const adData = adsResponse?.data || [];
-  const totalPages = adsResponse?.meta?.last_page || 
-                    adsResponse?.last_page ||
-                    Math.ceil((adsResponse?.total || adsResponse?.meta?.total || 0) / itemsPerPage) || 1;
+  const adData = adsResponse?.data?.data || adsResponse?.data || [];
+  const totalPages = adsResponse?.data?.last_page || 
+                    adsResponse?.last_page || 
+                    adsResponse?.data?.meta?.last_page ||
+                    Math.ceil((adsResponse?.data?.total || adsResponse?.total || adsResponse?.data?.meta?.total || 0) / itemsPerPage) || 1;
   
   const featuredAds = Array.isArray(adData) ? adData.filter((ad: Listing) => ad.featured) : [];
   const regularAds = Array.isArray(adData) ? adData.filter((ad: Listing) => !ad.featured) : [];

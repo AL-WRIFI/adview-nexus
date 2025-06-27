@@ -1,4 +1,7 @@
 
+import { User } from './user';
+import { Comment } from './comment';
+
 export interface Listing {
   id: number;
   title: string;
@@ -60,8 +63,11 @@ export interface ListingImage {
   order: number;
 }
 
+export interface GalleryImage {
+  id?: number;
+  url: string;
+  file?: File;
+}
+
 // Legacy alias for backward compatibility
 export type Ad = Listing;
-
-import { User } from './user';
-import { Comment } from './comment';

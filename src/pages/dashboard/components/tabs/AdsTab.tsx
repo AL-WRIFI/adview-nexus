@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -50,7 +49,7 @@ export function AdsTab({ onPromote, onDelete }: AdsTabProps) {
   const { data: userListingsResponse, isLoading, error, refetch } = useQuery({
     queryKey: ['userListings', currentUser?.id, currentPage, selectedStatus, searchQuery, sortBy],
     queryFn: () => listingsAPI.getListings({ 
-      user_id: currentUser!.id,
+      user_id: currentUser!.id.toString(),
       page: currentPage,
       per_page: itemsPerPage,
       search: searchQuery || undefined,
@@ -59,8 +58,8 @@ export function AdsTab({ onPromote, onDelete }: AdsTabProps) {
     enabled: !!currentUser?.id,
   });
 
-  const listings = userListingsResponse?.data || [];
-  const totalPages = Math.ceil((userListingsResponse?.total || 0) / itemsPerPage);
+  const listings = userListingsResponse?.data?.data || userListingsResponse?.data || [];
+  const totalPages = Math.ceil((userListingsResponse?.data?.total || userListingsResponse?.total || 0) / itemsPerPage);
 
   const handleRefreshAd = async (adId: number) => {
     try {
@@ -91,16 +90,6 @@ export function AdsTab({ onPromote, onDelete }: AdsTabProps) {
     if (listing.main_image_url) {
       return listing.main_image_url;
     }
-
-    // Check if the 'image' property is an object with 'image_url'
-    if (listing.image && typeof listing.image === 'object' && 'image_url' in listing.image) {
-      return (listing.image as ListingImage).image_url;
-    }
-    
-    // Check if 'image' is a direct URL string
-    if (typeof listing.image === 'string' && listing.image) {
-      return listing.image;
-    }
     
     // Check the 'images' array for the first available image
     if (listing.images && Array.isArray(listing.images) && listing.images.length > 0) {
@@ -108,7 +97,7 @@ export function AdsTab({ onPromote, onDelete }: AdsTabProps) {
       if (firstImage) {
         if (typeof firstImage === 'object') {
           // It's a ListingImage object, check for 'url' or 'image_url'
-          return (firstImage as ListingImage).url || (firstImage as ListingImage).image_url;
+          return (firstImage as ListingImage).image_url || (firstImage as any).url;
         }
         if (typeof firstImage === 'string') {
           // It's a URL string
@@ -200,7 +189,7 @@ export function AdsTab({ onPromote, onDelete }: AdsTabProps) {
       </div>
 
       {/* Ads List */}
-      {listings.length === 0 ? (
+      {Array.isArray(listings) && listings.length === 0 ? (
         <Card>
           <CardContent className="text-center py-12">
             <p className="text-muted-foreground text-lg">لا توجد إعلانات تطابق المعايير المحددة</p>
@@ -208,7 +197,7 @@ export function AdsTab({ onPromote, onDelete }: AdsTabProps) {
         </Card>
       ) : (
         <div className="space-y-3">
-          {listings.map((listing: Listing) => {
+          {Array.isArray(listings) && listings.map((listing: Listing) => {
             const timeAgo = formatDistanceToNow(new Date(listing.created_at), { 
               addSuffix: true,
               locale: ar

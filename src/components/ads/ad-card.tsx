@@ -77,8 +77,10 @@ export function AdCard({
       const firstImage = ad.images[0];
       if (firstImage && typeof firstImage === 'string') {
         return firstImage;
-      } else if (firstImage && typeof firstImage === 'object' && 'url' in firstImage) {
+      } else if (firstImage && typeof firstImage === 'object' && firstImage !== null && 'url' in firstImage) {
         return (firstImage as any).url;
+      } else if (firstImage && typeof firstImage === 'object' && firstImage !== null && 'image_url' in firstImage) {
+        return (firstImage as any).image_url;
       }
     }
     
