@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { AdCard } from '@/components/ads/ad-card';
 import { Button } from '@/components/ui/button';
@@ -64,6 +65,7 @@ export function AdsTab() {
     return <div>Error loading ads. Please try again.</div>;
   }
 
+  // Handle different response formats
   const ads = Array.isArray(adsData) ? adsData : adsData?.data || [];
   const totalCount = Array.isArray(adsData) ? adsData.length : adsData?.total || 0;
 
@@ -131,7 +133,6 @@ export function AdsTab() {
         <div className="flex items-center space-x-2">
           <Label htmlFor="itemsPerPage">إعلانات لكل صفحة:</Label>
           <Select
-            id="itemsPerPage"
             value={itemsPerPage.toString()}
             onValueChange={(value) => setItemsPerPage(parseInt(value))}
           >
