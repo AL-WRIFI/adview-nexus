@@ -3,6 +3,7 @@ export interface SearchFilters {
   search?: string;
   category_id?: number;
   subcategory_id?: number;
+  sub_category_id?: number; // Legacy support
   brand_id?: number;
   state_id?: number;
   city_id?: number;
@@ -10,8 +11,10 @@ export interface SearchFilters {
   min_price?: number;
   max_price?: number;
   condition?: 'new' | 'used' | 'refurbished';
+  product_condition?: 'new' | 'used' | 'refurbished'; // Legacy support
   listing_type?: 'sell' | 'rent' | 'wanted' | 'exchange' | 'service';
   sort?: 'newest' | 'oldest' | 'price_asc' | 'price_desc' | 'popular' | 'created_at' | 'updated_at';
+  sort_by?: 'newest' | 'oldest' | 'price_asc' | 'price_desc' | 'popular' | 'created_at' | 'updated_at'; // Legacy support
   featured?: boolean;
   verified_user?: boolean;
   with_images?: boolean;
