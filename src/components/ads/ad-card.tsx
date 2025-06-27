@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -8,14 +7,15 @@ import { useNavigate } from 'react-router-dom';
 import { Listing } from '@/types';
 import { formatDistanceToNow } from 'date-fns';
 import { useAuth } from '@/context/auth-context';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 
 interface AdCardProps {
   ad: Listing;
   layout?: 'grid' | 'list';
+  isFavorite?: boolean;
 }
 
-export function AdCard({ ad, layout = 'grid' }: AdCardProps) {
+export function AdCard({ ad, layout = 'grid', isFavorite = false }: AdCardProps) {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
@@ -53,15 +53,6 @@ export function AdCard({ ad, layout = 'grid' }: AdCardProps) {
     });
   };
 
-  const handleShare = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    // Placeholder for share logic
-    toast({
-      title: 'تم نسخ رابط الإعلان',
-      description: 'يمكنك الآن مشاركة الرابط مع أصدقائك.',
-    });
-  };
-
   const formatPrice = (price: number) => {
     return price.toLocaleString('ar-SA', {
       style: 'currency',
@@ -96,7 +87,7 @@ export function AdCard({ ad, layout = 'grid' }: AdCardProps) {
                 onClick={(e) => handleFavorite(e)}
                 className="flex-shrink-0 ml-2"
               >
-                <Heart className="h-4 w-4" />
+                <Heart className={`h-4 w-4 ${isFavorite ? 'fill-red-500 text-red-500' : ''}`} />
               </Button>
             </div>
             
@@ -150,7 +141,7 @@ export function AdCard({ ad, layout = 'grid' }: AdCardProps) {
               onClick={(e) => handleFavorite(e)}
               className="flex-shrink-0 ml-2"
             >
-              <Heart className="h-4 w-4" />
+              <Heart className={`h-4 w-4 ${isFavorite ? 'fill-red-500 text-red-500' : ''}`} />
             </Button>
           </div>
           
