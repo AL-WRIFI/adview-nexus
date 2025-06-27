@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { AdCard } from './ad-card';
 import { Button } from '@/components/ui/button';
@@ -50,16 +49,9 @@ function HorizontalAdsSection({ title, ads, sectionId }: HorizontalAdsSectionPro
 
   // دالة الحصول على رابط الصورة بشكل آمن
   const getImageUrl = (ad: Listing): string => {
-    if (ad.image) {
-      if (typeof ad.image === 'string') {
-        return ad.image;
-      }
-      if (typeof ad.image === 'object' && 'image_url' in ad.image) {
-        return ad.image.image_url;
-      }
-      if (typeof ad.image === 'object' && 'url' in ad.image) {
-        return (ad.image as any).url;
-      }
+    // Check main_image_url first
+    if (ad.main_image_url) {
+      return ad.main_image_url;
     }
     
     if (ad.images && Array.isArray(ad.images) && ad.images.length > 0) {
@@ -189,7 +181,7 @@ function HorizontalAdsSection({ title, ads, sectionId }: HorizontalAdsSectionPro
                         <h3 className="font-medium truncate">{ad.title}</h3>
 
                         <div className="flex justify-between items-center">
-                          <span className="text-gray-500">{ad.city_name || 'غير محدد'}</span>
+                          <span className="text-gray-500">{ad.city_name || ad.city || ad.location || 'غير محدد'}</span>
                           {ad.price && (
                             <span className="font-semibold text-green-600 dark:text-green-400">
                               {ad.price.toLocaleString()} ريال
@@ -259,4 +251,3 @@ export function RelatedAndSuggestedAds({
     </div>
   );
 }
-

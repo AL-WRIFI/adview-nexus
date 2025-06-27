@@ -8,6 +8,7 @@ export interface SearchFilters {
   brand_id?: number;
   city_id?: number;
   state_id?: number;
+  district_id?: number;
   min_price?: number;
   max_price?: number;
   condition?: 'new' | 'used' | 'refurbished' | string;
@@ -15,6 +16,8 @@ export interface SearchFilters {
   listing_type?: 'sell' | 'buy' | 'rent' | 'exchange' | string;
   featured?: boolean;
   negotiable?: boolean;
+  verified_user?: boolean;
+  with_images?: boolean;
   sort?: string;
   sort_by?: string; // Alias for sort
   lat?: number;

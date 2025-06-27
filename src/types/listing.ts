@@ -27,6 +27,13 @@ export interface Listing {
   created_at: string;
   updated_at: string;
   comments_enabled: boolean;
+  
+  // Additional properties that components expect
+  city?: string;
+  city_name?: string;
+  location?: string;
+  viewCount?: number; // Alias for views_count
+  is_negotiable?: boolean; // Alias for negotiable
 }
 
 export interface ListingDetails extends Listing {

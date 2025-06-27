@@ -1,264 +1,124 @@
-import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '@/context/auth-context';
-import { useTheme } from '@/context/theme-provider';
-import { Moon, Sun, Menu, Settings, User, Bell, CreditCard, HelpCircle, Exit, Search } from 'lucide-react';
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet"
-import { useIsMobile } from '@/hooks/use-mobile';
-import { useCategories } from '@/hooks/use-api';
-import { Category } from '@/types';
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { User, Plus, Bell, Menu, LogOut } from 'lucide-react';
+import { useState } from 'react';
 
-export function Header() {
-  const { isAuthenticated, user, logout } = useAuth();
-  const { theme, setTheme } = useTheme();
+interface HeaderProps {
+  isLoggedIn?: boolean;
+}
+
+export function Header({ isLoggedIn = false }: HeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const navigate = useNavigate();
-  const isMobile = useIsMobile();
-  const { data: categories } = useCategories();
-  const [searchQuery, setSearchQuery] = useState('');
-
-  const handleThemeToggle = () => {
-    setTheme(theme === "light" ? "dark" : "light");
-  };
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate(`/search?search=${searchQuery}`);
-    }
-  };
 
   return (
     <header className="bg-white dark:bg-dark-card border-b border-border dark:border-dark-border sticky top-0 z-50">
-      <div className="container px-4 mx-auto py-4 flex items-center justify-between">
-        {/* Logo */}
-        <Link to="/" className="text-2xl font-bold text-foreground">
-          مكس سوريا
-        </Link>
+      <div className="container px-4 mx-auto">
+        <div className="flex items-center justify-between h-16">
+          {/* Logo */}
+          <Link to="/" className="flex items-center space-x-2 space-x-reverse">
+            <div className="w-8 h-8 bg-brand rounded-lg flex items-center justify-center">
+              <span className="text-white font-bold text-lg">س</span>
+            </div>
+            <span className="text-xl font-bold text-gray-900 dark:text-white">سوق</span>
+          </Link>
 
-        {/* Search Bar */}
-        <form onSubmit={handleSearch} className="flex-grow mx-4">
-          <div className="relative">
-            <Search className="absolute right-4 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5" />
-            <Input
-              type="text"
-              placeholder="ابحث عن أي شيء..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-4 pr-12 h-10"
-            />
-            <Button
-              type="submit"
-              variant="ghost"
-              size="icon"
-              className="absolute left-2 top-1/2 transform -translate-y-1/2 h-8 w-8"
-            >
-              <Search className="h-4 w-4" />
-            </Button>
-          </div>
-        </form>
+          {/* Navigation Links - Desktop */}
+          <nav className="hidden md:flex items-center space-x-6 space-x-reverse">
+            <Link to="/" className="text-gray-700 dark:text-gray-300 hover:text-brand transition-colors">
+              الرئيسية
+            </Link>
+            <Link to="/categories" className="text-gray-700 dark:text-gray-300 hover:text-brand transition-colors">
+              التصنيفات
+            </Link>
+            <Link to="/search" className="text-gray-700 dark:text-gray-300 hover:text-brand transition-colors">
+              البحث
+            </Link>
+          </nav>
 
-        {/* Theme Toggle */}
-        <Button variant="ghost" size="icon" onClick={handleThemeToggle}>
-          {theme === "light" ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
-          <span className="sr-only">Toggle theme</span>
-        </Button>
-
-        {/* User Menu */}
-        {isAuthenticated && user ? (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                <Avatar className="h-10 w-10">
-                  <AvatarImage 
-                    src={user.avatar || user.avatar_url || user.image || ''} 
-                    alt={user.first_name + ' ' + user.last_name}
-                  />
-                  <AvatarFallback>
-                    {user.first_name?.[0]}{user.last_name?.[0]}
-                  </AvatarFallback>
-                </Avatar>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-64" align="end" forceMount>
-              <div className="flex items-center justify-start gap-2 p-2">
-                <div className="flex flex-col space-y-1 leading-none">
-                  <p className="font-medium text-sm">
-                    {user.first_name} {user.last_name}
-                  </p>
-                  <p className="w-[200px] truncate text-xs text-muted-foreground">
-                    {user.email}
-                  </p>
-                  {user.wallet_balance !== undefined && (
-                    <p className="text-xs text-green-600">
-                      الرصيد: {user.wallet_balance} ر.س
-                    </p>
-                  )}
-                </div>
-              </div>
-              
-              <DropdownMenuSeparator />
-              
-              <DropdownMenuItem asChild>
-                <Link to="/dashboard" className="cursor-pointer">
-                  <User className="ml-2 h-4 w-4" />
-                  <span>لوحة التحكم</span>
-                </Link>
-              </DropdownMenuItem>
-              
-              <DropdownMenuItem asChild>
-                <Link to="/profile" className="cursor-pointer">
-                  <Settings className="ml-2 h-4 w-4" />
-                  <span>الملف الشخصي</span>
-                </Link>
-              </DropdownMenuItem>
-              
-              <DropdownMenuItem asChild>
-                <Link to="/statistics" className="cursor-pointer">
-                  <CreditCard className="ml-2 h-4 w-4" />
-                  <span>إحصائيات</span>
-                </Link>
-              </DropdownMenuItem>
-              
-              <DropdownMenuItem asChild>
-                <Link to="/messages" className="cursor-pointer">
-                  <Bell className="ml-2 h-4 w-4" />
-                  <span>الرسائل</span>
-                </Link>
-              </DropdownMenuItem>
-              
-              <DropdownMenuSeparator />
-              
-              <DropdownMenuItem asChild>
-                <Button variant="ghost" onClick={() => logout()} className="w-full justify-start">
-                  <Exit className="ml-2 h-4 w-4" />
-                  <span>تسجيل الخروج</span>
-                </Button>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        ) : (
-          <div className="flex items-center space-x-2">
-            <Button asChild variant="outline">
-              <Link to="/auth/login">تسجيل الدخول</Link>
-            </Button>
-            <Button asChild>
-              <Link to="/auth/register">إنشاء حساب</Link>
-            </Button>
-          </div>
-        )}
-
-        {/* Mobile Menu */}
-        {isMobile && (
-          <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <Menu className="h-5 w-5" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="right" className="w-80">
-              <SheetHeader>
-                <SheetTitle>القائمة</SheetTitle>
-                <SheetDescription>
-                  تصفح الخيارات المتاحة
-                </SheetDescription>
-              </SheetHeader>
-              <div className="grid gap-4 py-4">
-                {/* Mobile Search Bar */}
-                <form onSubmit={handleSearch} className="w-full">
-                  <div className="relative">
-                    <Search className="absolute right-4 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5" />
-                    <Input
-                      type="text"
-                      placeholder="ابحث عن أي شيء..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-4 pr-12 h-10"
-                    />
-                    <Button
-                      type="submit"
-                      variant="ghost"
-                      size="icon"
-                      className="absolute left-2 top-1/2 transform -translate-y-1/2 h-8 w-8"
-                    >
-                      <Search className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </form>
-
-                {/* Categories List */}
-                {categories && categories.length > 0 ? (
-                  categories.map((category) => (
-                    <Button key={category.id} variant="ghost" className="w-full justify-start">
-                      <Link to={`/category/${category.id}`}>{category.name}</Link>
-                    </Button>
-                  ))
-                ) : (
-                  <p className="text-sm text-muted-foreground">لا توجد تصنيفات</p>
-                )}
-
-                {/* Auth Links */}
-                {!isAuthenticated && (
-                  <>
-                    <Button variant="ghost" className="w-full justify-start">
-                      <Link to="/auth/login">تسجيل الدخول</Link>
-                    </Button>
-                    <Button variant="ghost" className="w-full justify-start">
-                      <Link to="/auth/register">إنشاء حساب</Link>
-                    </Button>
-                  </>
-                )}
-
-                {/* User Links */}
-                {isAuthenticated && user && (
-                  <>
-                    <Button variant="ghost" className="w-full justify-start">
-                      <Link to="/dashboard">لوحة التحكم</Link>
-                    </Button>
-                    <Button variant="ghost" className="w-full justify-start">
-                      <Link to="/profile">الملف الشخصي</Link>
-                    </Button>
-                    <Button variant="ghost" className="w-full justify-start">
-                      <Link to="/messages">الرسائل</Link>
-                    </Button>
-                    <Button variant="ghost" className="w-full justify-start" onClick={() => logout()}>
-                      تسجيل الخروج
-                    </Button>
-                  </>
-                )}
-
-                {/* Theme Toggle */}
-                <Button variant="ghost" className="w-full justify-start" onClick={handleThemeToggle}>
-                  {theme === "light" ? "الوضع الداكن" : "الوضع الفاتح"}
-                </Button>
-
-                {/* Help */}
-                <Button variant="ghost" className="w-full justify-start">
-                  <Link to="/help">
-                    <HelpCircle className="ml-2 h-4 w-4" />
-                    المساعدة
+          {/* Actions */}
+          <div className="flex items-center space-x-3 space-x-reverse">
+            {isLoggedIn ? (
+              <>
+                <Button asChild size="sm" className="hidden md:flex">
+                  <Link to="/add-ad">
+                    <Plus className="w-4 h-4 ml-1" />
+                    إضافة إعلان
                   </Link>
                 </Button>
-              </div>
-            </SheetContent>
-          </Sheet>
+                
+                <Button variant="ghost" size="icon" asChild>
+                  <Link to="/notifications">
+                    <Bell className="w-5 h-5" />
+                  </Link>
+                </Button>
+                
+                <Button variant="ghost" size="icon" asChild>
+                  <Link to="/profile">
+                    <User className="w-5 h-5" />
+                  </Link>
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="outline" size="sm" asChild>
+                  <Link to="/auth/login">تسجيل الدخول</Link>
+                </Button>
+                
+                <Button size="sm" asChild>
+                  <Link to="/auth/register">إنشاء حساب</Link>
+                </Button>
+              </>
+            )}
+
+            {/* Mobile Menu Button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="md:hidden"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+            >
+              <Menu className="w-5 h-5" />
+            </Button>
+          </div>
+        </div>
+
+        {/* Mobile Menu */}
+        {isMenuOpen && (
+          <div className="md:hidden border-t border-border dark:border-dark-border py-4">
+            <nav className="flex flex-col space-y-3">
+              <Link 
+                to="/" 
+                className="text-gray-700 dark:text-gray-300 hover:text-brand transition-colors px-2 py-1"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                الرئيسية
+              </Link>
+              <Link 
+                to="/categories" 
+                className="text-gray-700 dark:text-gray-300 hover:text-brand transition-colors px-2 py-1"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                التصنيفات
+              </Link>
+              <Link 
+                to="/search" 
+                className="text-gray-700 dark:text-gray-300 hover:text-brand transition-colors px-2 py-1"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                البحث
+              </Link>
+              {isLoggedIn && (
+                <Link 
+                  to="/add-ad" 
+                  className="text-brand hover:text-brand/80 transition-colors px-2 py-1 font-medium"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  إضافة إعلان
+                </Link>
+              )}
+            </nav>
+          </div>
         )}
       </div>
     </header>

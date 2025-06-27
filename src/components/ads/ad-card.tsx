@@ -65,25 +65,20 @@ export function AdCard({
     }
   };
 
-  // Handle the new image format
+  // Handle the image format
   const getImageUrl = () => {
-    // Check if we have image object with image_url
-    if (ad.image && typeof ad.image === 'object' && 'image_url' in ad.image) {
-      return ad.image.image_url;
+    // Check main_image_url first
+    if (ad.main_image_url) {
+      return ad.main_image_url;
     }
     
-    // For backwards compatibility, check if image is a string
-    if (typeof ad.image === 'string' && ad.image) {
-      return ad.image;
-    }
-    
-    // If we have images array with url property
+    // If we have images array
     if (ad.images && Array.isArray(ad.images) && ad.images.length > 0) {
       const firstImage = ad.images[0];
-      if (firstImage && typeof firstImage === 'object' && 'url' in firstImage) {
-        return (firstImage as any).url;
-      } else if (firstImage && typeof firstImage === 'string') {
+      if (firstImage && typeof firstImage === 'string') {
         return firstImage;
+      } else if (firstImage && typeof firstImage === 'object' && 'url' in firstImage) {
+        return (firstImage as any).url;
       }
     }
     
@@ -166,7 +161,7 @@ export function AdCard({
           <div className="mt-auto flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
             <div className="flex items-center">
               <MapPin className="h-3 w-3 ml-1" />
-              <span className="truncate max-w-[80px]">{ad.city || ad.city_name || ad.location || 'غير محدد'}</span>
+              <span className="truncate max-w-[80px]">{ad.city_name || ad.city || ad.location || 'غير محدد'}</span>
             </div>
             <div className="flex items-center">
               <Clock className="h-3 w-3 ml-1" />
@@ -265,7 +260,7 @@ export function AdCard({
         <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2 text-xs text-muted-foreground">
           <div className="flex items-center">
             <MapPin className="h-3 w-3 ml-1" />
-            <span className="truncate max-w-[80px]">{ad.city || ad.city_name || ad.location || 'غير محدد'}</span>
+            <span className="truncate max-w-[80px]">{ad.city_name || ad.city || ad.location || 'غير محدد'}</span>
           </div>
           <div className="flex items-center">
             <Clock className="h-3 w-3 ml-1" />
