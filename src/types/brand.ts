@@ -4,6 +4,7 @@ export interface Brand {
   name: string;
   description?: string;
   logo_url?: string;
+  logo?: string;
   image?: string;
   website?: string;
   is_active?: boolean;

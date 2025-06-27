@@ -67,9 +67,19 @@ export function AdCard({
 
   // Handle the new image format
   const getImageUrl = () => {
+    // Check main_image_url first
+    if (ad.main_image_url) {
+      if (typeof ad.main_image_url === 'string') {
+        return ad.main_image_url;
+      }
+      if (typeof ad.main_image_url === 'object' && ad.main_image_url && 'image_url' in ad.main_image_url) {
+        return (ad.main_image_url as any).image_url;
+      }
+    }
+    
     // Check if we have image object with image_url
     if (ad.image && typeof ad.image === 'object' && 'image_url' in ad.image) {
-      return ad.image.image_url;
+      return (ad.image as any).image_url;
     }
     
     // For backwards compatibility, check if image is a string
@@ -166,7 +176,7 @@ export function AdCard({
           <div className="mt-auto flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
             <div className="flex items-center">
               <MapPin className="h-3 w-3 ml-1" />
-              <span className="truncate max-w-[80px]">{ad.city || ad.city_name || ad.location || 'غير محدد'}</span>
+              <span className="truncate max-w-[80px]">{ad.city || ad.city_name || ad.location || ad.address || 'غير محدد'}</span>
             </div>
             <div className="flex items-center">
               <Clock className="h-3 w-3 ml-1" />
@@ -265,7 +275,7 @@ export function AdCard({
         <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2 text-xs text-muted-foreground">
           <div className="flex items-center">
             <MapPin className="h-3 w-3 ml-1" />
-            <span className="truncate max-w-[80px]">{ad.city || ad.city_name || ad.location || 'غير محدد'}</span>
+            <span className="truncate max-w-[80px]">{ad.city || ad.city_name || ad.location || ad.address || 'غير محدد'}</span>
           </div>
           <div className="flex items-center">
             <Clock className="h-3 w-3 ml-1" />

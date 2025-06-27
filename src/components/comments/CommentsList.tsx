@@ -1,399 +1,354 @@
-
 import React, { useState } from 'react';
-import { formatDistanceToNow } from 'date-fns';
-import { ar } from 'date-fns/locale';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Comment } from '@/types';
-import { Heart, MessageCircle, MoreHorizontal, Send, Trash, Edit } from 'lucide-react';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { useAuth } from '@/context/auth-context';
+} from "@/components/ui/dropdown-menu"
+import { Edit3, MessageCircle, MoreVertical, Trash2 } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea"
+import { cn } from "@/lib/utils";
+import { formatDistanceToNow } from 'date-fns';
+import { ar } from 'date-fns/locale';
+
+import { Comment } from '@/types';
 
 interface CommentsListProps {
-  comments: Comment[];
-  onAddComment: (text: string) => void;
-  onAddReply: (commentId: number, text: string) => void;
-  onDeleteComment: (commentId: number) => void;
-  onEditComment: (commentId: number, text: string) => void;
-  onDeleteReply: (commentId: number, replyId: number) => void;
-  onEditReply: (commentId: number, replyId: number, text: string) => void;
-  isLoading?: boolean;
+  listingId: number | string;
+  isAuthenticated: boolean;
+  currentUser: { id: string } | null;
 }
 
-export function CommentsList({
-  comments,
-  onAddComment,
-  onAddReply,
-  onDeleteComment,
-  onEditComment,
-  onDeleteReply,
-  onEditReply,
-  isLoading = false
+async function fetchComments(listingId: number) {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/comments?listing_id=${listingId}`);
+  if (!res.ok) {
+    throw new Error('Failed to fetch comments');
+  }
+  return res.json();
+}
+
+async function createCommentRequest(data: { listing_id: number, content: string, parent_id?: number }) {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/comments`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    throw new Error('Failed to create comment');
+  }
+  return res.json();
+}
+
+async function updateCommentRequest(data: { id: number, content: string }) {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/comments/${data.id}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ content: data.content }),
+  });
+  if (!res.ok) {
+    throw new Error('Failed to update comment');
+  }
+  return res.json();
+}
+
+async function deleteCommentRequest(commentId: number) {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/comments/${commentId}`, {
+    method: 'DELETE',
+  });
+  if (!res.ok) {
+    throw new Error('Failed to delete comment');
+  }
+  return res.json();
+}
+
+export function CommentsList({ 
+  listingId, 
+  isAuthenticated, 
+  currentUser 
 }: CommentsListProps) {
-  const [commentText, setCommentText] = useState('');
-  const [replyingTo, setReplyingTo] = useState<number | null>(null);
-  const [replyText, setReplyText] = useState('');
+  const [newComment, setNewComment] = useState('');
   const [editingComment, setEditingComment] = useState<number | null>(null);
-  const [editingReply, setEditingReply] = useState<{commentId: number, replyId: number} | null>(null);
-  const [editText, setEditText] = useState('');
+  const [replyingTo, setReplyingTo] = useState<number | null>(null);
   
-  const { isAuthenticated, user } = useAuth();
-
-  const handleSubmitComment = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (commentText.trim()) {
-      onAddComment(commentText);
-      setCommentText('');
-    }
-  };
-
-  const handleSubmitReply = (commentId: number) => {
-    if (replyText.trim()) {
-      onAddReply(commentId, replyText);
-      setReplyText('');
+  const createComment = useMutation({
+    mutationFn: (data: { listing_id: number, content: string, parent_id?: number }) => createCommentRequest(data),
+    onSuccess: () => {
+      // Invalidate the query to refetch comments
+      queryClient.invalidateQueries(['comments', listingId]);
+      setNewComment('');
       setReplyingTo(null);
-    }
-  };
+    },
+  });
 
-  const handleStartEditing = (comment: Comment) => {
-    setEditingComment(comment.id);
-    setEditText(comment.content);
-  };
-
-  const handleStartEditingReply = (commentId: number, reply: Comment) => {
-    setEditingReply({commentId, replyId: reply.id});
-    setEditText(reply.content);
-  };
-
-  const handleSubmitEdit = () => {
-    if (editingComment && editText.trim()) {
-      onEditComment(editingComment, editText);
+  const updateComment = useMutation({
+    mutationFn: (data: { id: number, content: string }) => updateCommentRequest(data),
+    onSuccess: () => {
+      // Invalidate the query to refetch comments
+      queryClient.invalidateQueries(['comments', listingId]);
       setEditingComment(null);
-      setEditText('');
+      setNewComment('');
+    },
+  });
+
+  const deleteComment = useMutation({
+    mutationFn: (commentId: number) => deleteCommentRequest(commentId),
+    onSuccess: () => {
+      // Invalidate the query to refetch comments
+      queryClient.invalidateQueries(['comments', listingId]);
+    },
+  });
+  
+  const { data: comments = [], isLoading } = useQuery({
+    queryKey: ['comments', listingId],
+    queryFn: () => fetchComments(Number(listingId)),
+    enabled: !!listingId
+  });
+
+  const handleSubmit = (commentId?: number) => {
+    if (!newComment.trim()) return;
+
+    if (commentId) {
+      // Updating existing comment
+      updateComment.mutate({ id: commentId, content: newComment });
+    } else {
+      // Creating a new comment or reply
+      createComment.mutate({
+        listing_id: Number(listingId),
+        content: newComment,
+        parent_id: replyingTo || undefined,
+      });
     }
   };
 
-  const handleSubmitEditReply = () => {
-    if (editingReply && editText.trim()) {
-      onEditReply(editingReply.commentId, editingReply.replyId, editText);
-      setEditingReply(null);
-      setEditText('');
+  const renderStars = (rating: number) => {
+    const stars = [];
+    for (let i = 1; i <= 5; i++) {
+      stars.push(
+        <span key={i} className={i <= rating ? "text-yellow-500" : "text-gray-300"}>
+          ★
+        </span>
+      );
     }
+    return stars;
   };
 
-  const canModifyComment = (userId?: number) => {
-    if (!isAuthenticated || !user) return false;
-    return user.id === userId;
+  const handleReply = (parentId: number | string) => {
+    setReplyingTo(Number(parentId));
+    setNewComment('');
   };
 
-  return (
-    <div className="space-y-4">
-      {isAuthenticated && (
-        <form onSubmit={handleSubmitComment} className="space-y-3">
-          <div className="flex gap-3">
-            <Avatar className="w-10 h-10 border">
-              {user?.image ? (
-                <AvatarImage src={user.image} alt={user.first_name} />
-              ) : (
-                <AvatarFallback className="bg-brand/10 text-brand">
-                  {user?.first_name?.charAt(0) || 'U'}
-                </AvatarFallback>
-              )}
-            </Avatar>
-            <div className="flex-1 space-y-2">
-              <Textarea
-                placeholder="اكتب تعليقك هنا..."
-                value={commentText}
-                onChange={(e) => setCommentText(e.target.value)}
-                className="resize-none dark:bg-neutral-800 dark:border-neutral-700 dark:text-neutral-300 min-h-[80px]"
-              />
-              <div className="flex justify-end">
-                <Button 
-                  type="submit" 
-                  disabled={!commentText.trim() || isLoading}
-                  className="bg-brand hover:bg-brand/90 text-white dark:bg-brand dark:hover:bg-brand/90 dark:text-white"
-                >
-                  {isLoading ? (
-                    <>
-                      <div className="mr-2 h-4 w-4 animate-spin border-2 border-transparent border-t-white rounded-full" />
-                      جاري الإضافة...
-                    </>
-                  ) : 'إضافة تعليق'}
-                </Button>
-              </div>
-            </div>
-          </div>
-        </form>
-      )}
-      
-      <div className="space-y-4 mt-6">
-        {comments.length === 0 ? (
-          <div className="text-center py-6 text-neutral-500 dark:text-neutral-400">
-            لا توجد تعليقات حتى الآن. كن أول من يعلق!
-          </div>
-        ) : (
-          comments.map((comment) => (
-            <div 
-              key={comment.id} 
-              className="border border-neutral-200 dark:border-neutral-700 rounded-lg overflow-hidden bg-white dark:bg-neutral-800 shadow-sm"
-            >
-              <div className="p-4 border-b border-neutral-100 dark:border-neutral-700">
-                <div className="flex items-start gap-3">
-                  <Avatar className="w-10 h-10 border">
-                    {comment.user?.image ? (
-                      <AvatarImage src={comment.user.image} alt={`${comment.user.first_name} ${comment.user.last_name}`} />
-                    ) : (
-                      <AvatarFallback className="bg-neutral-200 dark:bg-neutral-700">
-                        {comment.user?.first_name?.charAt(0) || 'U'}
-                      </AvatarFallback>
-                    )}
-                  </Avatar>
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="font-medium dark:text-neutral-100">
-                          {comment.user ? `${comment.user.first_name} ${comment.user.last_name}` : 'مستخدم غير معروف'}
-                        </div>
-                        <div className="text-xs text-neutral-500 dark:text-neutral-400">
-                          {formatDistanceToNow(new Date(comment.created_at), { 
-                            addSuffix: true, 
-                            locale: ar
-                          })}
-                        </div>
-                      </div>
-                      
-                      {canModifyComment(comment.user?.id) && (
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleStartEditing(comment)}>
-                              <Edit className="mr-2 h-4 w-4" />
-                              تعديل التعليق
-                            </DropdownMenuItem>
-                            <DropdownMenuItem 
-                              className="text-red-500 focus:text-red-500"
-                              onClick={() => onDeleteComment(comment.id)}
-                            >
-                              <Trash className="mr-2 h-4 w-4" />
-                              حذف التعليق
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      )}
-                    </div>
-                    
-                    {editingComment === comment.id ? (
-                      <div className="mt-2">
-                        <Textarea
-                          value={editText}
-                          onChange={(e) => setEditText(e.target.value)}
-                          className="resize-none dark:bg-neutral-800 dark:border-neutral-700 min-h-[80px] text-sm"
-                        />
-                        <div className="flex justify-end gap-2 mt-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              setEditingComment(null);
-                              setEditText('');
-                            }}
-                          >
-                            إلغاء
-                          </Button>
-                          <Button
-                            size="sm"
-                            onClick={handleSubmitEdit}
-                          >
-                            حفظ التعديل
-                          </Button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="mt-2 text-neutral-700 dark:text-neutral-300">
-                        {comment.content}
-                      </div>
-                    )}
-                    
-                    <div className="flex items-center gap-4 mt-2">
-                      {isAuthenticated && (
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="text-brand hover:text-brand hover:bg-brand/10 px-2 text-xs flex items-center"
-                          onClick={() => replyingTo === comment.id 
-                            ? setReplyingTo(null) 
-                            : setReplyingTo(comment.id)
-                          }
-                        >
-                          <MessageCircle className="h-3 w-3 ml-1" />
-                          رد
-                        </Button>
-                      )}
-                      
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="text-neutral-500 hover:text-red-500 px-2 text-xs flex items-center"
-                      >
-                        <Heart className="h-3 w-3 ml-1" />
-                        إعجاب
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-                
-                {replyingTo === comment.id && isAuthenticated && (
-                  <div className="mr-10 mt-3 border-r-2 border-brand pr-3">
-                    <div className="flex gap-2">
-                      <Avatar className="w-8 h-8 border">
-                        {user?.image ? (
-                          <AvatarImage src={user.image} alt={user.first_name} />
-                        ) : (
-                          <AvatarFallback className="bg-brand/10 text-brand">
-                            {user?.first_name?.charAt(0) || 'U'}
-                          </AvatarFallback>
-                        )}
-                      </Avatar>
-                      <div className="flex-1 flex gap-2 items-end">
-                        <Textarea
-                          placeholder="اكتب ردك هنا..."
-                          value={replyText}
-                          onChange={(e) => setReplyText(e.target.value)}
-                          className="resize-none dark:bg-neutral-800 dark:border-neutral-700 min-h-[60px] text-sm flex-1"
-                        />
-                        <Button
-                          size="sm"
-                          disabled={!replyText.trim() || isLoading}
-                          className="bg-brand hover:bg-brand/90 text-white"
-                          onClick={() => handleSubmitReply(comment.id)}
-                        >
-                          {isLoading ? (
-                            <div className="h-4 w-4 animate-spin border-2 border-transparent border-t-white rounded-full" />
-                          ) : (
-                            <Send className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </div>
-                    </div>
+  const handleEdit = (comment: Comment) => {
+    setEditingComment(Number(comment.id));
+    setNewComment(comment.content);
+  };
+
+  const handleDelete = (commentId: number | string) => {
+    deleteComment.mutate(Number(commentId));
+  };
+
+  const renderComment = (comment: Comment, depth = 0) => {
+    const isCurrentUser = currentUser && String(currentUser.id) === String(comment.user_id);
+    const isEditing = editingComment === Number(comment.id);
+    const isReplying = replyingTo === Number(comment.id);
+
+    return (
+      <div key={comment.id} className={cn("space-y-3", depth > 0 && "ml-8 border-l border-gray-200 pl-4")}>
+        <div className="flex items-start space-x-3">
+          <Avatar className="h-8 w-8">
+            <AvatarImage 
+              src={comment.user?.avatar_url || comment.user?.avatar || comment.user?.image || '/placeholder.svg'} 
+              alt={comment.user?.username || comment.user?.name || comment.user?.first_name || 'مستخدم'} 
+            />
+            <AvatarFallback>
+              {(comment.user?.username || comment.user?.name || comment.user?.first_name || 'م')[0].toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+          
+          <div className="flex-1 space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <span className="font-medium text-sm">
+                  {comment.user?.username || comment.user?.name || 
+                   `${comment.user?.first_name || ''} ${comment.user?.last_name || ''}`.trim() || 'مستخدم مجهول'}
+                </span>
+                {comment.user?.verified && (
+                  <Badge variant="secondary" className="text-xs">موثق</Badge>
+                )}
+                {comment.rating && (
+                  <div className="flex items-center space-x-1">
+                    {renderStars(comment.rating)}
                   </div>
                 )}
               </div>
               
-              {comment.replies && comment.replies.length > 0 && (
-                <div className="bg-neutral-50 dark:bg-neutral-700/50">
-                  {comment.replies.map((reply) => (
-                    <div 
-                      key={reply.id} 
-                      className="p-3 border-b last:border-b-0 border-neutral-100 dark:border-neutral-700/50"
-                    >
-                      <div className="flex gap-2">
-                        <Avatar className="w-8 h-8 border">
-                          {reply.user?.image ? (
-                            <AvatarImage src={reply.user.image} alt={`${reply.user.first_name} ${reply.user.last_name}`} />
-                          ) : (
-                            <AvatarFallback className="bg-neutral-200 dark:bg-neutral-700">
-                              {reply.user?.first_name?.charAt(0) || 'U'}
-                            </AvatarFallback>
-                          )}
-                        </Avatar>
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between">
-                            <div className="flex flex-wrap gap-2 items-baseline">
-                              <div className="font-medium text-sm dark:text-neutral-100">
-                                {reply.user ? `${reply.user.first_name} ${reply.user.last_name}` : 'مستخدم غير معروف'}
-                              </div>
-                              <div className="text-xs text-neutral-500 dark:text-neutral-400">
-                                {formatDistanceToNow(new Date(reply.created_at), { 
-                                  addSuffix: true,
-                                  locale: ar
-                                })}
-                              </div>
-                            </div>
-                            
-                            {canModifyComment(reply.user?.id) && (
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" size="sm">
-                                    <MoreHorizontal className="h-3 w-3" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  <DropdownMenuItem onClick={() => handleStartEditingReply(comment.id, reply)}>
-                                    <Edit className="mr-2 h-3 w-3" />
-                                    تعديل الرد
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem 
-                                    className="text-red-500 focus:text-red-500"
-                                    onClick={() => onDeleteReply(comment.id, reply.id)}
-                                  >
-                                    <Trash className="mr-2 h-3 w-3" />
-                                    حذف الرد
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            )}
-                          </div>
-
-                          {editingReply && editingReply.commentId === comment.id && editingReply.replyId === reply.id ? (
-                            <div className="mt-2">
-                              <Textarea
-                                value={editText}
-                                onChange={(e) => setEditText(e.target.value)}
-                                className="resize-none dark:bg-neutral-800 dark:border-neutral-700 min-h-[60px] text-sm"
-                              />
-                              <div className="flex justify-end gap-2 mt-2">
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => {
-                                    setEditingReply(null);
-                                    setEditText('');
-                                  }}
-                                >
-                                  إلغاء
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  onClick={handleSubmitEditReply}
-                                >
-                                  حفظ التعديل
-                                </Button>
-                              </div>
-                            </div>
-                          ) : (
-                            <p className="mt-1 text-sm text-neutral-700 dark:text-neutral-300">
-                              {reply.content}
-                            </p>
-                          )}
-
-                          <div className="flex items-center gap-4 mt-1">
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="text-neutral-500 hover:text-red-500 px-1 text-xs flex items-center py-0 h-6"
-                            >
-                              <Heart className="h-3 w-3 ml-1" />
-                              إعجاب
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+              <div className="flex items-center space-x-2 text-xs text-muted-foreground">
+                <span>{formatDistanceToNow(new Date(comment.created_at), { addSuffix: true, locale: ar })}</span>
+                {isCurrentUser && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                        <MoreVertical className="h-3 w-3" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => handleEdit(comment)}>
+                        <Edit3 className="h-3 w-3 mr-1" />
+                        تعديل
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        onClick={() => handleDelete(comment.id)} 
+                        className="text-red-600"
+                      >
+                        <Trash2 className="h-3 w-3 mr-1" />
+                        حذف
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+              </div>
             </div>
-          ))
+            
+            {isEditing ? (
+              <div className="space-y-2">
+                <Textarea
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  placeholder="اكتب تعليقك..."
+                  className="min-h-[60px]"
+                />
+                <div className="flex justify-end space-x-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      setEditingComment(null);
+                      setNewComment('');
+                    }}
+                  >
+                    إلغاء
+                  </Button>
+                  <Button 
+                    size="sm"
+                    onClick={() => handleSubmit(Number(comment.id))}
+                    disabled={!newComment.trim() || updateComment.isPending}
+                  >
+                    {updateComment.isPending ? 'جاري الحفظ...' : 'حفظ'}
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <p className="text-sm text-gray-700">{comment.content}</p>
+            )}
+            
+            {isAuthenticated && !isEditing && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground"
+                onClick={() => handleReply(comment.id)}
+              >
+                <MessageCircle className="h-3 w-3 mr-1" />
+                رد
+              </Button>
+            )}
+            
+            {isReplying && (
+              <div className="space-y-2 mt-3">
+                <Textarea
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  placeholder="اكتب ردك..."
+                  className="min-h-[60px]"
+                />
+                <div className="flex justify-end space-x-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      setReplyingTo(null);
+                      setNewComment('');
+                    }}
+                  >
+                    إلغاء
+                  </Button>
+                  <Button 
+                    size="sm"
+                    onClick={() => handleSubmit(Number(comment.id))}
+                    disabled={!newComment.trim() || createComment.isPending}
+                  >
+                    {createComment.isPending ? 'جاري الإرسال...' : 'إرسال'}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+        
+        {/* Render replies */}
+        {comment.replies && comment.replies.length > 0 && (
+          <div className="space-y-3">
+            {comment.replies.map(reply => renderComment(reply, depth + 1))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const queryClient = useQueryClient();
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold">التعليقات</h3>
+        {isAuthenticated && (
+          <Button variant="secondary" size="sm" onClick={() => setReplyingTo(0)}>
+            أضف تعليق
+          </Button>
+        )}
+      </div>
+      
+      {/* Main Comment Form */}
+      {isAuthenticated && replyingTo === 0 && (
+        <div className="space-y-2">
+          <Textarea
+            value={newComment}
+            onChange={(e) => setNewComment(e.target.value)}
+            placeholder="اكتب تعليقك..."
+            className="min-h-[80px]"
+          />
+          <div className="flex justify-end">
+            <Button 
+              size="sm"
+              onClick={() => handleSubmit()}
+              disabled={!newComment.trim() || createComment.isPending}
+            >
+              {createComment.isPending ? 'جاري الإرسال...' : 'إرسال'}
+            </Button>
+          </div>
+        </div>
+      )}
+      
+      {/* Comments List */}
+      <div className="space-y-4">
+        {comments.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            <MessageCircle className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+            <p>لا توجد تعليقات بعد. كن أول من يعلق!</p>
+          </div>
+        ) : (
+          comments
+            .filter(comment => !comment.parent_id)
+            .map(comment => renderComment(comment))
         )}
       </div>
     </div>

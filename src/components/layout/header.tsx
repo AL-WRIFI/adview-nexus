@@ -95,23 +95,18 @@ export function Header() {
                     <div className="bg-brand p-6">
                       {isAuthenticated ? (
                         <div className="flex items-center gap-3">
-                          <Avatar>
-                            <AvatarImage
-                              src={user?.avatar || ""}
-                              alt={user?.name || ""}
+                          <span className="text-sm font-medium hidden md:block">
+                            {user.username || user.name || `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email}
+                          </span>
+                          <Avatar className="h-8 w-8">
+                            <AvatarImage 
+                              src={user.avatar_url || user.avatar || '/placeholder.svg'} 
+                              alt={user.username || user.name || user.first_name || 'User'} 
                             />
-                            <AvatarFallback className="bg-white/20 text-white">
-                              {getNameInitial()}
+                            <AvatarFallback>
+                              {(user.username || user.name || user.first_name || user.email || 'U')[0].toUpperCase()}
                             </AvatarFallback>
                           </Avatar>
-                          <div>
-                            <h3 className="text-white font-bold">
-                              {user?.name || "مستخدم"}
-                            </h3>
-                            <p className="text-white/80 text-sm">
-                              {user?.email || ""}
-                            </p>
-                          </div>
                         </div>
                       ) : (
                         <div className="flex flex-col gap-2">

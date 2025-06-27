@@ -11,15 +11,18 @@ export interface Listing {
   main_image_url?: string;
   gallery_images?: string[] | GalleryImage[];
   images?: string[];
+  image?: string | { image_url: string; url: string } | null;
   user_id?: string;
   category_id?: number;
   subcategory_id?: number;
   child_category_id?: number;
   brand_id?: number;
   negotiable?: boolean;
+  is_negotiable?: boolean;
   phone_hidden?: boolean;
   featured?: boolean;
   views_count?: number;
+  viewCount?: number;
   lat?: number;
   lng?: number;
   comments_enabled?: boolean;
@@ -29,6 +32,9 @@ export interface Listing {
   category?: Category;
   subcategory?: Category;
   brand?: Brand;
+  city?: string;
+  city_name?: string;
+  location?: string;
 }
 
 export interface ListingDetails extends Listing {
