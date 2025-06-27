@@ -1,4 +1,7 @@
 
+import { User } from './user';
+import { Listing } from './listing';
+
 export interface ApiResponse<T = any> {
   success: boolean;
   message?: string;
@@ -12,6 +15,13 @@ export interface ApiResponse<T = any> {
     from: number;
     to: number;
   };
+  // Support for direct pagination properties
+  current_page?: number;
+  last_page?: number;
+  per_page?: number;
+  total?: number;
+  from?: number;
+  to?: number;
 }
 
 export interface PaginatedResponse<T = any> {
@@ -27,6 +37,14 @@ export interface PaginatedResponse<T = any> {
     last: string;
     prev: string | null;
     next: string | null;
+  };
+  meta?: {
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+    from: number;
+    to: number;
   };
 }
 
@@ -62,6 +80,3 @@ export interface Favorite {
   created_at?: string;
   listing?: Listing;
 }
-
-import { User } from './user';
-import { Listing } from './listing';
