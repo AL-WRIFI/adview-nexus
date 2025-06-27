@@ -1,8 +1,9 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Textarea } from '@/components/ui/textarea';
-import { User, MessageSquare, Edit, Trash2, Reply } from 'lucide-react';
+import { User, MessageSquare, Edit, Trash2, Reply, Loader2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { Comment } from '@/types';
@@ -60,7 +61,7 @@ export function CommentsList({
         <div className="flex justify-between items-start">
           <div className="flex items-center gap-2">
             <Avatar className="h-8 w-8">
-              <AvatarImage src={comment.user?.avatar_url || comment.user?.avatar || comment.user?.image} />
+              <AvatarImage src={comment.user?.avatar_url || comment.user?.avatar} />
               <AvatarFallback>
                 <User className="h-4 w-4" />
               </AvatarFallback>
@@ -100,7 +101,7 @@ export function CommentsList({
           )}
         </div>
 
-        {editingComment === comment.id ? (
+        {editingComment === Number(comment.id) ? (
           <div className="mt-2 flex flex-col gap-2">
             <Textarea
               defaultValue={comment.content}
@@ -180,7 +181,7 @@ export function CommentsList({
                 <div className="flex justify-between items-start">
                   <div className="flex items-center gap-2">
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src={reply.user?.avatar_url || reply.user?.avatar || reply.user?.image} />
+                      <AvatarImage src={reply.user?.avatar_url || reply.user?.avatar} />
                       <AvatarFallback>
                         <User className="h-4 w-4" />
                       </AvatarFallback>
@@ -203,7 +204,7 @@ export function CommentsList({
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => setEditingReply(reply.id)}
+                        onClick={() => setEditingReply(Number(reply.id))}
                         className="h-6 px-2 text-xs"
                       >
                         تعديل
@@ -220,7 +221,7 @@ export function CommentsList({
                   )}
                 </div>
 
-                {editingReply === reply.id ? (
+                {editingReply === Number(reply.id) ? (
                   <div className="mt-2 flex flex-col gap-2">
                     <Textarea
                       defaultValue={reply.content}

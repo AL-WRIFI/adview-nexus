@@ -12,6 +12,7 @@ export interface SearchFilters {
   product_condition?: 'new' | 'used' | 'refurbished'; // Legacy support
   city_id?: number;
   state_id?: number;
+  district_id?: number;
   lat?: number;
   lng?: number;
   lon?: number; // Legacy support
@@ -21,6 +22,9 @@ export interface SearchFilters {
   sort_by?: 'newest' | 'oldest' | 'price_asc' | 'price_desc' | 'popular' | 'created_at' | 'updated_at'; // Legacy support
   featured?: boolean;
   negotiable?: boolean;
+  verified_user?: boolean;
+  with_images?: boolean;
+  user_id?: string;
   page?: number;
   per_page?: number;
 }

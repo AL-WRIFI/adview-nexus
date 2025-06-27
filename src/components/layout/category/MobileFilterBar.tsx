@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { MapPin, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { MobileFilterDrawer } from '@/components/filters/MobileFilterDrawer';
@@ -19,6 +19,8 @@ export function MobileFilterBar({
   selectedRegion = 'كل المناطق',
   isLoading = false
 }: MobileFilterBarProps) {
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+
   if (isLoading) {
     return (
       <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-2">
@@ -40,7 +42,12 @@ export function MobileFilterBar({
         <span className="text-sm">القريب</span>
       </Button>
       
-      <MobileFilterDrawer onFilterChange={onFilterChange} />
+      <MobileFilterDrawer 
+        open={isFilterOpen}
+        onOpenChange={setIsFilterOpen}
+        currentFilters={{}}
+        onFilterChange={onFilterChange}
+      />
     </div>
   );
 }

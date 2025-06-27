@@ -1,17 +1,18 @@
 
 export * from './listing';
-export * from './user';
-export * from './auth';
-export * from './profile';
 export * from './category';
 export * from './brand';
 export * from './state';
 export * from './city';
 export * from './search-filters';
-export * from './comment';
 export * from './api';
+export * from './profile';
 
-// Avoid re-export conflicts by using specific exports
+// Specific exports to avoid conflicts
 export type { User as UserType } from './user';
 export type { User as AuthUser } from './auth';
 export type { Comment as CommentType } from './comment';
+
+// Re-export User from auth for backward compatibility
+export { User } from './auth';
+export { Comment } from './comment';
