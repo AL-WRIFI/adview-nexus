@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Header } from '@/components/layout/header';
 import { CategoryBar } from '@/components/layout/category/CategoryBar';
@@ -39,10 +40,9 @@ export default function Home() {
     setPage(1);
   };
   
-  const adData = adsResponse?.data?.data || adsResponse?.data || [];
-  const totalPages = adsResponse?.data?.last_page || 
-                    adsResponse?.last_page || 
-                    Math.ceil((adsResponse?.data?.total || adsResponse?.total || 0) / itemsPerPage) || 1;
+  const adData = adsResponse?.data || [];
+  const totalPages = adsResponse?.data?.meta?.last_page || 
+                    Math.ceil((adsResponse?.data?.total || 0) / itemsPerPage) || 1;
   
   const featuredAds = Array.isArray(adData) ? adData.filter((ad: Listing) => ad.featured) : [];
   const regularAds = Array.isArray(adData) ? adData.filter((ad: Listing) => !ad.featured) : [];
@@ -70,7 +70,7 @@ export default function Home() {
       <div className="col-span-1 md:col-span-3">
         {/* View toggle buttons and items per page */}
         <div className="flex justify-end mb-4 gap-3 items-center">
-          <div className="flex items-center w-full justify-between">
+          <div className="flex items-center justify-between w-full mb-6">
             {isMobile ? (
               <div className="flex items-center w-full justify-between">
                 {/* Mobile Filter Button */}

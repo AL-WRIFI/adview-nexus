@@ -3,29 +3,22 @@ export interface SearchFilters {
   search?: string;
   category_id?: number;
   subcategory_id?: number;
-  sub_category_id?: number; // Alias for backward compatibility
-  child_category_id?: number;
   brand_id?: number;
-  city_id?: number;
   state_id?: number;
+  city_id?: number;
   district_id?: number;
   min_price?: number;
   max_price?: number;
-  condition?: 'new' | 'used' | 'refurbished' | string;
-  product_condition?: 'new' | 'used' | 'refurbished' | string; // Alias
-  listing_type?: 'sell' | 'buy' | 'rent' | 'exchange' | string;
+  condition?: 'new' | 'used' | 'refurbished';
+  listing_type?: 'sell' | 'rent' | 'wanted' | 'exchange' | 'service';
+  sort?: 'newest' | 'oldest' | 'price_asc' | 'price_desc' | 'popular' | 'created_at' | 'updated_at';
   featured?: boolean;
-  negotiable?: boolean;
   verified_user?: boolean;
   with_images?: boolean;
-  sort?: string;
-  sort_by?: string; // Alias for sort
   lat?: number;
   lon?: number;
-  lng?: number; // Alias for lon
   radius?: number;
+  user_id?: number;
   page?: number;
   per_page?: number;
-  limit?: number;
-  user_id?: string; // For filtering user's own ads
 }

@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -81,9 +82,14 @@ export function MobileSimilarAdsCarousel({
   };
   
   const getImageUrl = (ad: Listing) => {
-    // Check main_image_url first
-    if (ad.main_image_url) {
-      return ad.main_image_url;
+    if (ad.image) {
+      if (typeof ad.image === 'string') return ad.image;
+      if (typeof ad.image === 'object' && 'image_url' in ad.image) {
+        return ad.image.image_url;
+      }
+      if (typeof ad.image === 'object' && 'url' in ad.image) {
+        return (ad.image as any).url;
+      }
     }
     
     if (ad.images && ad.images.length > 0) {
@@ -241,7 +247,7 @@ export function MobileSimilarAdsCarousel({
                     <div className="flex items-center justify-between text-xs text-muted-foreground">
                       <div className="flex items-center gap-1">
                         <MapPin className="w-3 h-3" />
-                        <span className="truncate max-w-[80px]">{ad.city_name || ad.city || ad.location || 'غير محدد'}</span>
+                        <span className="truncate max-w-[80px]">{ad.city_name || ad.city || ad.location}</span>
                       </div>
                       <span>منذ يومين</span>
                     </div>
