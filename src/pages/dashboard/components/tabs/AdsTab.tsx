@@ -65,9 +65,9 @@ export function AdsTab() {
     return <div>Error loading ads. Please try again.</div>;
   }
 
-  // Handle different response formats
-  const ads = Array.isArray(adsData) ? adsData : adsData?.data || [];
-  const totalCount = Array.isArray(adsData) ? adsData.length : adsData?.total || 0;
+  // Handle different response formats - ensure we get an array
+  const ads = Array.isArray(adsData) ? adsData : (adsData?.data || []);
+  const totalCount = Array.isArray(adsData) ? adsData.length : (adsData?.total || 0);
 
   return (
     <div className="space-y-6">
@@ -93,7 +93,7 @@ export function AdsTab() {
         </Button>
       </div>
       
-      {ads.length === 0 ? (
+      {!Array.isArray(ads) || ads.length === 0 ? (
         <div className="text-center py-10">
           <p className="text-lg font-medium">لا يوجد لديك إعلانات.</p>
           <p className="text-muted-foreground">ابدأ في إضافة إعلانات الآن!</p>
@@ -156,7 +156,7 @@ export function AdsTab() {
             </Button>
             <Button
               onClick={() => setPage(page + 1)}
-              disabled={ads.length < itemsPerPage}
+              disabled={Array.isArray(ads) && ads.length < itemsPerPage}
               variant="outline"
               size="sm"
             >
