@@ -3,7 +3,6 @@ export interface SearchFilters {
   search?: string;
   category_id?: number;
   subcategory_id?: number;
-  child_category_id?: number;
   brand_id?: number;
   state_id?: number;
   city_id?: number;
