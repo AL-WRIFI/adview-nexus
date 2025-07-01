@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { Search, Filter, MapPin, ChevronDown, X } from 'lucide-react';
+import { Search, Filter, MapPin, ChevronDown, X, DollarSign, Star, Settings, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -83,7 +84,7 @@ export function AdFilters({
     }
   };
 
-  // Apply filters
+  // Apply filters - only called when clicking Apply button
   const applyFilters = () => {
     const filters: SearchFilters = {
       search: searchTerm || undefined,
@@ -107,14 +108,6 @@ export function AdFilters({
     onFilterChange(filters);
   };
 
-  useEffect(() => {
-    applyFilters();
-  }, [
-    searchTerm, minPrice, maxPrice, selectedStateId, selectedCityId, selectedDistrictId,
-    condition, listingType, featuredOnly, sortBy, individualOwners,
-    nearbyEnabled, nearbyRadius, userLocation
-  ]);
-
   const resetFilters = () => {
     setSearchTerm('');
     setMinPrice('');
@@ -129,6 +122,7 @@ export function AdFilters({
     setListingType('');
     setIndividualOwners(false);
     setSortBy('newest');
+    onFilterChange({});
   };
 
   // Count active filters
@@ -149,7 +143,10 @@ export function AdFilters({
     <div className="space-y-6">
       {/* Price Range */}
       <div>
-        <Label className="text-sm font-medium mb-3 block">السعر</Label>
+        <div className="flex items-center gap-2 mb-3">
+          <DollarSign className="h-4 w-4 text-brand" />
+          <Label className="text-sm font-medium">نطاق السعر</Label>
+        </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
             <Label className="text-xs text-muted-foreground mb-1 block">من</Label>
@@ -178,7 +175,10 @@ export function AdFilters({
 
       {/* Location */}
       <div className="space-y-3">
-        <Label className="text-sm font-medium">المنطقة والمدينة</Label>
+        <div className="flex items-center gap-2">
+          <MapPin className="h-4 w-4 text-brand" />
+          <Label className="text-sm font-medium">المنطقة والمدينة</Label>
+        </div>
         
         <Select value={selectedStateId?.toString() || ''} onValueChange={(value) => {
           setSelectedStateId(value ? parseInt(value) : undefined);
@@ -241,7 +241,10 @@ export function AdFilters({
       {/* Nearby Filter */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <Label className="text-sm font-medium">القريب مني</Label>
+          <div className="flex items-center gap-2">
+            <MapPin className="h-4 w-4 text-brand" />
+            <Label className="text-sm font-medium">القريب مني</Label>
+          </div>
           <Switch
             checked={nearbyEnabled}
             onCheckedChange={handleLocationToggle}
@@ -276,7 +279,10 @@ export function AdFilters({
 
       {/* Featured Only */}
       <div className="flex items-center justify-between">
-        <Label className="text-sm font-medium">الإعلانات المميزة فقط</Label>
+        <div className="flex items-center gap-2">
+          <Star className="h-4 w-4 text-brand" />
+          <Label className="text-sm font-medium">الإعلانات المميزة فقط</Label>
+        </div>
         <Switch
           checked={featuredOnly}
           onCheckedChange={setFeaturedOnly}
@@ -287,7 +293,10 @@ export function AdFilters({
 
       {/* Condition */}
       <div>
-        <Label className="text-sm font-medium mb-3 block">حالة السلعة</Label>
+        <div className="flex items-center gap-2 mb-3">
+          <CheckCircle className="h-4 w-4 text-brand" />
+          <Label className="text-sm font-medium">حالة السلعة</Label>
+        </div>
         <div className="grid grid-cols-3 gap-2">
           {[
             { value: '', label: 'الكل' },
@@ -311,7 +320,10 @@ export function AdFilters({
 
       {/* Listing Type */}
       <div>
-        <Label className="text-sm font-medium mb-3 block">نوع الإعلان</Label>
+        <div className="flex items-center gap-2 mb-3">
+          <Settings className="h-4 w-4 text-brand" />
+          <Label className="text-sm font-medium">نوع الإعلان</Label>
+        </div>
         <div className="grid grid-cols-2 gap-2">
           {[
             { value: '', label: 'الكل' },
@@ -363,6 +375,16 @@ export function AdFilters({
           </SelectContent>
         </Select>
       </div>
+
+      {/* Filter Action Buttons */}
+      <div className="flex gap-2 pt-4 border-t">
+        <Button variant="outline" onClick={resetFilters} className="flex-1">
+          إعادة تعيين
+        </Button>
+        <Button onClick={applyFilters} className="flex-1">
+          تطبيق الفلاتر
+        </Button>
+      </div>
     </div>
   );
 
@@ -386,14 +408,6 @@ export function AdFilters({
       {showAdvancedFilters && (
         <div className="absolute top-full mt-2 left-0 w-80 bg-white dark:bg-gray-800 border rounded-lg shadow-lg p-4 z-50 max-h-96 overflow-y-auto">
           <FilterContent />
-          <div className="flex gap-2 pt-4 border-t mt-4">
-            <Button variant="outline" onClick={resetFilters} className="flex-1">
-              إعادة تعيين
-            </Button>
-            <Button onClick={() => setShowAdvancedFilters(false)} className="flex-1">
-              تطبيق
-            </Button>
-          </div>
         </div>
       )}
     </div>
@@ -413,19 +427,19 @@ export function AdFilters({
               className="pr-10"
             />
           </div>
-          <Button>
+          <Button onClick={applyFilters}>
             <Search className="w-4 h-4" />
           </Button>
         </div>
 
-        {/* Mobile Filter Sheet */}
+        {/* Mobile Filter Sheet - Compact Button */}
         <Sheet>
           <SheetTrigger asChild>
-            <Button variant="outline" className="w-full flex items-center gap-2">
+            <Button variant="outline" size="sm" className="flex items-center gap-2 h-10 px-4">
               <Filter className="w-4 h-4" />
-              <span>فلترة النتائج</span>
+              <span>فلترة</span>
               {activeFiltersCount > 0 && (
-                <Badge variant="destructive" className="ml-auto">
+                <Badge variant="destructive" className="text-xs">
                   {activeFiltersCount}
                 </Badge>
               )}
@@ -465,7 +479,7 @@ export function AdFilters({
             className="pr-10"
           />
         </div>
-        <Button>
+        <Button onClick={applyFilters}>
           <Search className="w-4 h-4" />
         </Button>
       </div>
