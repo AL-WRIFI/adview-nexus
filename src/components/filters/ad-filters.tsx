@@ -47,6 +47,7 @@ export function AdFilters({
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'price_asc' | 'price_desc' | 'popular' | 'created_at' | 'updated_at'>('newest');
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
   
   const isMobile = useIsMobile();
   
@@ -99,6 +100,7 @@ export function AdFilters({
     };
 
     onFilterChange(filters);
+    setIsSheetOpen(false);
   };
 
   const resetFilters = () => {
@@ -116,6 +118,7 @@ export function AdFilters({
     setIndividualOwners(false);
     setSortBy('newest');
     onFilterChange({});
+    setIsSheetOpen(false);
   };
 
   // Count active filters
@@ -446,21 +449,19 @@ export function AdFilters({
     </div>
   );
 
-  if (isMobile) {
+  if (layout === 'horizontal') {
     return (
       <div className="w-full">
-        <Sheet>
+        <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
           <SheetTrigger asChild>
             <Button 
               variant="outline" 
-              className="w-full flex items-center justify-between gap-2 h-12 text-base font-medium border-2 border-blue-200 hover:border-blue-400 bg-gradient-to-r from-blue-50 to-white"
+              className="w-auto px-4 flex items-center gap-2 h-10 text-sm font-medium border-2 border-blue-200 hover:border-blue-400 bg-gradient-to-r from-blue-50 to-white"
             >
-              <div className="flex items-center gap-2">
-                <Filter className="w-5 h-5 text-blue-600" />
-                <span>فلترة النتائج</span>
-              </div>
+              <Filter className="w-4 h-4 text-blue-600" />
+              <span>فلاتر</span>
               {activeFiltersCount > 0 && (
-                <Badge variant="destructive" className="rounded-full min-w-[24px] h-6">
+                <Badge variant="destructive" className="rounded-full min-w-[20px] h-5 text-xs">
                   {activeFiltersCount}
                 </Badge>
               )}
