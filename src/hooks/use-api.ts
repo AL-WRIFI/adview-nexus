@@ -606,7 +606,7 @@ export function useUserListings(userId?: number) {
     queryKey: ['userListings', userId],
     queryFn: async () => {
       const response = await API.userAPI.getUserListings(userId);
-      return response.data;
+      return response;
     },
     enabled: API.isAuthenticated(),
   });

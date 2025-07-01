@@ -52,10 +52,57 @@ export function SiteSettingsProvider({ children }: SiteSettingsProviderProps) {
     if (colorData) {
       console.log('📥 Color settings loaded, applying...', colorData);
       applyColorSettings();
+      
+      // تطبيق متأخر للتأكد من تحميل جميع العناصر
+      setTimeout(() => {
+        applyColorSettings();
+      }, 500);
+      
+      setTimeout(() => {
+        applyColorSettings();
+      }, 1000);
     }
   }, [colorSettings]);
 
-  // Apply title from basic settings
+useEffect(() => {
+    const colorData = (colorSettings as ApiResponse<ColorSettings>)?.data;
+    if (!colorData) return;
+
+    const observer = new MutationObserver((mutations) => {
+      let shouldReapply = false;
+      
+      mutations.forEach((mutation) => {
+        if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+          // تحقق من إضافة عناصر جديدة تحتاج لتطبيق الألوان
+          mutation.addedNodes.forEach((node) => {
+            if (node.nodeType === Node.ELEMENT_NODE) {
+              const element = node as Element;
+              if (element.tagName === 'BUTTON' || 
+                  element.querySelector('button') ||
+                  element.tagName?.match(/^H[1-6]$/) ||
+                  element.querySelector('h1, h2, h3, h4, h5, h6')) {
+                shouldReapply = true;
+              }
+            }
+          });
+        }
+      });
+      
+      if (shouldReapply) {
+        setTimeout(() => {
+          applyColorSettings();
+        }, 100);
+      }
+    });
+
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+    });
+
+    return () => observer.disconnect();
+  }, [colorSettings]);
+  
   useEffect(() => {
     const basicData = (basicSettings as ApiResponse<BasicSettings>)?.data;
     if (basicData?.site_title) {

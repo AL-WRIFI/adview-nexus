@@ -14,6 +14,7 @@ import { Eye, Edit, Trash2, TrendingUp, Calendar, DollarSign, Search, RefreshCw,
 import { format, formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useUserListings } from '@/hooks/use-api';
 
 interface AdsTabProps {
   onPromote: (id: number) => void;
@@ -29,16 +30,18 @@ export function AdsTab({ onPromote, onDelete }: AdsTabProps) {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
 
-  const { data: userListingsResponse, isLoading, error, refetch } = useQuery({
-    queryKey: ['userListings', currentPage, selectedStatus, searchQuery, sortBy],
-    queryFn: () => listingsAPI.getListings({ 
-      user_id: 'current' as any,
-      page: currentPage,
-      per_page: itemsPerPage,
-      search: searchQuery || undefined,
-      sort: sortBy
-    }),
-  });
+  const { data: userListingsResponse, isLoading, error, refetch } = useUserListings();
+
+  // const { data: userListingsResponse, isLoading, error, refetch } = useQuery({
+  //   queryKey: ['userListings', currentPage, selectedStatus, searchQuery, sortBy],
+  //   queryFn: () => listingsAPI.getListings({ 
+  //     user_id: 'current' as any,
+  //     page: currentPage,
+  //     per_page: itemsPerPage,
+  //     search: searchQuery || undefined,
+  //     sort: sortBy
+  //   }),
+  // });
 
   const listings = userListingsResponse?.data || [];
   const totalPages = Math.ceil((userListingsResponse?.total || 0) / itemsPerPage);

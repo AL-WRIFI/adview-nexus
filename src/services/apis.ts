@@ -2,12 +2,12 @@
 import { 
   ApiResponse, PaginatedResponse, Listing, Comment, User, SearchFilters, 
   Favorite, Category, SubCategory, Brand, State, City, 
-  ChangePasswordPayload, DeleteAccountPayload, AccountSettings, UserSettings
+  ChangePasswordPayload, DeleteAccountPayload, AccountSettings, UserSettings, Chat, ChatMessage
 } from '@/types';
 // Configuration - Update to use the correct API URL
 const API_CONFIG = {
-  BASE_URL: 'https://admin2.mixsyria.com/api/v1',
-  // BASE_URL: 'http://haraj-syria.test/api/v1',
+  BASE_URL: 'https://haraj-syria.test/api/v1',
+  // BASE_URL: 'https://haraj-syria.test/api/v1',
   TIMEOUT: 30000,
   RETRY_ATTEMPTS: 3,
   RETRY_DELAY: 1000,
@@ -236,6 +236,7 @@ export const listingsAPI = {
 
   getListing: (id: number): Promise<ApiResponse<Listing>> => 
     ApiClient.get(`/listings/${id}`),
+  
   getCurrentUserListings: (
     filters?: Omit<SearchFilters, 'user_id'> // Exclude user_id, it's implicit
   ): Promise<ApiResponse<PaginatedResponse<Listing>>> => {
@@ -263,6 +264,9 @@ export const listingsAPI = {
 
   deleteListing: (id: number): Promise<ApiResponse<void>> => 
     ApiClient.delete(`/listings/${id}`),
+
+  getUserListings: (): Promise<ApiResponse<PaginatedResponse<Favorite>>> => 
+    ApiClient.get('/user/favorites'),
 
   getFavorites: (): Promise<ApiResponse<PaginatedResponse<Favorite>>> => 
     ApiClient.get('/user/favorites'),
@@ -377,7 +381,51 @@ export const commentsAPI = {
   deleteReply: (replyId: number): Promise<ApiResponse<void>> => 
     ApiClient.delete(`/replies/${replyId}`),
 };
+export const chatAPI = {
+  /**
+   * Fetches all chats for the current user.
+   * @param {number} page - The page number for pagination.
+   * @returns {Promise<ApiResponse<PaginatedResponse<Chat>>>}
+   */
+  getChats: (page: number = 1): Promise<ApiResponse<PaginatedResponse<Chat>>> =>
+    ApiClient.get(`/user/chats?page=${page}`),
 
+  /**
+   * Fetches messages for a specific chat, paginated.
+   * @param {number} chatId - The ID of the chat.
+   * @param {number} page - The page number for pagination.
+   * @returns {Promise<ApiResponse<PaginatedResponse<ChatMessage>>>}
+   */
+  getChatMessages: (chatId: number, page: number = 1): Promise<ApiResponse<PaginatedResponse<ChatMessage>>> =>
+    ApiClient.get(`/user/chats/${chatId}?page=${page}`),
+
+  /**
+   * Creates a new chat and sends the first message.
+   * Useful when messaging a user for the first time from an ad page.
+   * @param {FormData} data - Must contain recipient_id, message/file, and optionally listing_id.
+   * @returns {Promise<ApiResponse<ChatMessage>>}
+   */
+  createChat: (data: FormData): Promise<ApiResponse<ChatMessage>> =>
+    ApiClient.post('/user/chats', data),
+
+  /**
+   * Sends a message to an existing chat.
+   * @param {number} chatId - The ID of the chat.
+   * @param {FormData} data - Must contain message and/or file.
+   * @returns {Promise<ApiResponse<ChatMessage>>}
+   */
+  sendMessage: (chatId: number, data: FormData): Promise<ApiResponse<ChatMessage>> =>
+    ApiClient.post(`/user/chats/${chatId}/messages`, data),
+
+  /**
+   * Marks a specific message as seen by the current user.
+   * @param {number} chatId - The ID of the chat.
+   * @param {number} messageId - The ID of the message to mark as seen.
+   * @returns {Promise<ApiResponse<null>>}
+   */
+  markMessageAsSeen: (chatId: number, messageId: number): Promise<ApiResponse<null>> =>
+    ApiClient.post(`/user/chats/${chatId}/messages/${messageId}/seen`),
+};
 // Helper function to check if user is authenticated
 export const isAuthenticated = (): boolean => {
   return TokenManager.hasToken();

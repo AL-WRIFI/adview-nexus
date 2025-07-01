@@ -33,6 +33,8 @@ import { useAuth } from '@/context/auth-context';
 import { toast } from '@/hooks/use-toast';
 import { Comment } from '@/types';
 import { RelatedAndSuggestedAds } from '@/components/ads/RelatedAndSuggestedAds';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { chatAPI } from '@/services/apis'; // <-- أضف هذا السطر
 
 export default function AdDetails() {
   const { id } = useParams<{ id: string }>();
@@ -40,7 +42,56 @@ export default function AdDetails() {
   const [isFavorite, setIsFavorite] = useState(false);
   const [commandId, setCommandId] = useState(null);
   const navigate = useNavigate();
-  
+  const queryClient = useQueryClient();
+
+  const createChatMutation = useMutation({
+    mutationFn: (recipientId: number) => {
+      const formData = new FormData();
+      formData.append('recipient_id', recipientId.toString());
+      // Optional: Add a default message when starting a chat from an ad
+      formData.append('message', `مرحباً، أنا مهتم بالإعلان: "${ad?.title}"`);
+      if (ad?.id) {
+        formData.append('listing_id', ad.id.toString());
+      }
+      return chatAPI.createChat(formData);
+    },
+    onSuccess: (response) => {
+      // The response contains the new message, which has the chat_id
+      const chatId = response.data.chat_id;
+      // Invalidate chats list to refetch it on the dashboard
+      queryClient.invalidateQueries({ queryKey: ['chats'] });
+      // Navigate to the newly created chat page
+      navigate(`/messages/${chatId}`);
+    },
+    onError: (error) => {
+      toast({
+        title: "فشل إرسال الرسالة",
+        description: error.message || "حدث خطأ ما، حاول مرة أخرى.",
+        variant: "destructive"
+      });
+    }
+  });
+
+  const handleSendMessage = () => {
+    if (!isAuthenticated) {
+      toast({
+        title: "تسجيل الدخول مطلوب",
+        description: "يجب عليك تسجيل الدخول لإرسال رسالة",
+        variant: "destructive"
+      });
+      navigate('/auth/login', { state: { from: `/ad/${id}` } });
+      return;
+    }
+    // Make sure we have the ad owner's ID and it's not the current user
+    if (ad?.user?.id && ad.user.id !== user?.id) {
+      createChatMutation.mutate(ad.user.id);
+    } else if (ad?.user?.id === user?.id) {
+        toast({
+          title: "لا يمكنك مراسلة نفسك",
+          variant: "default"
+        });
+    }
+  };
   const { isAuthenticated, user } = useAuth();
   
   const numId = id ? parseInt(id, 10) : 0;
@@ -387,26 +438,20 @@ export default function AdDetails() {
                         {ad.user.phone}
                       </Button>
                     )}
-                    <Button 
-                      variant="outline" 
-                      className="w-full dark:border-neutral-600 dark:text-neutral-300 dark:hover:bg-neutral-700" 
-                      size="lg" 
-                      onClick={() => {
-                        if (!isAuthenticated) {
-                          toast({
-                            title: "تسجيل الدخول مطلوب",
-                            description: "يجب عليك تسجيل الدخول لإرسال رسالة",
-                            variant: "destructive"
-                          });
-                          navigate('/auth/login', { state: { from: `/ad/${id}` } });
-                          return;
-                        }
-                        navigate('/messages', { state: { userId: ad.user_id } });
-                      }}
-                    >
-                      <MessageSquare className="ml-2 h-5 w-5" />
-                      مراسلة
-                    </Button>
+                  <Button 
+    variant="outline" 
+    className="w-full dark:border-neutral-600 dark:text-neutral-300 dark:hover:bg-neutral-700" 
+    size="lg"
+    onClick={handleSendMessage}
+    disabled={createChatMutation.isPending} // Disable button while creating chat
+  >
+    {createChatMutation.isPending ? (
+      <Loader2 className="ml-2 h-5 w-5 animate-spin" />
+    ) : (
+      <MessageSquare className="ml-2 h-5 w-5" />
+    )}
+    {createChatMutation.isPending ? 'جاري الإنشاء...' : 'مراسلة'}
+  </Button>
                     <Button 
                       variant="ghost" 
                       className={`w-full border dark:border-neutral-700 ${

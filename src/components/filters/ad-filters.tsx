@@ -43,6 +43,7 @@ export function AdFilters({
   const [nearbyEnabled, setNearbyEnabled] = useState(false);
   const [showMoreBrands, setShowMoreBrands] = useState(false);
   const [showMoreSubcategories, setShowMoreSubcategories] = useState(false);
+  const [showMoreCategories, setShowMoreCategories] = useState(false);
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   
@@ -171,9 +172,9 @@ export function AdFilters({
     <div className="space-y-6">
       {/* Categories Section */}
       <div>
-        <h3 className="text-lg font-semibold mb-4">التصنيفات</h3>
+        <h3 className="text-lg font-semibold mb-4"><line></line></h3>
         <div className="grid grid-cols-3 gap-3">
-          {categories.slice(0, 9).map((category) => (
+          {categories.slice(0, showMoreCategories ? categories.length : 9).map((category) => (
             <button
               key={category.id}
               onClick={() => {
@@ -186,19 +187,43 @@ export function AdFilters({
                   : 'hover:bg-gray-50 dark:hover:bg-gray-800'
               }`}
             >
-              <div className="w-12 h-12 mb-2 flex items-center justify-center">
-                <CategoryIcon name={category.icon || 'Car'} className="w-8 h-8 text-gray-600 dark:text-gray-400" />
+              <div className="w-16 h-16 mb-2 flex items-center justify-center">
+                {category.image ? (
+                    <img
+                      src={category.image}
+                      alt={category.name}
+                      className="w-full h-full object-contain"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gray-200 dark:bg-gray-700 rounded flex items-center justify-center">
+                      <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                        {category.name.charAt(0)}
+                      </span>
+                    </div>
+                  )}
+                {/* <CategoryIcon name={category.image || 'Car'} className="w-8 h-8 text-gray-600 dark:text-gray-400" /> */}
               </div>
               <span className="text-xs text-center leading-tight">{category.name}</span>
             </button>
           ))}
         </div>
+        {categories.length > 6 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowMoreCategories(!showMoreCategories)}
+              className="w-full mt-3"
+            >
+              {showMoreCategories ? 'عرض أقل' : `عرض المزيد (${categories.length - 6})`}
+              <ChevronDown className={`w-4 h-4 mr-2 transition-transform ${showMoreCategories ? 'rotate-180' : ''}`} />
+            </Button>
+          )}
       </div>
 
       {/* Subcategories */}
       {subcategories.length > 0 && (
         <div>
-          <h3 className="text-lg font-semibold mb-4">التصنيفات الفرعية</h3>
+          <h3 className="text-lg font-semibold mb-4"></h3>
           <div className="grid grid-cols-3 gap-3">
             {subcategories.slice(0, showMoreSubcategories ? subcategories.length : 6).map((subcat) => (
               <button
@@ -211,7 +236,20 @@ export function AdFilters({
                 }`}
               >
                 <div className="w-12 h-12 mb-2 flex items-center justify-center">
-                  <CategoryIcon name={subcat.icon || 'Car'} className="w-8 h-8 text-gray-600 dark:text-gray-400" />
+                  {subcat.image ? (
+                    <img
+                      src={subcat.image}
+                      alt={subcat.name}
+                      className="w-full h-full object-contain"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gray-200 dark:bg-gray-700 rounded flex items-center justify-center">
+                      <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                        {subcat.name.charAt(0)}
+                      </span>
+                    </div>
+                  )}
+                  {/* <CategoryIcon name={subcat.image || 'Car'} className="w-8 h-8 text-gray-600 dark:text-gray-400" /> */}
                 </div>
                 <span className="text-xs text-center leading-tight">{subcat.name}</span>
               </button>
@@ -234,7 +272,7 @@ export function AdFilters({
       {/* Brands */}
       {categoryBrands.length > 0 && (
         <div>
-          <h3 className="text-lg font-semibold mb-4">الماركات</h3>
+          <h3 className="text-lg font-semibold mb-4"></h3>
           <div className="grid grid-cols-3 gap-3">
             {categoryBrands.slice(0, showMoreBrands ? categoryBrands.length : 9).map((brand) => (
               <button
@@ -281,7 +319,7 @@ export function AdFilters({
 
       {/* Animals Section */}
       <div>
-        <h3 className="text-lg font-semibold mb-4">الحيوانات</h3>
+        <h3 className="text-lg font-semibold mb-4"></h3>
         <div className="grid grid-cols-3 gap-3">
           {[
             { name: 'دواب', icon: '🐐' },
@@ -354,7 +392,7 @@ export function AdFilters({
                 <SelectValue placeholder="اختر المنطقة" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">جميع المناطق</SelectItem>
+                <SelectItem value="all">جميع المناطق</SelectItem>
                 {states.map((state) => (
                   <SelectItem key={state.id} value={state.id.toString()}>
                     {state.name}
@@ -371,7 +409,7 @@ export function AdFilters({
                   <SelectValue placeholder="اختر المدينة" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">جميع المدن</SelectItem>
+                  <SelectItem value="all">جميع المدن</SelectItem>
                   {stateCities.map((city) => (
                     <SelectItem key={city.id} value={city.id.toString()}>
                       {city.name}
@@ -422,7 +460,7 @@ export function AdFilters({
                 <SelectValue placeholder="اختر النوع" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">الكل</SelectItem>
+                <SelectItem value="all">الكل</SelectItem>
                 <SelectItem value="sell">للبيع</SelectItem>
                 <SelectItem value="rent">للإيجار</SelectItem>
                 <SelectItem value="wanted">مطلوب</SelectItem>
@@ -438,7 +476,7 @@ export function AdFilters({
                 <SelectValue placeholder="اختر الحالة" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">الكل</SelectItem>
+                <SelectItem value="all">الكل</SelectItem>
                 <SelectItem value="new">جديد</SelectItem>
                 <SelectItem value="used">مستعمل</SelectItem>
               </SelectContent>

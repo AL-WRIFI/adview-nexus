@@ -35,6 +35,7 @@ import RegisterPage from './pages/auth/register';
 import NewSearchPage from './pages/search/NewSearchPage';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage'; 
 import ResetPasswordPage from './pages/auth/ResetPasswordPage';
+import VerifyEmailPage from './pages/auth/verify-email';
 
 // Create a client with optimized cache config
 const queryClient = new QueryClient({
@@ -70,6 +71,7 @@ function AppContent() {
       {/* Auth Routes */}
       <Route path="/auth/login" element={<LoginPage />} />
       <Route path="/auth/register" element={<RegisterPage />} />
+      <Route path="/auth/verify-email" element={<VerifyEmailPage />} />
       <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/auth/reset-password" element={<ResetPasswordPage />} />
       
@@ -99,7 +101,7 @@ function AppContent() {
           <SettingsPage />
         </ProtectedRoute>
       } />
-      <Route path="/messages" element={
+        <Route path="/messages/:chatId" element={
         <ProtectedRoute>
           <MessagesPage />
         </ProtectedRoute>

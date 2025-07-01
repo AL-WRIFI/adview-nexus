@@ -2,7 +2,7 @@
 import { ApiResponse, PaginatedResponse } from '@/types';
 import { ListingPromotion, StripePromotionResponse } from '@/types/promotions';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://admin2.mixsyria.com/api/v1';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://haraj-syria.test/api/v1';
 // const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://haraj-syria.test/api/v1';
 
 // Helper function to get the auth token from storage

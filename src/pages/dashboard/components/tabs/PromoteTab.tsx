@@ -33,7 +33,7 @@ export function PromoteTab() {
     );
   }
 
-  const listings = userListings || [];
+  const listings = userListings.data || [];
   const promotionsList = promotionsResponse?.data || [];
   const packagesList = Array.isArray(packages) ? packages : [];
 

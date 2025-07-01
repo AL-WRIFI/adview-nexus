@@ -300,3 +300,39 @@ export interface DeleteAccountPayload {
     reason: string;
     description?: string;
 }
+// In src/types/index.ts or a similar file
+
+export interface ChatParticipant {
+  id: number;
+  full_name: string;
+  image: string;
+}
+
+export interface LastMessage {
+  id: number;
+  message: { text: string };
+  file_url?: string;
+  created_at: string;
+}
+
+export interface Chat {
+  id: number;
+  other_participant: ChatParticipant | null; // Note: Needs fix in backend to not be null
+  last_message: LastMessage | null;
+  unread_messages_count: number;
+  updated_at: string; // "منذ 11 شهر"
+}
+
+export interface ChatMessage {
+  id: number;
+  chat_id: number;
+  message: {
+    text: string;
+  };
+  file_url: string | null;
+  is_seen: boolean;
+  sent_by_me: boolean;
+  sender_type: 'user' | 'member';
+  created_at: string; // "منذ ثانية"
+  timestamp: string; // "2025-06-28T17:59:38.000000Z"
+}
