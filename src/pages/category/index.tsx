@@ -6,31 +6,33 @@ import { Footer } from '@/components/layout/footer';
 import { AdFilters } from '@/components/filters/ad-filters';
 import { AdCard } from '@/components/ads/ad-card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Grid2X2, List } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { MobileNav } from '@/components/layout/mobile-nav';
 import { useListings, useCategory, useCategories } from '@/hooks/use-api';
 import { SearchFilters } from '@/types';
 import { useAuth } from '@/context/auth-context';
 import { CategoryBar } from '@/components/layout/category/CategoryBar';
+import { CategoryFilters } from '@/components/layout/category/CategoryFilters';
 import { Pagination } from '@/components/custom/pagination';
-import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select';
+import { useLayoutStore } from '@/store/layout-store';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export default function CategoryPage() {
   const { categoryId } = useParams<{ categoryId: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { adLayout } = useLayoutStore();
+  const isMobile = useIsMobile();
   
   const numericCategoryId = categoryId ? parseInt(categoryId, 10) : 0;
   
   const [filters, setFilters] = useState<SearchFilters>({
     category_id: numericCategoryId,
-    sub_category_id: searchParams.get('subcategory') ? parseInt(searchParams.get('subcategory')!, 10) : undefined,
+    subcategory_id: searchParams.get('subcategory') ? parseInt(searchParams.get('subcategory')!, 10) : undefined,
     child_category_id: searchParams.get('childcategory') ? parseInt(searchParams.get('childcategory')!, 10) : undefined,
   });
-  const [adLayout, setAdLayout] = useState<'grid' | 'list'>('grid');
   const [page, setPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(12);
-  const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'price_asc' | 'price_desc' | 'popular' | 'created_at' | 'updated_at'>('created_at');
+  const [selectedRegion, setSelectedRegion] = useState('كل المناطق');
   const { isAuthenticated } = useAuth();
   
   // Fetch data
@@ -39,8 +41,8 @@ export default function CategoryPage() {
   const { data: listingsResponse, isLoading: isLoadingListings, error } = useListings({
     category_id: numericCategoryId,
     page,
-    per_page: itemsPerPage,
-    sort: sortBy,
+    per_page: 12,
+    sort: 'created_at',
     ...filters,
   });
   
@@ -50,7 +52,7 @@ export default function CategoryPage() {
       setFilters(prev => ({
         ...prev,
         category_id: numericCategoryId,
-        sub_category_id: searchParams.get('subcategory') ? parseInt(searchParams.get('subcategory')!, 10) : undefined,
+        subcategory_id: searchParams.get('subcategory') ? parseInt(searchParams.get('subcategory')!, 10) : undefined,
         child_category_id: searchParams.get('childcategory') ? parseInt(searchParams.get('childcategory')!, 10) : undefined,
       }));
       setPage(1); // Reset to first page on filter changes
@@ -62,22 +64,43 @@ export default function CategoryPage() {
       ...prev,
       ...newFilters,
       category_id: numericCategoryId,
-      sub_category_id: searchParams.get('subcategory') ? parseInt(searchParams.get('subcategory')!, 10) : undefined,
+      subcategory_id: searchParams.get('subcategory') ? parseInt(searchParams.get('subcategory')!, 10) : undefined,
       child_category_id: searchParams.get('childcategory') ? parseInt(searchParams.get('childcategory')!, 10) : undefined,
     }));
     setPage(1); // Reset to first page when filters change
   };
+
+  const handleNearbyClick = () => {
+    // Handle nearby functionality
+    console.log('Nearby clicked');
+  };
+
+  const handleRegionSelect = (region: string) => {
+    setSelectedRegion(region);
+  };
+
+  const handleFilterClick = () => {
+    // Handle filter click
+    console.log('Filter clicked');
+  };
   
   // Get the listings from the response, ensure it's an array even if undefined
   const listings = listingsResponse?.data || [];
-  const totalPages = listingsResponse?.last_page || 1;
-  const totalResults = listingsResponse?.data?.total || 0;
+  const totalPages = listingsResponse?.meta?.last_page || 1;
+  const totalResults = listingsResponse?.meta?.total || 0;
   
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
       
       <CategoryBar />
+      
+      <CategoryFilters 
+        onNearbyClick={handleNearbyClick}
+        onRegionSelect={handleRegionSelect}
+        onFilterClick={handleFilterClick}
+        selectedRegion={selectedRegion}
+      />
       
       <div className="container px-4 mx-auto py-6">
         {/* Results Header */}
@@ -90,141 +113,38 @@ export default function CategoryPage() {
               {totalResults} إعلان متاح
             </p>
           </div>
-          
-          {/* Sort and layout controls */}
-          <div className="flex items-center gap-3">
-            <Select
-              value={sortBy}
-              onValueChange={(value: 'newest' | 'oldest' | 'price_asc' | 'price_desc' | 'popular' | 'created_at' | 'updated_at') => {
-                setSortBy(value);
-                setPage(1);
-              }}
-            >
-              <SelectTrigger className="w-16 h-8">
-                <SelectValue placeholder="الترتيب" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="created_at">الترتيب الجديد</SelectItem>
-                <SelectItem value="updated_at">الترتيب القديم</SelectItem>
-              </SelectContent>
-            </Select>
-            
-            <Select
-              value={itemsPerPage.toString()}
-              onValueChange={(value) => {
-                setItemsPerPage(parseInt(value, 10));
-                setPage(1);
-              }}
-            >
-              <SelectTrigger className="w-16 h-8">
-                <SelectValue placeholder="12" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="12">12</SelectItem>
-                <SelectItem value="24">24</SelectItem>
-                <SelectItem value="36">36</SelectItem>
-                <SelectItem value="48">48</SelectItem>
-              </SelectContent>
-            </Select>
-            
-            <div className="flex border rounded-sm overflow-hidden">
-              <Button 
-                variant={adLayout === 'grid' ? "default" : "ghost"} 
-                size="icon"
-                onClick={() => setAdLayout('grid')}
-                className="h-8 w-8 rounded-none"
-                aria-label="Grid view"
-                title="عرض شبكي"
-              >
-                <Grid2X2 className="h-4 w-4" />
-              </Button>
-              <Button 
-                variant={adLayout === 'list' ? "default" : "ghost"}
-                size="icon" 
-                onClick={() => setAdLayout('list')}
-                className="h-8 w-8 rounded-none"
-                aria-label="List view"
-                title="عرض قائمة"
-              >
-                <List className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           {/* Sidebar with filters */}
-          <div className="col-span-1 hidden md:block">
-            <AdFilters 
-              layout="sidebar" 
-              onLayoutChange={setAdLayout} 
-              currentLayout={adLayout}
-              onFilterChange={handleFilterChange}
-              selectedCategory={category}
-            />
-          </div>
-          
-          {/* Main content */}
-          <div className="col-span-1 md:col-span-3">
-            {/* Mobile filters */}
-            <div className="md:hidden mb-6">
+          {!isMobile && (
+            <div className="col-span-1 hidden md:block">
               <AdFilters 
-                layout="horizontal" 
-                onLayoutChange={setAdLayout} 
-                currentLayout={adLayout} 
+                layout="sidebar" 
                 onFilterChange={handleFilterChange}
                 selectedCategory={category}
               />
             </div>
+          )}
+          
+          {/* Main content */}
+          <div className="col-span-1 md:col-span-3">
+            {/* Mobile filters */}
+            {isMobile && (
+              <div className="mb-6">
+                <AdFilters 
+                  layout="horizontal" 
+                  onFilterChange={handleFilterChange}
+                  selectedCategory={category}
+                />
+              </div>
+            )}
             
-            {/* Compact view toggle buttons and per page select */}
+            {/* Results count */}
             <div className="flex flex-col sm:flex-row justify-between mb-4 gap-3">
               <p className="text-muted-foreground">
                 {Array.isArray(listings) && listings.length > 0 ? `${listings.length} نتيجة` : '0 نتيجة'} 
               </p>
-              
-              <div className="flex items-center gap-3">
-                <Select
-                  value={itemsPerPage.toString()}
-                  onValueChange={(value) => {
-                    setItemsPerPage(parseInt(value, 10));
-                    setPage(1);
-                  }}
-                >
-                  <SelectTrigger className="w-16 h-8">
-                    <SelectValue placeholder="12" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="12">12</SelectItem>
-                    <SelectItem value="24">24</SelectItem>
-                    <SelectItem value="36">36</SelectItem>
-                    <SelectItem value="48">48</SelectItem>
-                  </SelectContent>
-                </Select>
-                
-                <div className="flex border rounded-sm overflow-hidden">
-                  <Button 
-                    variant={adLayout === 'grid' ? "default" : "ghost"} 
-                    size="icon"
-                    onClick={() => setAdLayout('grid')}
-                    className="h-8 w-8 rounded-none"
-                    aria-label="Grid view"
-                    title="عرض شبكي"
-                  >
-                    <Grid2X2 className="h-4 w-4" />
-                  </Button>
-                  <Button 
-                    variant={adLayout === 'list' ? "default" : "ghost"}
-                    size="icon" 
-                    onClick={() => setAdLayout('list')}
-                    className="h-8 w-8 rounded-none"
-                    aria-label="List view"
-                    title="عرض قائمة"
-                  >
-                    <List className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
             </div>
             
             {/* Loading state */}
