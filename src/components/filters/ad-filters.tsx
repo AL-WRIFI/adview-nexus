@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Search, Filter, MapPin, ChevronDown, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -39,10 +38,10 @@ export function AdFilters({
   const [nearbyEnabled, setNearbyEnabled] = useState(false);
   const [nearbyRadius, setNearbyRadius] = useState(5);
   const [featuredOnly, setFeaturedOnly] = useState(false);
-  const [condition, setCondition] = useState<string>('');
-  const [listingType, setListingType] = useState<string>('');
+  const [condition, setCondition] = useState<'new' | 'used' | 'refurbished' | ''>('');
+  const [listingType, setListingType] = useState<'sell' | 'rent' | 'wanted' | 'exchange' | 'service' | ''>('');
   const [individualOwners, setIndividualOwners] = useState(false);
-  const [sortBy, setSortBy] = useState<string>('newest');
+  const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'price_asc' | 'price_desc' | 'popular' | 'created_at' | 'updated_at'>('newest');
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
@@ -299,7 +298,7 @@ export function AdFilters({
               key={item.value}
               variant={condition === item.value ? "default" : "outline"}
               size="sm"
-              onClick={() => setCondition(item.value)}
+              onClick={() => setCondition(item.value as any)}
               className="text-xs"
             >
               {item.label}
@@ -326,7 +325,7 @@ export function AdFilters({
               key={item.value}
               variant={listingType === item.value ? "default" : "outline"}
               size="sm"
-              onClick={() => setListingType(item.value)}
+              onClick={() => setListingType(item.value as any)}
               className="text-xs"
             >
               {item.label}
@@ -351,7 +350,7 @@ export function AdFilters({
       {/* Sort */}
       <div>
         <Label className="text-sm font-medium mb-3 block">ترتيب الإعلانات من</Label>
-        <Select value={sortBy} onValueChange={setSortBy}>
+        <Select value={sortBy} onValueChange={(value) => setSortBy(value as any)}>
           <SelectTrigger>
             <SelectValue />
           </SelectTrigger>

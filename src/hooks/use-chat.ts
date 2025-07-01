@@ -1,4 +1,3 @@
-// src/hooks/use-chat.ts
 
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
 import { chatAPI } from '@/services/apis';
@@ -16,9 +15,10 @@ export const useChats = () => {
 export const useChatMessages = (chatId: number | null) => {
   return useInfiniteQuery({
     queryKey: ['chat', chatId],
-    queryFn: ({ pageParam = 1 }) => chatAPI.getChatMessages(chatId!, pageParam),
-    getNextPageParam: (lastPage) => {
-      if (lastPage.data.current_page < lastPage.data.last_page) {
+    queryFn: ({ pageParam = 1 }) => chatAPI.getChatMessages(chatId!, pageParam as number),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage: any) => {
+      if (lastPage?.data?.current_page < lastPage?.data?.last_page) {
         return lastPage.data.current_page + 1;
       }
       return undefined;
@@ -31,11 +31,11 @@ export const useChatMessages = (chatId: number | null) => {
 export const useStartConversation = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: FormData) => chatAPI.startConversation(data),
-    onSuccess: (response) => {
+    mutationFn: (data: FormData) => chatAPI.createChat(data),
+    onSuccess: (response: any) => {
       // تحديث قائمة المحادثات والمحادثة الجديدة
       queryClient.invalidateQueries({ queryKey: ['chats'] });
-      queryClient.setQueryData(['chat', response.data.chat_id], (oldData: any) => {
+      queryClient.setQueryData(['chat', response?.data?.chat_id], (oldData: any) => {
           // يمكنك هنا تحديث الكاش مباشرة بالرسالة الجديدة
           return oldData;
       });
@@ -55,7 +55,7 @@ export const useStartConversation = () => {
 export const useSendMessage = (chatId: number) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: FormData) => chatAPI.sendMessageInChat(chatId, data),
+    mutationFn: (data: FormData) => chatAPI.sendMessage(chatId, data),
     onSuccess: () => {
       // تحديث قائمة المحادثات والمحادثة الحالية
       queryClient.invalidateQueries({ queryKey: ['chats'] });
