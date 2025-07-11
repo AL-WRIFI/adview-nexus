@@ -58,6 +58,7 @@ export interface Category {
   parent_id?: number;
   children?: Category[];
   subcategories?: Category[];
+  childcategories?: Category[];
   slug?: string;
   count?: number;
 }

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowRight, Image, X, UploadCloud, ChevronDown, Info, Loader2 } from 'lucide-react';
+import { ArrowRight, Image, X, UploadCloud, ChevronDown, Info, Loader2, AlertTriangle } from 'lucide-react';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { MobileNav } from '@/components/layout/mobile-nav';
@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { isAuthenticated } from '@/services/api';
 import { useCreateListing, useCategories, useBrands, useStates, useCities ,useDistricts ,useBrand} from '@/hooks/use-api';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   Select,
   SelectContent,
@@ -64,11 +65,85 @@ export default function AddAd() {
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [lat, setLat] = useState<number | null>(null);
   const [lon, setLon] = useState<number | null>(null);
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  
+  // Bad words filter - comprehensive list
+  const badWords = [
+    'سيء', 'قبيح', 'غبي', 'أحمق', 'ملعون', 'لعين', 'خبيث', 'وسخ', 'قذر', 'نجس',
+    'كلب', 'حمار', 'خنزير', 'جحش', 'بهيمة', 'حيوان', 'وحش', 'شيطان',
+    'اغتصاب', 'قتل', 'موت', 'دم', 'عنف', 'ضرب', 'إرهاب', 'تفجير',
+    'عاهرة', 'زانية', 'فاحشة', 'عري', 'جنس', 'إباحي', 'فاسق', 'منحرف',
+    'يهودي', 'صهيوني', 'كافر', 'مرتد', 'ملحد', 'فاسد', 'منافق'
+  ];
+  
+  // Get subcategories based on selected category
+  const subcategories = categoryId && categories ? 
+    categories.find(cat => cat.id === categoryId)?.subcategories || [] : [];
+  
+  // Get child categories based on selected subcategory
+  const childCategories = subCategoryId && subcategories ? 
+    subcategories.find(sub => sub.id === subCategoryId)?.childcategories || 
+    subcategories.find(sub => sub.id === subCategoryId)?.children || [] : [];
   
   // Get filtered cities based on selected state
   const { data: cities } = useCities(stateId || undefined);
   const { data: districts } = useDistricts(cityId || undefined); 
   const { data: brands } = useBrand(categoryId || undefined);
+  
+  // Function to check for bad words
+  const containsBadWords = (text: string): boolean => {
+    const lowercaseText = text.toLowerCase();
+    return badWords.some(badWord => lowercaseText.includes(badWord.toLowerCase()));
+  };
+  
+  // Real-time validation function
+  const validateForm = () => {
+    const errors: string[] = [];
+    
+    if (!categoryId) {
+      errors.push('يجب اختيار التصنيف الرئيسي');
+    }
+    
+    if (!adTitle.trim()) {
+      errors.push('يجب إدخال عنوان الإعلان');
+    } else if (containsBadWords(adTitle)) {
+      errors.push('عنوان الإعلان يحتوي على كلمات غير مناسبة');
+    }
+    
+    if (!adDescription.trim()) {
+      errors.push('يجب إدخال وصف الإعلان');
+    } else if (containsBadWords(adDescription)) {
+      errors.push('وصف الإعلان يحتوي على كلمات غير مناسبة');
+    }
+    
+    if (adType !== 'job' && (!adPrice || parseFloat(adPrice) <= 0)) {
+      errors.push('يجب إدخال سعر صحيح');
+    }
+    
+    if (!stateId) {
+      errors.push('يجب اختيار المحافظة');
+    }
+    
+    if (!cityId) {
+      errors.push('يجب اختيار المدينة');
+    }
+    
+    if (!districtId) {
+      errors.push('يجب اختيار الحي');
+    }
+    
+    if (!mainImage) {
+      errors.push('يجب إضافة الصورة الرئيسية');
+    }
+    
+    setValidationErrors(errors);
+    return errors.length === 0;
+  };
+  
+  // Real-time validation on form changes
+  useEffect(() => {
+    validateForm();
+  }, [categoryId, subCategoryId, childCategoryId, adTitle, adDescription, adPrice, stateId, cityId, districtId, mainImage, adType]);
   
   // If coming back from login with form data, restore it
   useEffect(() => {
@@ -224,12 +299,12 @@ export default function AddAd() {
       return;
     }
     
-    // Validate required fields
-    if (!categoryId || !adTitle || !adDescription || !stateId || !cityId || !districtId || !mainImage) {
+    // Validate required fields and check for bad words
+    if (!validateForm()) {
       toast({
         variant: 'destructive',
-        title: 'معلومات غير مكتملة',
-        description: 'يرجى التأكد من إدخال جميع الحقول المطلوبة',
+        title: 'معلومات غير مكتملة أو غير صحيحة',
+        description: 'يرجى مراجعة الأخطاء المعروضة وتصحيحها',
       });
       return;
     }
@@ -282,7 +357,7 @@ export default function AddAd() {
   
   return (
     <div className="min-h-screen flex flex-col">
-      <Header isLoggedIn={isAuthenticated()} />
+      <Header />
       
       <main className="flex-1 pb-20 md:pb-0">
         <div className="container px-4 mx-auto py-6">
@@ -336,11 +411,30 @@ export default function AddAd() {
                 </div>
                 
                 <div className="space-y-4">
+                  {/* Validation Errors Display */}
+                  {validationErrors.length > 0 && (
+                    <Alert variant="destructive">
+                      <AlertTriangle className="h-4 w-4" />
+                      <AlertDescription>
+                        <ul className="list-disc pr-4">
+                          {validationErrors.map((error, index) => (
+                            <li key={index}>{error}</li>
+                          ))}
+                        </ul>
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                  
+                  {/* Main Category */}
                   <div>
-                    <Label>اختر تصنيف الإعلان</Label>
-                    <Select value={categoryId?.toString()} onValueChange={(value) => setCategoryId(parseInt(value))}>
+                    <Label>اختر التصنيف الرئيسي</Label>
+                    <Select value={categoryId?.toString()} onValueChange={(value) => {
+                      setCategoryId(parseInt(value));
+                      setSubCategoryId(null);
+                      setChildCategoryId(null);
+                    }}>
                       <SelectTrigger>
-                        <SelectValue placeholder="اختر التصنيف" />
+                        <SelectValue placeholder="اختر التصنيف الرئيسي" />
                       </SelectTrigger>
                       <SelectContent>
                         {categories?.map((category) => (
@@ -352,6 +446,47 @@ export default function AddAd() {
                     </Select>
                   </div>
                   
+                  {/* Sub Category */}
+                  {categoryId && subcategories.length > 0 && (
+                    <div>
+                      <Label>اختر التصنيف الفرعي</Label>
+                      <Select value={subCategoryId?.toString()} onValueChange={(value) => {
+                        setSubCategoryId(parseInt(value));
+                        setChildCategoryId(null);
+                      }}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="اختر التصنيف الفرعي" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {subcategories.map((subcategory) => (
+                            <SelectItem key={subcategory.id} value={subcategory.id.toString()}>
+                              {subcategory.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                  
+                  {/* Child Category */}
+                  {subCategoryId && childCategories.length > 0 && (
+                    <div>
+                      <Label>اختر التصنيف التفصيلي</Label>
+                      <Select value={childCategoryId?.toString()} onValueChange={(value) => setChildCategoryId(parseInt(value))}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="اختر التصنيف التفصيلي" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {childCategories.map((childCategory) => (
+                            <SelectItem key={childCategory.id} value={childCategory.id.toString()}>
+                              {childCategory.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                  
                   {/* Brand selection, only for certain categories */}
                   {(adType === 'sell' || adType === 'rent') && categoryId && (
                     <div>
@@ -362,7 +497,7 @@ export default function AddAd() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="0">بدون ماركة</SelectItem>
-                          {brands?.map((brand) => (
+                          {Array.isArray(brands) && brands?.map((brand) => (
                             <SelectItem key={brand.id} value={brand.id.toString()}>
                               {brand.name}
                             </SelectItem>
@@ -384,6 +519,20 @@ export default function AddAd() {
             {/* Step 2: Ad details */}
             {currentStep === 2 && (
               <div className="space-y-6">
+                {/* Validation Errors Display */}
+                {validationErrors.length > 0 && (
+                  <Alert variant="destructive">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertDescription>
+                      <ul className="list-disc pr-4">
+                        {validationErrors.map((error, index) => (
+                          <li key={index}>{error}</li>
+                        ))}
+                      </ul>
+                    </AlertDescription>
+                  </Alert>
+                )}
+                
                 <div>
                   <Label htmlFor="title">عنوان الإعلان</Label>
                   <Input
@@ -391,8 +540,11 @@ export default function AddAd() {
                     value={adTitle}
                     onChange={(e) => setAdTitle(e.target.value)}
                     placeholder="اكتب عنواناً واضحاً ومختصراً"
-                    className="mt-1"
+                    className={`mt-1 ${containsBadWords(adTitle) ? 'border-red-500' : ''}`}
                   />
+                  {containsBadWords(adTitle) && (
+                    <p className="text-red-500 text-sm mt-1">العنوان يحتوي على كلمات غير مناسبة</p>
+                  )}
                 </div>
                 
                 <div>
@@ -403,8 +555,11 @@ export default function AddAd() {
                     onChange={(e) => setAdDescription(e.target.value)}
                     placeholder="اكتب وصفاً مفصلاً"
                     rows={5}
-                    className="mt-1 resize-none"
+                    className={`mt-1 resize-none ${containsBadWords(adDescription) ? 'border-red-500' : ''}`}
                   />
+                  {containsBadWords(adDescription) && (
+                    <p className="text-red-500 text-sm mt-1">الوصف يحتوي على كلمات غير مناسبة</p>
+                  )}
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -566,6 +721,19 @@ export default function AddAd() {
             {/* Step 3: Images */}
             {currentStep === 3 && (
               <div className="space-y-6">
+                {/* Validation Errors Display */}
+                {validationErrors.length > 0 && (
+                  <Alert variant="destructive">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertDescription>
+                      <ul className="list-disc pr-4">
+                        {validationErrors.map((error, index) => (
+                          <li key={index}>{error}</li>
+                        ))}
+                      </ul>
+                    </AlertDescription>
+                  </Alert>
+                )}
                 {/* Main image */}
                 <div>
                   <Label className="mb-2 block">الصورة الرئيسية</Label>
@@ -653,6 +821,19 @@ export default function AddAd() {
             {/* Step 4: Review */}
             {currentStep === 4 && (
               <div className="space-y-6">
+                {/* Validation Errors Display */}
+                {validationErrors.length > 0 && (
+                  <Alert variant="destructive">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertDescription>
+                      <ul className="list-disc pr-4">
+                        {validationErrors.map((error, index) => (
+                          <li key={index}>{error}</li>
+                        ))}
+                      </ul>
+                    </AlertDescription>
+                  </Alert>
+                )}
                 <div className="border rounded-lg overflow-hidden">
                   <div className="bg-gray-50 border-b p-3">
                     <h3 className="font-bold">مراجعة معلومات الإعلان</h3>
@@ -667,7 +848,19 @@ export default function AddAd() {
                       
                       <div>
                         <h4 className="text-sm text-muted-foreground">التصنيف</h4>
-                        <p>{categories?.find(c => c.id === categoryId)?.name || '-'}</p>
+                        <div className="space-y-1">
+                          <p>{categories?.find(c => c.id === categoryId)?.name || '-'}</p>
+                          {subCategoryId && (
+                            <p className="text-sm text-muted-foreground">
+                              {subcategories.find(s => s.id === subCategoryId)?.name}
+                            </p>
+                          )}
+                          {childCategoryId && (
+                            <p className="text-xs text-muted-foreground">
+                              {childCategories.find(c => c.id === childCategoryId)?.name}
+                            </p>
+                          )}
+                        </div>
                       </div>
                       
                       <div>
@@ -711,7 +904,7 @@ export default function AddAd() {
                       {brandId && brandId > 0 && (
                         <div>
                           <h4 className="text-sm text-muted-foreground">الماركة</h4>
-                          <p>{brands?.find(b => b.id === brandId)?.name || '-'}</p>
+                          <p>{Array.isArray(brands) && brands?.find(b => b.id === brandId)?.name || '-'}</p>
                         </div>
                       )}
                     </div>
