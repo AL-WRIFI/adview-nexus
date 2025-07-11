@@ -30,6 +30,7 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [agreeTerms, setAgreeTerms] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<{[key: string]: string}>({});
   
   // Filter cities based on selected state
   const filteredCities = stateId 
@@ -49,8 +50,21 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate inputs
-    if (!firstName || !lastName || !email || !phone || !password || !confirmPassword || !stateId || !cityId) {
+    // Validate inputs and set field errors
+    const errors: {[key: string]: string} = {};
+    
+    if (!firstName) errors.firstName = 'هذا الحقل مطلوب';
+    if (!lastName) errors.lastName = 'هذا الحقل مطلوب';
+    if (!email) errors.email = 'هذا الحقل مطلوب';
+    if (!phone) errors.phone = 'هذا الحقل مطلوب';
+    if (!password) errors.password = 'هذا الحقل مطلوب';
+    if (!confirmPassword) errors.confirmPassword = 'هذا الحقل مطلوب';
+    if (!stateId) errors.stateId = 'هذا الحقل مطلوب';
+    if (!cityId) errors.cityId = 'هذا الحقل مطلوب';
+    
+    setFieldErrors(errors);
+    
+    if (Object.keys(errors).length > 0) {
       toast({
         variant: 'destructive',
         title: 'خطأ في البيانات',
@@ -124,43 +138,59 @@ export default function RegisterPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="firstName">الاسم الأول</Label>
-                  <Input
-                    id="firstName"
-                    placeholder="الاسم الأول"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                  />
+                   <Input
+                     id="firstName"
+                     placeholder="الاسم الأول"
+                     value={firstName}
+                     onChange={(e) => setFirstName(e.target.value)}
+                     className={fieldErrors.firstName ? 'border-red-500' : ''}
+                   />
+                   {fieldErrors.firstName && (
+                     <p className="text-sm text-red-500 mt-1">{fieldErrors.firstName}</p>
+                   )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="lastName">الاسم الأخير</Label>
-                  <Input
-                    id="lastName"
-                    placeholder="الاسم الأخير"
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                  />
+                   <Input
+                     id="lastName"
+                     placeholder="الاسم الأخير"
+                     value={lastName}
+                     onChange={(e) => setLastName(e.target.value)}
+                     className={fieldErrors.lastName ? 'border-red-500' : ''}
+                   />
+                   {fieldErrors.lastName && (
+                     <p className="text-sm text-red-500 mt-1">{fieldErrors.lastName}</p>
+                   )}
                 </div>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="email">البريد الإلكتروني</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="أدخل البريد الإلكتروني"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
+                 <Input
+                   id="email"
+                   type="email"
+                   placeholder="أدخل البريد الإلكتروني"
+                   value={email}
+                   onChange={(e) => setEmail(e.target.value)}
+                   className={fieldErrors.email ? 'border-red-500' : ''}
+                 />
+                 {fieldErrors.email && (
+                   <p className="text-sm text-red-500 mt-1">{fieldErrors.email}</p>
+                 )}
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="phone">رقم الهاتف</Label>
-                <Input
-                  id="phone"
-                  placeholder="أدخل رقم الهاتف"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                />
+                 <Input
+                   id="phone"
+                   placeholder="أدخل رقم الهاتف"
+                   value={phone}
+                   onChange={(e) => setPhone(e.target.value)}
+                   className={fieldErrors.phone ? 'border-red-500' : ''}
+                 />
+                 {fieldErrors.phone && (
+                   <p className="text-sm text-red-500 mt-1">{fieldErrors.phone}</p>
+                 )}
               </div>
 
               <div className="space-y-2">
@@ -172,9 +202,9 @@ export default function RegisterPage() {
                     setCityId(null);
                   }}
                 >
-                  <SelectTrigger id="state">
-                    <SelectValue placeholder="اختر المنطقة / المحافظة" />
-                  </SelectTrigger>
+                   <SelectTrigger id="state" className={fieldErrors.stateId ? 'border-red-500' : ''}>
+                     <SelectValue placeholder="اختر المنطقة / المحافظة" />
+                   </SelectTrigger>
                   <SelectContent>
                     {loadingStates ? (
                       <div className="p-2 text-center text-sm text-muted-foreground">
@@ -188,7 +218,10 @@ export default function RegisterPage() {
                       ))
                     )}
                   </SelectContent>
-                </Select>
+                 </Select>
+                 {fieldErrors.stateId && (
+                   <p className="text-sm text-red-500 mt-1">{fieldErrors.stateId}</p>
+                 )}
               </div>
 
               <div className="space-y-2">
@@ -198,9 +231,9 @@ export default function RegisterPage() {
                   onValueChange={(value) => setCityId(parseInt(value, 10))}
                   disabled={!stateId}
                 >
-                  <SelectTrigger id="city">
-                    <SelectValue placeholder={stateId ? "اختر المدينة" : "اختر المنطقة أولاً"} />
-                  </SelectTrigger>
+                   <SelectTrigger id="city" className={fieldErrors.cityId ? 'border-red-500' : ''}>
+                     <SelectValue placeholder={stateId ? "اختر المدينة" : "اختر المنطقة أولاً"} />
+                   </SelectTrigger>
                   <SelectContent>
                     {!stateId ? (
                       <div className="p-2 text-center text-sm text-muted-foreground">
@@ -222,19 +255,23 @@ export default function RegisterPage() {
                       ))
                     )}
                   </SelectContent>
-                </Select>
+                 </Select>
+                 {fieldErrors.cityId && (
+                   <p className="text-sm text-red-500 mt-1">{fieldErrors.cityId}</p>
+                 )}
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="password">كلمة المرور</Label>
                 <div className="relative">
-                  <Input
-                    id="password"
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="أدخل كلمة المرور (8 أحرف على الأقل)"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                  />
+                   <Input
+                     id="password"
+                     type={showPassword ? 'text' : 'password'}
+                     placeholder="أدخل كلمة المرور (8 أحرف على الأقل)"
+                     value={password}
+                     onChange={(e) => setPassword(e.target.value)}
+                     className={fieldErrors.password ? 'border-red-500' : ''}
+                   />
                   <Button
                     type="button"
                     variant="ghost"
@@ -244,19 +281,23 @@ export default function RegisterPage() {
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </Button>
-                </div>
+                 </div>
+                 {fieldErrors.password && (
+                   <p className="text-sm text-red-500 mt-1">{fieldErrors.password}</p>
+                 )}
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="confirmPassword">تأكيد كلمة المرور</Label>
                 <div className="relative">
-                  <Input
-                    id="confirmPassword"
-                    type={showConfirmPassword ? 'text' : 'password'}
-                    placeholder="أعد إدخال كلمة المرور"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                  />
+                   <Input
+                     id="confirmPassword"
+                     type={showConfirmPassword ? 'text' : 'password'}
+                     placeholder="أعد إدخال كلمة المرور"
+                     value={confirmPassword}
+                     onChange={(e) => setConfirmPassword(e.target.value)}
+                     className={fieldErrors.confirmPassword ? 'border-red-500' : ''}
+                   />
                   <Button
                     type="button"
                     variant="ghost"
@@ -266,7 +307,10 @@ export default function RegisterPage() {
                   >
                     {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </Button>
-                </div>
+                 </div>
+                 {fieldErrors.confirmPassword && (
+                   <p className="text-sm text-red-500 mt-1">{fieldErrors.confirmPassword}</p>
+                 )}
               </div>
 
               <div className="flex items-center space-x-2 space-x-reverse">

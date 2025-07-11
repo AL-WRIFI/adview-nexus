@@ -90,6 +90,7 @@ export default function EditAd() {
   const [lon, setLon] = useState<number | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<{[key: string]: string}>({});
   
   // Get filtered cities based on selected state
   const { data: cities } = useCities(stateId || undefined);
@@ -232,8 +233,18 @@ export default function EditAd() {
       return;
     }
 
-    // Validate required fields
-    if (!categoryId || !adTitle || !adDescription || !stateId || !cityId || !address) {
+    // Validate required fields and set field errors
+    const errors: {[key: string]: string} = {};
+    if (!categoryId) errors.categoryId = 'هذا الحقل مطلوب';
+    if (!adTitle) errors.adTitle = 'هذا الحقل مطلوب';
+    if (!adDescription) errors.adDescription = 'هذا الحقل مطلوب';
+    if (!stateId) errors.stateId = 'هذا الحقل مطلوب';
+    if (!cityId) errors.cityId = 'هذا الحقل مطلوب';
+    if (!address) errors.address = 'هذا الحقل مطلوب';
+    
+    setFieldErrors(errors);
+    
+    if (Object.keys(errors).length > 0) {
       toast({
         variant: 'destructive',
         title: 'معلومات غير مكتملة',
@@ -419,21 +430,24 @@ export default function EditAd() {
                 </div>
                 
                 <div className="space-y-4">
-                  <div>
-                    <Label className="dark:text-gray-200">اختر تصنيف الإعلان</Label>
-                    <Select value={categoryId?.toString()} onValueChange={(value) => setCategoryId(parseInt(value))}>
-                      <SelectTrigger className="dark:border-dark-border dark:bg-dark-card dark:text-gray-200">
-                        <SelectValue placeholder="اختر التصنيف" />
-                      </SelectTrigger>
-                      <SelectContent className="dark:bg-dark-card dark:border-dark-border">
-                        {categories?.map((category) => (
-                          <SelectItem key={category.id} value={category.id.toString()} className="dark:text-gray-200 dark:focus:bg-dark-muted">
-                            {category.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                   <div>
+                     <Label className="dark:text-gray-200">اختر تصنيف الإعلان</Label>
+                     <Select value={categoryId?.toString()} onValueChange={(value) => setCategoryId(parseInt(value))}>
+                       <SelectTrigger className={`dark:border-dark-border dark:bg-dark-card dark:text-gray-200 ${fieldErrors.categoryId ? 'border-red-500' : ''}`}>
+                         <SelectValue placeholder="اختر التصنيف" />
+                       </SelectTrigger>
+                       <SelectContent className="dark:bg-dark-card dark:border-dark-border">
+                         {categories?.map((category) => (
+                           <SelectItem key={category.id} value={category.id.toString()} className="dark:text-gray-200 dark:focus:bg-dark-muted">
+                             {category.name}
+                           </SelectItem>
+                         ))}
+                       </SelectContent>
+                     </Select>
+                     {fieldErrors.categoryId && (
+                       <p className="text-sm text-red-500 mt-1">{fieldErrors.categoryId}</p>
+                     )}
+                   </div>
                   
                   {/* Brand selection, only for certain categories */}
                   {(adType === 'sell' || adType === 'buy' || adType === 'exchange') && categoryId && (

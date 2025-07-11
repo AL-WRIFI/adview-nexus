@@ -66,6 +66,7 @@ export default function AddAd() {
   const [lat, setLat] = useState<number | null>(null);
   const [lon, setLon] = useState<number | null>(null);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [fieldErrors, setFieldErrors] = useState<{[key: string]: string}>({});
   
   // Bad words filter - comprehensive list
   const badWords = [
@@ -99,44 +100,56 @@ export default function AddAd() {
   // Real-time validation function
   const validateForm = () => {
     const errors: string[] = [];
+    const fieldValidationErrors: {[key: string]: string} = {};
     
     if (!categoryId) {
       errors.push('يجب اختيار التصنيف الرئيسي');
+      fieldValidationErrors.categoryId = 'هذا الحقل مطلوب';
     }
     
     if (!adTitle.trim()) {
       errors.push('يجب إدخال عنوان الإعلان');
+      fieldValidationErrors.adTitle = 'هذا الحقل مطلوب';
     } else if (containsBadWords(adTitle)) {
       errors.push('عنوان الإعلان يحتوي على كلمات غير مناسبة');
+      fieldValidationErrors.adTitle = 'يحتوي على كلمات غير مناسبة';
     }
     
     if (!adDescription.trim()) {
       errors.push('يجب إدخال وصف الإعلان');
+      fieldValidationErrors.adDescription = 'هذا الحقل مطلوب';
     } else if (containsBadWords(adDescription)) {
       errors.push('وصف الإعلان يحتوي على كلمات غير مناسبة');
+      fieldValidationErrors.adDescription = 'يحتوي على كلمات غير مناسبة';
     }
     
     if (adType !== 'job' && (!adPrice || parseFloat(adPrice) <= 0)) {
       errors.push('يجب إدخال سعر صحيح');
+      fieldValidationErrors.adPrice = 'هذا الحقل مطلوب';
     }
     
     if (!stateId) {
       errors.push('يجب اختيار المحافظة');
+      fieldValidationErrors.stateId = 'هذا الحقل مطلوب';
     }
     
     if (!cityId) {
       errors.push('يجب اختيار المدينة');
+      fieldValidationErrors.cityId = 'هذا الحقل مطلوب';
     }
     
     if (!districtId) {
       errors.push('يجب اختيار الحي');
+      fieldValidationErrors.districtId = 'هذا الحقل مطلوب';
     }
     
     if (!mainImage) {
       errors.push('يجب إضافة الصورة الرئيسية');
+      fieldValidationErrors.mainImage = 'هذا الحقل مطلوب';
     }
     
     setValidationErrors(errors);
+    setFieldErrors(fieldValidationErrors);
     return errors.length === 0;
   };
   
@@ -254,6 +267,14 @@ export default function AddAd() {
   };
   
   const handleNextStep = () => {
+    if (!validateForm()) {
+      toast({
+        variant: 'destructive',
+        title: 'معلومات غير مكتملة',
+        description: 'يرجى ملء جميع الحقول المطلوبة بشكل صحيح',
+      });
+      return;
+    }
     setCurrentStep(currentStep + 1);
   };
   
@@ -425,26 +446,29 @@ export default function AddAd() {
                     </Alert>
                   )}
                   
-                  {/* Main Category */}
-                  <div>
-                    <Label>اختر التصنيف الرئيسي</Label>
-                    <Select value={categoryId?.toString()} onValueChange={(value) => {
-                      setCategoryId(parseInt(value));
-                      setSubCategoryId(null);
-                      setChildCategoryId(null);
-                    }}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="اختر التصنيف الرئيسي" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {categories?.map((category) => (
-                          <SelectItem key={category.id} value={category.id.toString()}>
-                            {category.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                   {/* Main Category */}
+                   <div>
+                     <Label>اختر التصنيف الرئيسي</Label>
+                     <Select value={categoryId?.toString()} onValueChange={(value) => {
+                       setCategoryId(parseInt(value));
+                       setSubCategoryId(null);
+                       setChildCategoryId(null);
+                     }}>
+                       <SelectTrigger className={fieldErrors.categoryId ? 'border-red-500' : ''}>
+                         <SelectValue placeholder="اختر التصنيف الرئيسي" />
+                       </SelectTrigger>
+                       <SelectContent>
+                         {categories?.map((category) => (
+                           <SelectItem key={category.id} value={category.id.toString()}>
+                             {category.name}
+                           </SelectItem>
+                         ))}
+                       </SelectContent>
+                     </Select>
+                     {fieldErrors.categoryId && (
+                       <p className="text-sm text-red-500 mt-1">{fieldErrors.categoryId}</p>
+                     )}
+                   </div>
                   
                   {/* Sub Category */}
                   {categoryId && subcategories.length > 0 && (
