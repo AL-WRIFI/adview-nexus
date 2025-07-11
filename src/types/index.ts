@@ -136,7 +136,9 @@ export interface SearchFilters {
   category_id?: number;
   sub_category_id?: number | string;
   child_category_id?: number | string;
+  subcategory_id?: number;
   city_id?: number;
+  district_id?: number;
   brand_id?: number;
   state_id?: number;
   min_price?: number;
@@ -145,6 +147,8 @@ export interface SearchFilters {
   product_condition?: 'new' | 'used' | 'refurbished';
   listing_type?: 'sell' | 'rent' | 'wanted' | 'buy' | 'exchange' | 'service';
   featured?: boolean;
+  verified_user?: boolean;
+  with_images?: boolean;
   sort?: 'newest' | 'oldest' | 'price_asc' | 'price_desc' | 'popular' | 'created_at' | 'updated_at';
   sort_by?: 'newest' | 'oldest' | 'price_asc' | 'price_desc' | 'popular' | 'created_at' | 'updated_at';
   radius?: number;

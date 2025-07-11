@@ -1,7 +1,7 @@
 
 import { ApiResponse } from '@/types';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://haraj-syria.test/api/v1';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://haraj-syria.test/api/v1';
 // const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://haraj-syria.test/api/v1';
 
 // Helper function to get the auth token from storage

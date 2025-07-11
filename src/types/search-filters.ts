@@ -1,4 +1,3 @@
-
 export interface SearchFilters {
   search?: string;
   category_id?: number;

@@ -6,8 +6,7 @@ import {
 } from '@/types';
 // Configuration - Update to use the correct API URL
 const API_CONFIG = {
-  BASE_URL: 'https://haraj-syria.test/api/v1',
-  // BASE_URL: 'https://haraj-syria.test/api/v1',
+  BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://haraj-syria.test/api/v1',
   TIMEOUT: 30000,
   RETRY_ATTEMPTS: 3,
   RETRY_DELAY: 1000,

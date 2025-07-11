@@ -83,7 +83,7 @@ export function EnhancedMobileCategoryBar({
 
   return (
     <div dir="rtl" className="bg-white dark:bg-dark-background border-b border-border dark:border-dark-border">
-      <div className="py-4">
+      <div className="py-3">
         <div ref={sliderRef} className="keen-slider touch-pan-x select-none">
           {pages.map((page, pageIndex) => (
             <div key={pageIndex} className="keen-slider__slide px-4">
@@ -99,7 +99,7 @@ export function EnhancedMobileCategoryBar({
                         : "opacity-80 hover:opacity-100"
                     )}
                   >
-                    <div className="w-16 h-16 mb-1 rounded-sm overflow-hidden">
+                    <div className={`w-14 h-14 mb-1 rounded-sm overflow-hidden border-2 transition-all ${selectedCategory === category.id ? 'border-brand' : 'border-gray-200 dark:border-gray-700'}`}>
                       <img
                         src={getCategoryImage(category)}
                         alt={category.name}
@@ -110,7 +110,7 @@ export function EnhancedMobileCategoryBar({
                         }}
                       />
                     </div>
-                    <span className="text-xs text-center font-medium text-gray-800 dark:text-gray-100 leading-tight w-full px-1 truncate max-w-[64px]">
+                    <span className={`text-xs text-center font-medium leading-tight w-full px-1 truncate max-w-[56px] ${selectedCategory === category.id ? 'text-brand' : 'text-foreground'}`}>
                       {category.name}
                     </span>
                   </button>

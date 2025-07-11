@@ -189,7 +189,7 @@ export function AdFilters({
             <SelectValue placeholder="اختر المنطقة" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">جميع المناطق</SelectItem>
+            <SelectItem value="all">جميع المناطق</SelectItem>
             {states.map((state) => (
               <SelectItem key={state.id} value={state.id.toString()}>
                 {state.name}
@@ -207,7 +207,7 @@ export function AdFilters({
               <SelectValue placeholder="اختر المدينة" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">جميع المدن</SelectItem>
+              <SelectItem value="all">جميع المدن</SelectItem>
               {stateCities.map((city) => (
                 <SelectItem key={city.id} value={city.id.toString()}>
                   {city.name}
@@ -225,7 +225,7 @@ export function AdFilters({
               <SelectValue placeholder="اختر الحي" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">جميع الأحياء</SelectItem>
+              <SelectItem value="all">جميع الأحياء</SelectItem>
               {districts.map((district) => (
                 <SelectItem key={district.id} value={district.id.toString()}>
                   {district.name}

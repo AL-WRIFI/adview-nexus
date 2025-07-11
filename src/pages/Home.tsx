@@ -6,8 +6,8 @@ import { MobileFilterSheet } from '@/components/filters/MobileFilterSheet';
 import { Footer } from '@/components/layout/footer';
 import { MobileNav } from '@/components/layout/mobile-nav';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, Loader2, Grid2X2, List, MapPin } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { ChevronLeft, Loader2, Grid2X2, List, MapPin, Search } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAds, useCurrentLocation, useStates } from '@/hooks/use-api';
 import { SearchFilters, Listing } from '@/types';
 import { useAuth } from '@/context/auth-context';
@@ -24,8 +24,10 @@ export default function Home() {
   const [filters, setFilters] = useState<SearchFilters>({});
   const [selectedStateId, setSelectedStateId] = useState<number | undefined>();
   const [nearbyEnabled, setNearbyEnabled] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const { isAuthenticated, user } = useAuth();
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
   
   const { data: locationData, isSuccess: locationLoaded } = useCurrentLocation();
   const { data: states = [] } = useStates();
@@ -52,6 +54,30 @@ export default function Home() {
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
+      {/* Mobile Search Bar - only on mobile */}
+      {isMobile && (
+        <div className="bg-white dark:bg-dark-background border-b border-border dark:border-dark-border px-4 py-3">
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            if (searchQuery.trim()) {
+              navigate(`/search?search=${encodeURIComponent(searchQuery.trim())}`);
+            }
+          }}>
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="ابحث عن منتجات، خدمات، وظائف..."
+                className="w-full h-10 pr-10 pl-4 rounded-lg border border-input bg-background"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              <button type="submit" className="absolute top-0 right-0 h-full px-3 flex items-center">
+                <Search className="h-5 w-5 text-muted-foreground" />
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
       <CategoryBar />
       
       <main className="flex-1 pb-20 md:pb-0">
