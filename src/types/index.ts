@@ -39,6 +39,7 @@ export interface User {
   phone: string;
   email?: string;
   avatar?: string;
+  avatar_url?: string;
   image?: string;
   name: string;
   city: string;
@@ -109,6 +110,7 @@ export interface Listing {
   district?: string;
   comments_count?: number;
   distance_km?: number;
+  is_favorited?: boolean;
 }
 
 export interface ListingDetails extends Omit<Listing, 'location'> {
@@ -310,6 +312,7 @@ export interface ChatParticipant {
   id: number;
   full_name: string;
   image: string;
+  phone?: string;
 }
 
 export interface LastMessage {

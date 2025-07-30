@@ -8,7 +8,8 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Inbox, User, AlertCircle, MessageSquareText } from 'lucide-react';
-import { Chat } from '@/types'; // تأكد من استيراد النوع
+import { Chat } from '@/types';
+import { WhatsAppButton } from '@/components/chat/WhatsAppButton';
 
 // --- تصميم جديد ومحسّن لعرض عنصر المحادثة ---
 const ChatListItem = ({ chat }: { chat: Chat }) => (
@@ -35,14 +36,23 @@ const ChatListItem = ({ chat }: { chat: Chat }) => (
                 {chat.last_message?.message?.text || 'لا توجد رسائل بعد'}
             </p>
         </div>
-        <div className="flex flex-col items-end justify-between h-full gap-1 text-xs ml-auto">
+        <div className="flex flex-col items-end justify-between h-full gap-2 text-xs">
             <time className="text-muted-foreground whitespace-nowrap">{chat.updated_at}</time>
-            {chat.unread_messages_count > 0 && (
-                // إضافة تأثير تكبير عند التمرير باستخدام group-hover
-                <span className="bg-brand text-white font-bold rounded-full h-5 w-5 flex items-center justify-center text-[10px] transform transition-transform group-hover:scale-110">
-                    {chat.unread_messages_count}
-                </span>
-            )}
+            <div className="flex items-center gap-2">
+                {chat.unread_messages_count > 0 && (
+                    <span className="bg-brand text-white font-bold rounded-full h-5 w-5 flex items-center justify-center text-[10px] transform transition-transform group-hover:scale-110">
+                        {chat.unread_messages_count}
+                    </span>
+                )}
+                {chat.other_participant && (
+                    <WhatsAppButton 
+                        phoneNumber={chat.other_participant.phone || ''}
+                        message={`مرحباً ${chat.other_participant.full_name}`}
+                        size="sm"
+                        className="h-6 w-6 p-1"
+                    />
+                )}
+            </div>
         </div>
     </Link>
 );
@@ -73,7 +83,7 @@ export function MessagesTab() {
         retry: 1,
     });
 
-    const chats: Chat[] = apiResponse?.data || [];
+    const chats: Chat[] = apiResponse?.data?.data || [];
 
     const CardBody = () => {
         if (isLoading) {
