@@ -89,11 +89,23 @@ export function AdFilters({
         <div className="grid grid-cols-2 gap-3">
           <div>
             <Label className="text-xs text-muted-foreground mb-1 block">من</Label>
-            <Input type="number" placeholder="0" value={localFilters.min_price || ''} onChange={e => handleFilterUpdate('min_price', e.target.value ? parseInt(e.target.value) : undefined)} className="text-right" />
+            <Input 
+              type="number" 
+              placeholder="0" 
+              value={localFilters.min_price || ''} 
+              onChange={e => handleFilterUpdate('min_price', e.target.value === '' ? undefined : e.target.value)} 
+              className="text-right" 
+            />
           </div>
           <div>
             <Label className="text-xs text-muted-foreground mb-1 block">إلى</Label>
-            <Input type="number" placeholder="∞" value={localFilters.max_price || ''} onChange={e => handleFilterUpdate('max_price', e.target.value ? parseInt(e.target.value) : undefined)} className="text-right" />
+            <Input 
+              type="number" 
+              placeholder="∞" 
+              value={localFilters.max_price || ''} 
+              onChange={e => handleFilterUpdate('max_price', e.target.value === '' ? undefined : e.target.value)} 
+              className="text-right" 
+            />
           </div>
         </div>
       </div>

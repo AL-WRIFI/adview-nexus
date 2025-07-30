@@ -34,17 +34,17 @@ export function CategoryBar() {
   
   const handleSubcategorySelect = (subcategoryId: number) => {
     if (selectedSubcategory === subcategoryId) {
-      setCategory(selectedCategory, undefined, undefined);
+      setCategory(typeof selectedCategory === 'number' ? selectedCategory : undefined, undefined, undefined);
     } else {
-      setCategory(selectedCategory, subcategoryId, undefined);
+      setCategory(typeof selectedCategory === 'number' ? selectedCategory : undefined, subcategoryId, undefined);
     }
   };
 
   const handleChildCategorySelect = (childCategoryId: number) => {
     if (selectedChildCategory === childCategoryId) {
-      setCategory(selectedCategory, selectedSubcategory, undefined);
+      setCategory(typeof selectedCategory === 'number' ? selectedCategory : undefined, typeof selectedSubcategory === 'number' ? selectedSubcategory : undefined, undefined);
     } else {
-      setCategory(selectedCategory, selectedSubcategory, childCategoryId);
+      setCategory(typeof selectedCategory === 'number' ? selectedCategory : undefined, typeof selectedSubcategory === 'number' ? selectedSubcategory : undefined, childCategoryId);
     }
   };
 
@@ -66,11 +66,11 @@ export function CategoryBar() {
     return (
       <div dir="rtl" className="bg-white dark:bg-dark-background border-b border-border dark:border-dark-border">
         <EnhancedMobileCategoryBar
-          selectedCategory={selectedCategory}
+          selectedCategory={typeof selectedCategory === 'number' ? selectedCategory : undefined}
           onCategorySelect={handleCategorySelect}
-          selectedSubcategory={selectedSubcategory}
+          selectedSubcategory={typeof selectedSubcategory === 'number' ? selectedSubcategory : undefined}
           onSubcategorySelect={handleSubcategorySelect}
-          selectedChildCategory={selectedChildCategory}
+          selectedChildCategory={typeof selectedChildCategory === 'number' ? selectedChildCategory : undefined}
           onChildCategorySelect={handleChildCategorySelect}
         />
       </div>
@@ -80,8 +80,8 @@ export function CategoryBar() {
   return (
     <div dir="rtl" className="bg-white dark:bg-dark-background border-b border-border dark:border-dark-border">
       <div className="container mx-auto px-4 py-4 bg-white dark:bg-dark-background">
-        <ScrollableContainer showScrollbar={categories && categories.length > 6}>
-          <div className="flex gap-6 min-w-max">
+        <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent hover:scrollbar-thumb-gray-400 dark:hover:scrollbar-thumb-gray-500">
+          <div className="flex gap-6 min-w-max pb-2">
             {loadingCategories ? (
               <span className="text-sm text-muted-foreground py-4">جاري تحميل التصنيفات...</span>
             ) : (
@@ -98,13 +98,13 @@ export function CategoryBar() {
               })
             )}
           </div>
-        </ScrollableContainer>
+        </div>
       </div>
       {selectedCategory && subcategories.length > 0 && (
         <div className="bg-gray-50 dark:bg-dark-surface">
           <div className="container mx-auto px-4 py-2">
-            <ScrollableContainer showScrollbar={subcategories.length > 4}>
-              <div className="flex flex-col gap-1 min-w-max">
+            <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent hover:scrollbar-thumb-gray-400 dark:hover:scrollbar-thumb-gray-500">
+              <div className="flex flex-col gap-1 min-w-max pb-2">
                 <div className="flex gap-2">
                   {subcategories.map(subcategory => {
                     const isSelected = selectedSubcategory === subcategory.id;
@@ -128,7 +128,7 @@ export function CategoryBar() {
                   </div>
                 )}
               </div>
-            </ScrollableContainer>
+            </div>
           </div>
         </div>
       )}
