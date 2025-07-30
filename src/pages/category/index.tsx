@@ -92,32 +92,24 @@ export default function CategoryPage() {
   // Get the listings from the response, ensure it's an array even if undefined
   const listings = listingsResponse?.data || [];
   const totalPages = listingsResponse?.meta?.last_page || listingsResponse?.last_page || 1;
-  const totalResults = listingsResponse?.meta?.total || listings.length || 0;
+  const totalResults = listingsResponse?.meta?.total_items || listings.length || 0;
   return <div className="min-h-screen flex flex-col">
       <Header />
-      {isMobile && (
-        <div className="bg-white dark:bg-dark-background border-b border-border dark:border-dark-border px-4 py-3">
-          <form onSubmit={(e) => {
-            e.preventDefault();
-            if (searchQuery.trim()) {
-              navigate(`/search?search=${encodeURIComponent(searchQuery.trim())}`);
-            }
-          }}>
+      {isMobile && <div className="bg-white dark:bg-dark-background border-b border-border dark:border-dark-border px-4 py-3">
+          <form onSubmit={e => {
+        e.preventDefault();
+        if (searchQuery.trim()) {
+          navigate(`/search?search=${encodeURIComponent(searchQuery.trim())}`);
+        }
+      }}>
             <div className="relative">
-              <input
-                type="text"
-                placeholder="ابحث عن منتجات، خدمات، وظائف..."
-                className="w-full h-10 pr-10 pl-4 rounded-lg border border-input bg-background"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
+              <input type="text" placeholder="ابحث عن منتجات، خدمات، وظائف..." className="w-full h-10 pr-10 pl-4 rounded-lg border border-input bg-background" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
               <button type="submit" className="absolute top-0 right-0 h-full px-3 flex items-center">
                 <Search className="h-5 w-5 text-muted-foreground" />
               </button>
             </div>
           </form>
-        </div>
-      )}
+        </div>}
       <CategoryBar />
       
       <div className="container px-4 mx-auto py-6">
@@ -128,9 +120,7 @@ export default function CategoryPage() {
               <h2 className="text-xl font-bold">
                 {category?.name || 'إعلانات التصنيف'}
               </h2>
-              <p className="text-sm text-muted-foreground">
-                {totalResults} إعلان متاح
-              </p>
+              
             </div>
             
             {/* Mobile Filter Button - Compact */}

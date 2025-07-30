@@ -88,7 +88,7 @@ export function AdvancedFilters({ onFilterChange, currentFilters }: AdvancedFilt
         <div className="space-y-2">
           <Label className="flex items-center gap-2 text-sm font-medium">
             <MapPin className="w-4 h-4" />
-            المدينة
+            المنطقة
           </Label>
           <Select
             value={currentFilters.city_id?.toString() || 'all'}
@@ -99,10 +99,10 @@ export function AdvancedFilters({ onFilterChange, currentFilters }: AdvancedFilt
             }
           >
             <SelectTrigger>
-              <SelectValue placeholder="اختر المدينة" />
+              <SelectValue placeholder="اختر المنطقة" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">جميع المدن</SelectItem>
+              <SelectItem value="all">جميع المناطق</SelectItem>
               {cities.map((city) => (
                 <SelectItem key={city.id} value={city.id.toString()}>
                   {city.name}
@@ -234,8 +234,8 @@ export function AdvancedFilters({ onFilterChange, currentFilters }: AdvancedFilt
             className="w-full"
           />
           <div className="flex justify-between text-sm text-muted-foreground mt-2">
-            <span>{priceRange[0].toLocaleString()} ريال</span>
-            <span>{priceRange[1].toLocaleString()} ريال</span>
+            <span>{priceRange[0].toLocaleString()} SYP</span>
+            <span>{priceRange[1].toLocaleString()} SYP</span>
           </div>
         </div>
         <div className="grid grid-cols-2 gap-4">

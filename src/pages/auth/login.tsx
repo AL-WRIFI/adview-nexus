@@ -23,7 +23,6 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [isPending, setIsPending] = useState(false);
-  const [fieldErrors, setFieldErrors] = useState<{[key: string]: string}>({});
   
   // Get the redirect path from location state or default to dashboard
   const from = location.state?.from || '/dashboard';
@@ -51,15 +50,7 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate inputs and set field errors
-    const errors: {[key: string]: string} = {};
-    
-    if (!identifier) errors.identifier = 'هذا الحقل مطلوب';
-    if (!password) errors.password = 'هذا الحقل مطلوب';
-    
-    setFieldErrors(errors);
-    
-    if (Object.keys(errors).length > 0) {
+    if (!identifier || !password) {
       toast({
         variant: 'destructive',
         title: 'خطأ في البيانات',
@@ -118,17 +109,13 @@ export default function LoginPage() {
                 <Label htmlFor="identifier">
                   البريد الإلكتروني أو رقم الهاتف أو اسم المستخدم
                 </Label>
-                 <Input
-                   id="identifier"
-                   type="text"
-                   placeholder="أدخل البريد الإلكتروني أو رقم الهاتف أو اسم المستخدم"
-                   value={identifier}
-                   onChange={(e) => setIdentifier(e.target.value)}
-                   className={fieldErrors.identifier ? 'border-red-500' : ''}
-                 />
-                 {fieldErrors.identifier && (
-                   <p className="text-sm text-red-500 mt-1">{fieldErrors.identifier}</p>
-                 )}
+                <Input
+                  id="identifier"
+                  type="text"
+                  placeholder="أدخل البريد الإلكتروني أو رقم الهاتف أو اسم المستخدم"
+                  value={identifier}
+                  onChange={(e) => setIdentifier(e.target.value)}
+                />
               </div>
 
               <div className="space-y-2">
@@ -146,14 +133,13 @@ export default function LoginPage() {
                   </Button>
                 </div>
                 <div className="relative">
-                   <Input
-                     id="password"
-                     type={showPassword ? 'text' : 'password'}
-                     placeholder="أدخل كلمة المرور"
-                     value={password}
-                     onChange={(e) => setPassword(e.target.value)}
-                     className={fieldErrors.password ? 'border-red-500' : ''}
-                   />
+                  <Input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="أدخل كلمة المرور"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
                   <Button
                     type="button"
                     variant="ghost"
@@ -163,10 +149,7 @@ export default function LoginPage() {
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </Button>
-                 </div>
-                 {fieldErrors.password && (
-                   <p className="text-sm text-red-500 mt-1">{fieldErrors.password}</p>
-                 )}
+                </div>
               </div>
 
               <div className="flex items-center space-x-2 space-x-reverse">

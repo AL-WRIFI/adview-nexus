@@ -108,6 +108,7 @@ export interface Listing {
   subcategory?: string;
   district?: string;
   comments_count?: number;
+  distance_km?: number;
 }
 
 export interface ListingDetails extends Omit<Listing, 'location'> {
@@ -119,6 +120,7 @@ export interface ListingDetails extends Omit<Listing, 'location'> {
   sub_category_name?: string;
   state_id?: number;
   city_id?: number;
+  district_id?: number;
   state?: string;
   lat?: number;
   lon?: number;
@@ -128,6 +130,7 @@ export interface ListingDetails extends Omit<Listing, 'location'> {
   favorites_count?: number;
   is_favorited?: boolean;
   phone_hidden?: boolean;
+  distance_km?: number;
   related?: Listing[];
   comments?: Comment[];
 }
@@ -284,28 +287,24 @@ export interface UserSettings {
   updated_at: string;
 }
 
-// Type for the data returned by `/account/settings` endpoint
 export interface AccountSettings {
-  // يمكنك تعريف هذه الأنواع لاحقًا إذا احتجت إليها
+
   account_info: unknown; 
   verify_info: unknown;
   business_hours: unknown;
   user_settings: UserSettings;
 }
 
-// Type for the change password mutation payload
 export interface ChangePasswordPayload {
   current_password: string;
   password: string;
   password_confirmation: string;
 }
 
-// Type for the delete account mutation payload
 export interface DeleteAccountPayload {
     reason: string;
     description?: string;
 }
-// In src/types/index.ts or a similar file
 
 export interface ChatParticipant {
   id: number;
@@ -322,10 +321,10 @@ export interface LastMessage {
 
 export interface Chat {
   id: number;
-  other_participant: ChatParticipant | null; // Note: Needs fix in backend to not be null
+  other_participant: ChatParticipant | null;
   last_message: LastMessage | null;
   unread_messages_count: number;
-  updated_at: string; // "منذ 11 شهر"
+  updated_at: string; 
 }
 
 export interface ChatMessage {
@@ -338,6 +337,6 @@ export interface ChatMessage {
   is_seen: boolean;
   sent_by_me: boolean;
   sender_type: 'user' | 'member';
-  created_at: string; // "منذ ثانية"
-  timestamp: string; // "2025-06-28T17:59:38.000000Z"
+  created_at: string;
+  timestamp: string;
 }

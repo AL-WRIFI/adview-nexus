@@ -34,8 +34,7 @@ import { toast } from '@/hooks/use-toast';
 import { Comment } from '@/types';
 import { RelatedAndSuggestedAds } from '@/components/ads/RelatedAndSuggestedAds';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { chatAPI } from '@/services/apis'; // <-- أضف هذا السطر
-
+import { chatAPI } from '@/services/apis';
 export default function AdDetails() {
   const { id } = useParams<{ id: string }>();
   const [activeTab, setActiveTab] = useState('comments');

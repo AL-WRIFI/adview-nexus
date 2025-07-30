@@ -1,22 +1,22 @@
+// src/components/ads/AdCard.tsx
 
 import { Link } from 'react-router-dom';
 import { Clock, MapPin, Star, Eye, Image as ImageIcon, Heart } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Ad, Listing } from '@/types';
+import { Listing } from '@/types';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useAddToFavorites, useRemoveFromFavorites } from '@/hooks/use-api';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 
 interface AdCardProps {
-  ad: Listing | Ad;
+  ad: Listing;
   layout?: 'grid' | 'list';
   className?: string;
-  onFavoriteToggle?: (adId: string | number) => void;
+  onFavoriteToggle?: (adId: number) => void;
   isFavorite?: boolean;
-  distance?: number;
 }
 
 export function AdCard({ 
@@ -25,9 +25,8 @@ export function AdCard({
   className, 
   onFavoriteToggle, 
   isFavorite: externalIsFavorite,
-  distance
 }: AdCardProps) {
-  const [localIsFavorite, setLocalIsFavorite] = useState(false);
+  const [localIsFavorite, setLocalIsFavorite] = useState(ad.is_favorited || false);
   const { isAuthenticated } = useAuth();
   const addToFavorites = useAddToFavorites();
   const removeFromFavorites = useRemoveFromFavorites();
@@ -39,7 +38,6 @@ export function AdCard({
 
   const isFavorite = externalIsFavorite !== undefined ? externalIsFavorite : localIsFavorite;
 
-  // Handle favorite toggle independently if no external handler is provided
   const handleFavoriteToggle = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -56,8 +54,8 @@ export function AdCard({
     if (onFavoriteToggle) {
       onFavoriteToggle(ad.id);
     } else {
-      setLocalIsFavorite(!localIsFavorite);
-      if (localIsFavorite) {
+      setLocalIsFavorite(!isFavorite);
+      if (isFavorite) {
         removeFromFavorites.mutate(ad.id);
       } else {
         addToFavorites.mutate(ad.id);
@@ -65,35 +63,29 @@ export function AdCard({
     }
   };
 
-  // Handle the new image format
-  const getImageUrl = () => {
-    // Check if we have image object with image_url
-    if (ad.image && typeof ad.image === 'object' && 'image_url' in ad.image) {
-      return ad.image.image_url;
-    }
-    
-    // For backwards compatibility, check if image is a string
-    if (typeof ad.image === 'string' && ad.image) {
-      return ad.image;
-    }
-    
-    // If we have images array with url property
+  const getImageUrl = (): string | null => {
+    if (ad.main_image_url) return ad.main_image_url;
+    if (ad.image && typeof ad.image === 'object' && 'image_url' in ad.image) return (ad.image as any).image_url;
+    if (typeof ad.image === 'string' && ad.image) return ad.image;
     if (ad.images && Array.isArray(ad.images) && ad.images.length > 0) {
       const firstImage = ad.images[0];
-      if (firstImage && typeof firstImage === 'object' && 'url' in firstImage) {
-        return (firstImage as any).url;
-      } else if (firstImage && typeof firstImage === 'string') {
-        return firstImage;
-      }
+      if (firstImage && typeof firstImage === 'object' && 'url' in firstImage) return (firstImage as any).url;
+      if (typeof firstImage === 'string') return firstImage;
     }
-    
     return null;
   };
 
   const imageUrl = getImageUrl();
   const hasValidImage = !!imageUrl;
 
-  // Grid view renders a vertical card
+  const formatDistance = (distanceInKm: number): string => {
+    if (distanceInKm < 1) {
+      const meters = Math.round(distanceInKm * 1000);
+      return `${meters} متر`;
+    }
+    return `${distanceInKm.toFixed(1)} كم`;
+  };
+
   if (layout === 'grid') {
     return (
       <Link
@@ -104,7 +96,6 @@ export function AdCard({
           className
         )}
       >
-        {/* Favorite button */}
         <button 
           className="absolute top-2 right-2 z-10 w-8 h-8 rounded-full bg-white/80 flex items-center justify-center shadow-sm"
           onClick={handleFavoriteToggle}
@@ -114,7 +105,6 @@ export function AdCard({
           />
         </button>
 
-        {/* Image section with fixed height */}
         <div className="relative w-full h-40">
           {hasValidImage ? (
             <img 
@@ -122,16 +112,6 @@ export function AdCard({
               alt={ad.title} 
               className="w-full h-full object-cover"
               loading="lazy"
-              onError={(e) => {
-                (e.target as HTMLImageElement).style.display = 'none';
-                const parent = e.currentTarget.parentElement;
-                if (parent) {
-                  parent.classList.add('flex', 'items-center', 'justify-center', 'bg-muted');
-                  const icon = document.createElement('div');
-                  icon.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-muted-foreground"><rect x="2" y="2" width="20" height="20" rx="0" ry="0"></rect><circle cx="12" cy="9" r="3"></circle><path d="M12 12v3"></path><line x1="5" y1="19" x2="19" y2="19"></line></svg>';
-                  parent.appendChild(icon);
-                }
-              }}
             />
           ) : (
             <div className="w-full h-full bg-muted flex items-center justify-center flex-col text-muted-foreground">
@@ -147,13 +127,12 @@ export function AdCard({
           ) : null}
         </div>
         
-        {/* Content section */}
         <div className="p-3 flex flex-col h-40">
           <div className="flex justify-between items-start">
             <h3 className="font-bold text-sm truncate max-w-[180px]" title={ad.title}>{ad.title}</h3>
             {ad.price > 0 && (
               <span className="font-bold text-brand whitespace-nowrap mr-2 text-sm">
-                {ad.price.toLocaleString()} ريال
+                {ad.price.toLocaleString()} SYP
               </span>
             )}
           </div>
@@ -161,12 +140,11 @@ export function AdCard({
          <p className="text-muted-foreground text-xs line-clamp-3 mt-1 leading-snug">
             {ad.description}
           </p>
-
           
           <div className="mt-auto flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
             <div className="flex items-center">
               <MapPin className="h-3 w-3 ml-1" />
-              <span className="truncate max-w-[80px]">{ad.city || ad.city_name || ad.location || 'غير محدد'}</span>
+              <span className="truncate max-w-[80px]">{ad.city_name || ad.city || 'غير محدد'}</span>
             </div>
             <div className="flex items-center">
               <Clock className="h-3 w-3 ml-1" />
@@ -174,13 +152,13 @@ export function AdCard({
             </div>
             <div className="flex items-center">
               <Eye className="h-3 w-3 ml-1" />
-              <span>{ad.views_count || ad.viewCount || 0}</span>
+              <span>{ad.views_count || 0}</span>
             </div>
             
-            {distance !== undefined && (
-              <div className="flex items-center ml-auto text-xs bg-brand/10 text-brand px-2 py-0.5 rounded-full">
-                <MapPin className="h-3 w-3 ml-1" />
-                <span>{distance < 1 ? `${Math.round(distance * 1000)} متر` : `${distance.toFixed(1)} كم`}</span>
+            {ad.distance_km !== undefined && ad.distance_km !== null && (
+              <div className="flex items-center">
+                <MapPin className="h-3 w-3 ml-1 text-brand" />
+                <span className="text-brand font-medium">{formatDistance(ad.distance_km)}</span>
               </div>
             )}
           </div>
@@ -189,7 +167,6 @@ export function AdCard({
     );
   }
 
-  // List view renders a horizontal card
   return (
     <Link 
       to={`/ad/${ad.id}`}
@@ -199,7 +176,6 @@ export function AdCard({
         className
       )}
     >
-      {/* Favorite */}
       <button 
         className="absolute top-2 right-2 z-10 w-7 h-7 rounded-full bg-white/80 flex items-center justify-center shadow-sm"
         onClick={handleFavoriteToggle}
@@ -209,24 +185,13 @@ export function AdCard({
         />
       </button>
 
-      {/* Image */}
-      <div className="w-28 md:w-36 h-28 flex-shrink-0 relative h-36">
+      <div className="w-28 md:w-36 flex-shrink-0 relative">
         {hasValidImage ? (
           <img 
             src={imageUrl} 
             alt={ad.title} 
             className="w-full h-full object-cover"
             loading="lazy"
-            onError={(e) => {
-              (e.target as HTMLImageElement).style.display = 'none';
-              const parent = e.currentTarget.parentElement;
-              if (parent) {
-                parent.classList.add('flex', 'items-center', 'justify-center', 'bg-muted');
-                const icon = document.createElement('div');
-                icon.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-muted-foreground"><rect x="2" y="2" width="20" height="20" rx="0" ry="0"></rect><circle cx="12" cy="9" r="3"></circle><path d="M12 12v3"></path><line x1="5" y1="19" x2="19" y2="19"></line></svg>';
-                parent.appendChild(icon);
-              }
-            }}
           />
         ) : (
           <div className="w-full h-full bg-muted flex items-center justify-center text-muted-foreground">
@@ -240,7 +205,6 @@ export function AdCard({
         )}
       </div>
       
-      {/* Content */}
       <div className="p-3 flex flex-col flex-1 justify-between overflow-hidden">
         <div>
           <div className="flex justify-between items-start gap-2">
@@ -252,7 +216,7 @@ export function AdCard({
             </h3>
             {ad.price > 0 && (
               <span className="font-bold text-brand text-sm shrink-0 whitespace-nowrap">
-                {ad.price.toLocaleString()} ريال
+                {ad.price.toLocaleString()} SYP
               </span>
             )}
           </div>
@@ -262,10 +226,10 @@ export function AdCard({
           </p>
         </div>
 
-        <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2 text-xs text-muted-foreground">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-xs text-muted-foreground">
           <div className="flex items-center">
             <MapPin className="h-3 w-3 ml-1" />
-            <span className="truncate max-w-[80px]">{ad.city || ad.city_name || ad.location || 'غير محدد'}</span>
+            <span className="truncate max-w-[80px]">{ad.city_name || ad.city || 'غير محدد'}</span>
           </div>
           <div className="flex items-center">
             <Clock className="h-3 w-3 ml-1" />
@@ -273,13 +237,13 @@ export function AdCard({
           </div>
           <div className="flex items-center">
             <Eye className="h-3 w-3 ml-1" />
-            <span>{ad.views_count || ad.viewCount || 0}</span>
+            <span>{ad.views_count || 0}</span>
           </div>
           
-          {distance !== undefined && (
-            <div className="flex items-center ml-auto text-xs bg-brand/10 text-brand px-2 py-0.5 rounded-full">
-              <MapPin className="h-3 w-3 ml-1" />
-              <span>{distance < 1 ? `${Math.round(distance * 1000)} متر` : `${distance.toFixed(1)} كم`}</span>
+          {ad.distance_km !== undefined && ad.distance_km !== null && (
+            <div className="flex items-center">
+              <MapPin className="h-3 w-3 ml-1 text-brand" />
+              <span className="text-brand font-medium">{formatDistance(ad.distance_km)}</span>
             </div>
           )}
         </div>

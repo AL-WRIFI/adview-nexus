@@ -28,7 +28,8 @@ import {
   Clock
 } from 'lucide-react';
 import { SearchFilters } from '@/types';
-import { useCategories, useBrands, useStates, useCities } from '@/hooks/use-api';
+import { useCategories, useBrands } from '@/hooks/use-api';
+import { useStates, useCities } from '@/hooks/use-api.ts';
 import { cn } from '@/lib/utils';
 
 interface EnhancedAdFiltersProps {

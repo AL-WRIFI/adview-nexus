@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowRight, Image, X, UploadCloud, ChevronDown, Info, Loader2 } from 'lucide-react';
 import { Header } from '@/components/layout/header';
@@ -12,7 +12,8 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { isAuthenticated } from '@/services/api';
-import { useUpdateListing, useListing, useCategories, useBrands, useStates, useCities, useBrand } from '@/hooks/use-api';
+import { useUpdateListing, useListing, useCategories, useBrands, useStates, useCities, useDistricts } from '@/hooks/use-api';
+import { checkProfanity } from '@/utils/profanity-filter';
 import {
   Select,
   SelectContent,
@@ -36,8 +37,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Card, CardContent } from "@/components/ui/card";
-import { Listing } from '@/types';
 
 interface GalleryImage {
   id: string;
@@ -45,23 +44,32 @@ interface GalleryImage {
 }
 
 interface MainImage {
-  image_id: string;
-  image_url: string;
+  id: string;
+  url: string;
 }
 
 export default function EditAd() {
-  const { listingId } = useParams();
+  const { listingId } = useParams<{ listingId: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  const listingIdNumber = useMemo(() => {
+    const id = Number(listingId);
+    return isNaN(id) ? -1 : id;
+  }, [listingId]);
+
+  const { 
+    data: listing, 
+    isLoading: isLoadingListing, 
+    error: listingError 
+  } = useListing(listingIdNumber);
+
   const { data: categories } = useCategories();
   const { data: states } = useStates();
-  const { data: listing, isLoading: isLoadingListing } = useListing(Number(listingId));
-  const updateListingMutation = useUpdateListing(Number(listingId));
-  const { user } = useAuth();
-  
-  // Local state for form
-  const [currentStep, setCurrentStep] = useState(3); // Start at final step
-  const [adType, setAdType] = useState<'sell' | 'buy' | 'exchange' | 'service'>('sell');
+  const updateListingMutation = useUpdateListing(listingIdNumber);
+
+  const [currentStep, setCurrentStep] = useState(1);
+  const [adType, setAdType] = useState<'sell' | 'rent' | 'job' | 'service'>('sell');
   const [categoryId, setCategoryId] = useState<number | null>(null);
   const [subCategoryId, setSubCategoryId] = useState<number | null>(null);
   const [childCategoryId, setChildCategoryId] = useState<number | null>(null);
@@ -72,290 +80,388 @@ export default function EditAd() {
   const [isNegotiable, setIsNegotiable] = useState(false);
   const [stateId, setStateId] = useState<number | null>(null);
   const [cityId, setCityId] = useState<number | null>(null);
+  const [districtId, setDistrictId] = useState<number | null>(null);
   const [address, setAddress] = useState('');
   const [phoneHidden, setPhoneHidden] = useState(false);
   const [productCondition, setProductCondition] = useState<'new' | 'used'>('used');
-  
-  // Image handling
+
   const [mainImage, setMainImage] = useState<File | null>(null);
-  const [galleryImages, setGalleryImages] = useState<File[]>([]); // New uploaded images
-  
-  // For current images display
-  const [mainImageData, setMainImageData] = useState<MainImage | null>(null);
-  const [galleryImagesData, setGalleryImagesData] = useState<GalleryImage[]>([]);
+  const [mainImagePreview, setMainImagePreview] = useState<string | null>(null);
+  const [existingMainImage, setExistingMainImage] = useState<MainImage | null>(null);
+
+  const [galleryImages, setGalleryImages] = useState<File[]>([]);
+  const [galleryImagePreviews, setGalleryImagePreviews] = useState<string[]>([]);
+  const [existingGalleryImages, setExistingGalleryImages] = useState<GalleryImage[]>([]);
   const [deletedImageIds, setDeletedImageIds] = useState<string[]>([]);
-  
+
   const [agreeTerms, setAgreeTerms] = useState(true);
   const [lat, setLat] = useState<number | null>(null);
   const [lon, setLon] = useState<number | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [fieldErrors, setFieldErrors] = useState<{[key: string]: string}>({});
-  
-  // Get filtered cities based on selected state
-  const { data: cities } = useCities(stateId || undefined);
-  const { data: brands } = useBrand(categoryId || undefined);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isInitialized, setIsInitialized] = useState(false);
 
-  // Check if user is authenticated
+  const { data: cities } = useCities(stateId);
+  const { data: districts } = useDistricts(cityId);
+  const { data: brands } = useBrands(categoryId);
+
+  const subCategories = useMemo(() => {
+    return categoryId && categories 
+      ? categories.find(cat => cat.id === categoryId)?.subcategories || [] 
+      : [];
+  }, [categoryId, categories]);
+
+  const childCategories = useMemo(() => {
+    return subCategoryId && subCategories 
+      ? subCategories.find(sub => sub.id === subCategoryId)?.childcategories || [] 
+      : [];
+  }, [subCategoryId, subCategories]);
+
   useEffect(() => {
     if (!isAuthenticated()) {
-      toast({
-        variant: 'destructive',
+      toast({ 
+        variant: 'destructive', 
         title: 'تسجيل الدخول مطلوب',
-        description: 'يجب تسجيل الدخول لتعديل الإعلان',
+        description: 'يجب تسجيل الدخول لتعديل الإعلانات'
       });
       navigate('/auth/login', { state: { from: `/edit-ad/${listingId}` } });
+      return;
     }
-  }, []);
-  
-  // Load listing data when available
+
+    if (listingIdNumber <= 0) {
+      toast({ 
+        variant: 'destructive', 
+        title: 'معرف غير صالح',
+        description: 'معرف الإعلان غير صحيح'
+      });
+      navigate('/dashboard');
+      return;
+    }
+
+    if (listingError) {
+      toast({ 
+        variant: 'destructive', 
+        title: 'خطأ في تحميل البيانات',
+        description: 'لم نتمكن من تحميل بيانات الإعلان'
+      });
+      navigate('/dashboard');
+    }
+  }, [listingError, listingId, listingIdNumber, navigate, toast]);
+
   useEffect(() => {
-    if (listing) {
-      console.log("Listing data:", listing);
-      
-      // Set form data from listing
-      setAdType(listing.listing_type as any || 'sell');
+    if (listing && !isInitialized) {
+      setAdType(listing.listing_type as 'sell' | 'rent' | 'job' | 'service' || 'sell');
       setCategoryId(listing.category_id || null);
       setSubCategoryId(listing.sub_category_id || null);
       setChildCategoryId(listing.child_category_id || null);
       setBrandId(listing.brand_id || null);
       setAdTitle(listing.title || '');
       setAdDescription(listing.description || '');
-      setAdPrice(listing.price ? listing.price.toString() : '');
-      setIsNegotiable(listing.is_negotiable || false);
+      setAdPrice(listing.price ? String(listing.price) : '');
+      setIsNegotiable(listing.negotiable || false);
       setStateId(listing.state_id || null);
       setCityId(listing.city_id || null);
+      setDistrictId(listing.district_id || null);
       setAddress(listing.address || '');
       setPhoneHidden(listing.phone_hidden || false);
       setProductCondition(listing.condition as 'new' | 'used' || 'used');
-      
-      // Set location data if available
-      if (listing.lat && listing.lon) {
-        setLat(Number(listing.lat));
-        setLon(Number(listing.lon));
-      }
-      
-      // Set image data
+      setLat(listing.lat ? Number(listing.lat) : null);
+      setLon(listing.lon ? Number(listing.lon) : null);
+
       if (listing.image) {
-        setMainImageData(listing.image as MainImage);
+        setExistingMainImage({ 
+          id: listing.image.image_id, 
+          url: listing.image.image_url 
+        });
       }
       
-      // Handle gallery images
       if (listing.images && Array.isArray(listing.images)) {
-        setGalleryImagesData(listing.images as GalleryImage[]);
+        setExistingGalleryImages(listing.images.map(img => ({ 
+          id: img.id, 
+          url: img.url 
+        })));
       }
+
+      setIsInitialized(true);
     }
-  }, [listing]);
-  
-  // Try to get user's location if not already set
+  }, [listing, isInitialized]);
+
   useEffect(() => {
-    if (!lat && !lon && navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setLat(position.coords.latitude);
-          setLon(position.coords.longitude);
-        },
-        (error) => {
-          console.error("Error getting geolocation:", error);
-        }
-      );
-    }
-  }, []);
-  
+    return () => {
+      if (mainImagePreview) URL.revokeObjectURL(mainImagePreview);
+      galleryImagePreviews.forEach(url => URL.revokeObjectURL(url));
+    };
+  }, [mainImagePreview, galleryImagePreviews]);
+
   const handleMainImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setMainImage(file);
+    if (!e.target.files?.[0]) return;
+    
+    const file = e.target.files[0];
+    if (!file.type.startsWith('image/')) {
+      setErrors({ ...errors, image: 'يجب أن يكون الملف صورة' });
+      return;
     }
-  };
-  
-  const handleGalleryImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const newFiles = Array.from(e.target.files);
-      setGalleryImages([...galleryImages, ...newFiles]);
+    if (file.size > 5 * 1024 * 1024) {
+      setErrors({ ...errors, image: 'حجم الصورة كبير جداً (الحد الأقصى 5MB)' });
+      return;
     }
+    
+    setMainImage(file);
+    if (mainImagePreview) URL.revokeObjectURL(mainImagePreview);
+    setMainImagePreview(URL.createObjectURL(file));
+    setErrors({ ...errors, image: '' });
   };
-  
+
   const handleRemoveMainImage = () => {
-    setMainImage(null);
-    setMainImageData(null);
-  };
-  
-  const handleRemoveGalleryImage = (index: number, imageId?: string) => {
-    // Check if this is an existing image (has ID) or a new one
-    if (imageId) {
-      // It's an existing image, mark it for deletion
-      setDeletedImageIds(prev => [...prev, imageId]);
-      // Remove from display
-      setGalleryImagesData(prev => prev.filter(img => img.id !== imageId));
-    } else {
-      // It's a new image, just remove from the array
-      const updatedImages = [...galleryImages];
-      updatedImages.splice(index, 1);
-      setGalleryImages(updatedImages);
+    if (mainImage && mainImagePreview) {
+      URL.revokeObjectURL(mainImagePreview);
+      setMainImage(null);
+      setMainImagePreview(null);
+    } else if (existingMainImage) {
+      setDeletedImageIds(prev => [...prev, existingMainImage.id]);
+      setExistingMainImage(null);
     }
   };
 
-  const isExistingGalleryImage = (url: string): boolean => {
-    return galleryImagesData.some(img => img.url === url);
-  };
-  
-  const getStepTitle = () => {
-    switch (currentStep) {
-      case 1:
-        return 'تعديل نوع الإعلان';
-      case 2:
-        return 'تعديل معلومات الإعلان';
-      case 3:
-        return 'تعديل الصور';
-      case 4:
-        return 'مراجعة نهائية';
-      default:
-        return '';
-    }
-  };
-  
-  const handleNextStep = () => {
-    setCurrentStep(currentStep + 1);
-  };
-  
-  const handlePrevStep = () => {
-    setCurrentStep(currentStep - 1);
-  };
-  
-  const handleUpdate = async () => {
-    if (!agreeTerms) {
+  const handleGalleryImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files?.length) return;
+    
+    const newFiles = Array.from(e.target.files);
+    const validFiles = newFiles.filter(file => 
+      file.type.startsWith('image/') && file.size <= 5 * 1024 * 1024
+    );
+    
+    if (validFiles.length !== newFiles.length) {
       toast({
         variant: 'destructive',
-        title: 'الموافقة على الشروط',
-        description: 'يجب الموافقة على شروط الاستخدام وسياسة الخصوصية',
+        title: 'ملفات غير صالحة',
+        description: 'بعض الملفات ليست صوراً أو حجمها كبير جداً'
+      });
+    }
+    
+    const totalImages = existingGalleryImages.length + galleryImages.length + validFiles.length;
+    if (totalImages > 10) {
+      toast({
+        variant: 'destructive',
+        title: 'الحد الأقصى للصور',
+        description: 'لا يمكن إضافة أكثر من 10 صور'
       });
       return;
     }
+    
+    const newPreviews = validFiles.map(file => URL.createObjectURL(file));
+    setGalleryImages(prev => [...prev, ...validFiles]);
+    setGalleryImagePreviews(prev => [...prev, ...newPreviews]);
+  };
 
-    // Validate required fields and set field errors
-    const errors: {[key: string]: string} = {};
-    if (!categoryId) errors.categoryId = 'هذا الحقل مطلوب';
-    if (!adTitle) errors.adTitle = 'هذا الحقل مطلوب';
-    if (!adDescription) errors.adDescription = 'هذا الحقل مطلوب';
-    if (!stateId) errors.stateId = 'هذا الحقل مطلوب';
-    if (!cityId) errors.cityId = 'هذا الحقل مطلوب';
-    if (!address) errors.address = 'هذا الحقل مطلوب';
+  const handleRemoveNewGalleryImage = (index: number) => {
+    if (galleryImagePreviews[index]) {
+      URL.revokeObjectURL(galleryImagePreviews[index]);
+    }
     
-    setFieldErrors(errors);
+    const newImages = [...galleryImages];
+    const newPreviews = [...galleryImagePreviews];
     
-    if (Object.keys(errors).length > 0) {
+    newImages.splice(index, 1);
+    newPreviews.splice(index, 1);
+    
+    setGalleryImages(newImages);
+    setGalleryImagePreviews(newPreviews);
+  };
+
+  const handleRemoveExistingGalleryImage = (id: string) => {
+    setDeletedImageIds(prev => [...prev, id]);
+    setExistingGalleryImages(prev => prev.filter(img => img.id !== id));
+  };
+
+  const getStepTitle = () => {
+    switch (currentStep) {
+      case 1: return 'تعديل نوع الإعلان';
+      case 2: return 'تعديل معلومات الإعلان';
+      case 3: return 'تعديل الصور';
+      case 4: return 'مراجعة وحفظ التعديلات';
+      default: return '';
+    }
+  };
+
+  const validateStep = useCallback((step: number) => {
+    const newErrors: Record<string, string> = {};
+    
+    if (step === 1) {
+      if (!categoryId) newErrors.category_id = 'التصنيف الرئيسي مطلوب';
+    }
+    
+    if (step === 2) {
+      // Title validation
+      if (!adTitle.trim()) {
+        newErrors.title = 'عنوان الإعلان مطلوب';
+      } else if (adTitle.length > 255) {
+        newErrors.title = 'يجب ألا يتجاوز العنوان 255 حرفاً';
+      } else {
+        const titleCheck = checkProfanity(adTitle);
+        if (!titleCheck.isClean) {
+          newErrors.title = titleCheck.message || 'العنوان يحتوي على كلمات مخالفة';
+        }
+      }
+      
+      // Description validation
+      if (!adDescription.trim()) {
+        newErrors.description = 'وصف الإعلان مطلوب';
+      } else if (adDescription.length > 2000) {
+        newErrors.description = 'يجب ألا يتجاوز الوصف 2000 حرف';
+      } else {
+        const descriptionCheck = checkProfanity(adDescription);
+        if (!descriptionCheck.isClean) {
+          newErrors.description = descriptionCheck.message || 'الوصف يحتوي على كلمات مخالفة';
+        }
+      }
+      
+      // Price validation (only for sell/rent)
+      if (adType !== 'job') {
+        if (!adPrice) {
+          newErrors.price = 'السعر مطلوب';
+        } else if (isNaN(Number(adPrice)) || Number(adPrice) < 0) {
+          newErrors.price = 'الرجاء إدخال سعر صحيح (رقم موجب)';
+        }
+      }
+      
+      // Location validation
+      if (!stateId) newErrors.state_id = 'المحافظة مطلوبة';
+      if (!cityId) newErrors.city_id = 'المدينة مطلوبة';
+      
+      // District and address are now optional (no validation)
+    }
+    
+    if (step === 3) {
+      if (!mainImage && !existingMainImage) newErrors.image = 'الصورة الرئيسية مطلوبة';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  }, [
+    categoryId, adTitle, adDescription, adPrice, 
+    stateId, cityId, adType, mainImage, existingMainImage
+  ]);
+
+  const handleNextStep = () => {
+    if (validateStep(currentStep)) {
+      setCurrentStep(prev => Math.min(4, prev + 1));
+      window.scrollTo(0, 0);
+    } else {
+      toast({
+        variant: 'destructive',
+        title: 'حقول مطلوبة',
+        description: 'يرجى مراجعة الحقول المظللة بالأحمر وتعبئتها.',
+      });
+    }
+  };
+
+  const handlePrevStep = () => {
+    setCurrentStep(prev => Math.max(1, prev - 1));
+    window.scrollTo(0, 0);
+  };
+
+  const handleUpdate = async () => {
+    // Validate all steps
+    const step1Valid = validateStep(1);
+    const step2Valid = validateStep(2);
+    const step3Valid = validateStep(3);
+
+    if (!step1Valid || !step2Valid || !step3Valid) {
       toast({
         variant: 'destructive',
         title: 'معلومات غير مكتملة',
-        description: 'يرجى التأكد من إدخال جميع الحقول المطلوبة',
+        description: 'يوجد أخطاء في بيانات الإعلان. يرجى مراجعة جميع الخطوات وتصحيح الأخطاء.',
       });
+      
+      if (!step1Valid) setCurrentStep(1);
+      else if (!step2Valid) setCurrentStep(2);
+      else if (!step3Valid) setCurrentStep(3);
       return;
     }
     
+    if (!agreeTerms) {
+      toast({ 
+        variant: 'destructive', 
+        title: 'الموافقة على الشروط مطلوبة',
+        description: 'يجب الموافقة على الشروط والأحكام للمتابعة'
+      });
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('_method', 'PUT');
+    formData.append('listing_type', adType);
+    formData.append('category_id', categoryId!.toString());
+    formData.append('title', adTitle.trim());
+    formData.append('description', adDescription.trim());
+    formData.append('price', adPrice || '0');
+    formData.append('state_id', stateId!.toString());
+    formData.append('city_id', cityId!.toString());
+    
+    // Optional fields
+    if (districtId) formData.append('district_id', districtId.toString());
+    if (address) formData.append('address', address.trim());
+    
+    if (subCategoryId) formData.append('sub_category_id', subCategoryId.toString());
+    if (childCategoryId) formData.append('child_category_id', childCategoryId.toString());
+    if (brandId) formData.append('brand_id', brandId.toString());
+    
+    formData.append('negotiable', isNegotiable ? '1' : '0');
+    formData.append('phone_hidden', phoneHidden ? '1' : '0');
+    
+    if (adType === 'sell' || adType === 'rent') {
+      formData.append('condition', productCondition);
+    }
+    
+    if (lat !== null) formData.append('lat', lat.toString());
+    if (lon !== null) formData.append('lon', lon.toString());
+    
+    if (mainImage) formData.append('image', mainImage);
+    
+    galleryImages.forEach(file => formData.append('gallery_images[]', file));
+    deletedImageIds.forEach(id => formData.append('deleted_images[]', id));
+
     try {
-      setIsSubmitting(true);
-      const formData = new FormData();
-      
-      // Add required fields according to server validation
-      formData.append('listing_type', adType);
-      formData.append('category_id', categoryId.toString());
-      formData.append('title', adTitle);
-      formData.append('description', adDescription);
-      formData.append('price', adPrice || '0');
-      formData.append('state_id', stateId.toString());
-      formData.append('city_id', cityId.toString());
-      formData.append('address', address);
-      
-      // Add optional fields
-      if (subCategoryId) formData.append('sub_category_id', subCategoryId.toString());
-      if (childCategoryId) formData.append('child_category_id', childCategoryId.toString());
-      if (brandId) formData.append('brand_id', brandId.toString());
-      formData.append('negotiable', isNegotiable ? '1' : '0');
-      formData.append('phone_hidden', phoneHidden ? '1' : '0');
-      formData.append('product_condition', productCondition);
-      
-      // Handle main image as requested - only send if there's a new image
-      if (mainImage) {
-        formData.append('image', mainImage);
-      }
-      
-      // Add new gallery images if any
-      galleryImages.forEach((image) => {
-        formData.append('gallery_images[]', image);
-      });
-      
-      // Add deleted image IDs if any
-      deletedImageIds.forEach(id => {
-        formData.append('deleted_images[]', id);
-      });
-      
-      // Add location if available
-      if (lat !== null && lon !== null) {
-        formData.append('lat', lat.toString());
-        formData.append('lon', lon.toString());
-      }
-      
-      // Add method override for PUT request
-      formData.append('_method', 'PUT');
-      
-      console.log('Submitting form data:', {
-        listing_type: adType,
-        category_id: categoryId,
-        title: adTitle,
-        price: adPrice,
-        has_main_image: !!mainImage,
-        new_gallery_count: galleryImages.length,
-        deleted_images: deletedImageIds
-      });
-      
-      // Submit the update
       await updateListingMutation.mutateAsync(formData);
-      
-      // Navigate to dashboard on success
-      navigate('/dashboard', {
-        state: { successMessage: 'تم تحديث الإعلان بنجاح' }
+      navigate('/dashboard', { 
+        state: { 
+          successMessage: 'تم تحديث الإعلان بنجاح.',
+          successIcon: 'success'
+        } 
       });
-      
     } catch (error) {
-      console.error("Error updating listing:", error);
       toast({
         variant: 'destructive',
-        title: 'خطأ في تحديث الإعلان',
-        description: 'حدث خطأ أثناء تحديث الإعلان. يرجى المحاولة مرة أخرى',
+        title: 'خطأ في التحديث',
+        description: 'حدث خطأ أثناء محاولة تحديث الإعلان. يرجى المحاولة مرة أخرى.',
       });
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
-  const handleDelete = () => {
-    setIsDeleteDialogOpen(true);
-  };
-  
   const confirmDelete = async () => {
+    const deleteFormData = new FormData();
+    deleteFormData.append('_method', 'DELETE');
+    
     try {
-      // API call to delete listing
-      const deleteFormData = new FormData();
-      deleteFormData.append('_method', 'DELETE');
-      
       await updateListingMutation.mutateAsync(deleteFormData);
-      
       setIsDeleteDialogOpen(false);
-      navigate('/dashboard', {
-        state: { successMessage: 'تم حذف الإعلان بنجاح' }
+      navigate('/dashboard', { 
+        state: { 
+          successMessage: 'تم حذف الإعلان بنجاح.',
+          successIcon: 'success'
+        } 
       });
     } catch (error) {
-      console.error("Error deleting listing:", error);
       toast({
         variant: 'destructive',
-        title: 'خطأ في حذف الإعلان',
-        description: 'حدث خطأ أثناء حذف الإعلان. يرجى المحاولة مرة أخرى',
+        title: 'خطأ في الحذف',
+        description: 'حدث خطأ أثناء محاولة حذف الإعلان. يرجى المحاولة مرة أخرى.',
       });
     }
   };
-  
-  if (isLoadingListing) {
+
+  if (isLoadingListing || !isInitialized) {
     return (
       <div className="min-h-screen flex flex-col">
         <Header />
@@ -369,98 +475,147 @@ export default function EditAd() {
       </div>
     );
   }
-  
+
   return (
-    <div className="min-h-screen flex flex-col bg-background dark:bg-dark-background">
+    <div className="min-h-screen flex flex-col">
       <Header />
-      
       <main className="flex-1 pb-20 md:pb-0">
         <div className="container px-4 mx-auto py-6">
           <div className="max-w-3xl mx-auto">
-            {/* Progress */}
             <div className="mb-6">
-              <h1 className="text-2xl font-bold mb-6 text-center dark:text-gray-100">{getStepTitle()}</h1>
-              
+              <h1 className="text-2xl font-bold mb-6 text-center">{getStepTitle()}</h1>
               <div className="relative">
                 <div className="flex justify-between mb-2">
                   {[1, 2, 3, 4].map((step) => (
-                    <div 
+                    <div
                       key={step}
-                      className={`text-sm font-medium ${
-                        step <= currentStep ? 'text-brand dark:text-brand' : 'text-muted-foreground dark:text-gray-400'
-                      }`}
+                      className={`text-sm font-medium ${step <= currentStep ? 'text-brand' : 'text-muted-foreground'}`}
                     >
                       الخطوة {step}
                     </div>
                   ))}
                 </div>
-                
-                <div className="overflow-hidden h-2 rounded-full bg-gray-200 dark:bg-dark-muted">
-                  <div 
+                <div className="overflow-hidden h-2 rounded-full bg-gray-200">
+                  <div
                     className="h-full bg-brand transition-all duration-300"
                     style={{ width: `${(currentStep / 4) * 100}%` }}
                   />
                 </div>
               </div>
             </div>
-            
-            {/* Step 1: Choose ad type */}
+
             {currentStep === 1 && (
               <div className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {[
-                    { id: 'sell', label: 'بيع منتج'},
-                    { id: 'buy', label: 'شراء' },
-                    { id: 'exchange', label: 'مقايضة'},
-                    { id: 'service', label: 'خدمة',}
+                    { id: 'sell', label: 'بيع منتج' },
+                    { id: 'rent', label: 'تأجير' },
+                    { id: 'job', label: 'وظيفة' },
+                    { id: 'service', label: 'خدمة' }
                   ].map((type) => (
                     <button
                       key={type.id}
-                      className={`p-6 border dark:border-dark-border rounded-lg text-center hover:border-brand transition-colors ${
-                        adType === type.id 
-                          ? 'border-brand bg-brand/5 dark:border-brand dark:bg-brand/10' 
-                          : 'dark:border-dark-border dark:bg-dark-card'
+                      className={`p-6 border rounded-lg text-center hover:border-brand transition-colors ${
+                        adType === type.id ? 'border-brand bg-brand/5' : ''
                       }`}
                       onClick={() => setAdType(type.id as any)}
                     >
-                      <div className="text-lg font-bold dark:text-gray-100">{type.label}</div>
-                      {/* <div className="text-sm text-muted-foreground dark:text-gray-400 mt-1">{type.desc}</div> */}
+                      <div className="text-lg font-bold">{type.label}</div>
                     </button>
                   ))}
                 </div>
-                
                 <div className="space-y-4">
-                   <div>
-                     <Label className="dark:text-gray-200">اختر تصنيف الإعلان</Label>
-                     <Select value={categoryId?.toString()} onValueChange={(value) => setCategoryId(parseInt(value))}>
-                       <SelectTrigger className={`dark:border-dark-border dark:bg-dark-card dark:text-gray-200 ${fieldErrors.categoryId ? 'border-red-500' : ''}`}>
-                         <SelectValue placeholder="اختر التصنيف" />
-                       </SelectTrigger>
-                       <SelectContent className="dark:bg-dark-card dark:border-dark-border">
-                         {categories?.map((category) => (
-                           <SelectItem key={category.id} value={category.id.toString()} className="dark:text-gray-200 dark:focus:bg-dark-muted">
-                             {category.name}
-                           </SelectItem>
-                         ))}
-                       </SelectContent>
-                     </Select>
-                     {fieldErrors.categoryId && (
-                       <p className="text-sm text-red-500 mt-1">{fieldErrors.categoryId}</p>
-                     )}
-                   </div>
+                  <div>
+                    <Label>اختر التصنيف الرئيسي</Label>
+                    <Select
+                      value={categoryId?.toString()}
+                      onValueChange={(value) => {
+                        setCategoryId(parseInt(value));
+                        setSubCategoryId(null);
+                        setChildCategoryId(null);
+                        setBrandId(null);
+                        setErrors({ ...errors, category_id: '' });
+                      }}
+                    >
+                      <SelectTrigger className={errors.category_id ? 'border-red-500' : ''}>
+                        <SelectValue placeholder="اختر التصنيف الرئيسي" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {categories?.map((category) => (
+                          <SelectItem key={category.id} value={category.id.toString()}>
+                            {category.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {errors.category_id && (
+                      <p className="mt-1 text-sm text-red-500">{errors.category_id}</p>
+                    )}
+                  </div>
                   
-                  {/* Brand selection, only for certain categories */}
-                  {(adType === 'sell' || adType === 'buy' || adType === 'exchange') && categoryId && (
+                  {categoryId && subCategories.length > 0 && (
                     <div>
-                      <Label className="dark:text-gray-200">اختر الماركة</Label>
-                      <Select value={brandId?.toString()} onValueChange={(value) => setBrandId(parseInt(value))}>
-                        <SelectTrigger className="dark:border-dark-border dark:bg-dark-card dark:text-gray-200">
+                      <Label>اختر التصنيف الفرعي</Label>
+                      <Select
+                        value={subCategoryId?.toString()}
+                        onValueChange={(value) => {
+                          setSubCategoryId(parseInt(value));
+                          setChildCategoryId(null);
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="اختر التصنيف الفرعي" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {subCategories.map((sub) => (
+                            <SelectItem key={sub.id} value={sub.id.toString()}>
+                              {sub.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                  
+                  {subCategoryId && childCategories.length > 0 && (
+                    <div>
+                      <Label>اختر التصنيف التفصيلي</Label>
+                      <Select
+                        value={childCategoryId?.toString()}
+                        onValueChange={(value) => setChildCategoryId(parseInt(value))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="اختر التصنيف التفصيلي" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {childCategories.map((child) => (
+                            <SelectItem key={child.id} value={child.id.toString()}>
+                              {child.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                  
+                  {(adType === 'sell' || adType === 'rent') && 
+                    categoryId && 
+                    brands && 
+                    Array.isArray(brands) && 
+                    brands.length > 0 && (
+                    <div>
+                      <Label>اختر الماركة (اختياري)</Label>
+                      <Select 
+                        value={brandId?.toString()} 
+                        onValueChange={(value) => setBrandId(parseInt(value))}
+                      >
+                        <SelectTrigger>
                           <SelectValue placeholder="اختر الماركة" />
                         </SelectTrigger>
-                        <SelectContent className="dark:bg-dark-card dark:border-dark-border">
-                          <SelectItem value="0" className="dark:text-gray-200 dark:focus:bg-dark-muted">بدون ماركة</SelectItem>
-                          {brands && Array.isArray(brands) && brands.map((brand) => (
-                            <SelectItem key={brand.id} value={brand.id.toString()} className="dark:text-gray-200 dark:focus:bg-dark-muted">
+                        <SelectContent>
+                          <SelectItem value="0">بدون ماركة</SelectItem>
+                          {brands.map((brand) => (
+                            <SelectItem key={brand.id} value={brand.id.toString()}>
                               {brand.name}
                             </SelectItem>
                           ))}
@@ -469,78 +624,102 @@ export default function EditAd() {
                     </div>
                   )}
                 </div>
-                
-                <div className="flex justify-end pt-4">
-                  <Button onClick={handleNextStep} disabled={!categoryId}>
+                <div className="flex justify-between pt-4">
+                  <Button variant="outline" onClick={() => setCurrentStep(4)}>
+                    العودة للمراجعة
+                  </Button>
+                  <Button onClick={handleNextStep}>
                     التالي
                   </Button>
                 </div>
               </div>
             )}
-            
-            {/* Step 2: Ad details */}
+
             {currentStep === 2 && (
               <div className="space-y-6">
                 <div>
-                  <Label htmlFor="title" className="dark:text-gray-200">عنوان الإعلان</Label>
+                  <Label htmlFor="title">عنوان الإعلان</Label>
                   <Input
                     id="title"
                     value={adTitle}
-                    onChange={(e) => setAdTitle(e.target.value)}
+                    onChange={(e) => {
+                      setAdTitle(e.target.value);
+                      if (errors.title) setErrors({ ...errors, title: '' });
+                    }}
                     placeholder="اكتب عنواناً واضحاً ومختصراً"
-                    className="mt-1 dark:bg-dark-card dark:border-dark-border dark:text-gray-200"
+                    className={`mt-1 ${errors.title ? 'border-red-500' : ''}`}
                   />
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {adTitle.length}/255 حرف
+                  </p>
+                  {errors.title && (
+                    <p className="mt-1 text-sm text-red-500">{errors.title}</p>
+                  )}
                 </div>
                 
                 <div>
-                  <Label htmlFor="description" className="dark:text-gray-200">وصف الإعلان</Label>
+                  <Label htmlFor="description">وصف الإعلان</Label>
                   <Textarea
                     id="description"
                     value={adDescription}
-                    onChange={(e) => setAdDescription(e.target.value)}
+                    onChange={(e) => {
+                      setAdDescription(e.target.value);
+                      if (errors.description) setErrors({ ...errors, description: '' });
+                    }}
                     placeholder="اكتب وصفاً مفصلاً"
                     rows={5}
-                    className="mt-1 resize-none dark:bg-dark-card dark:border-dark-border dark:text-gray-200"
+                    className={`mt-1 resize-none ${errors.description ? 'border-red-500' : ''}`}
                   />
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {adDescription.length}/2000 حرف
+                  </p>
+                  {errors.description && (
+                    <p className="mt-1 text-sm text-red-500">{errors.description}</p>
+                  )}
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="price" className="dark:text-gray-200">السعر (ريال)</Label>
+                    <Label htmlFor="price">السعر (SYP)</Label>
                     <Input
                       id="price"
                       type="number"
                       value={adPrice}
-                      onChange={(e) => setAdPrice(e.target.value)}
+                      onChange={(e) => {
+                        setAdPrice(e.target.value);
+                        if (errors.price) setErrors({ ...errors, price: '' });
+                      }}
                       placeholder="أدخل السعر"
-                      className="mt-1 dark:bg-dark-card dark:border-dark-border dark:text-gray-200"
+                      className={`mt-1 ${errors.price ? 'border-red-500' : ''}`}
+                      disabled={adType === 'job'}
                     />
+                    {errors.price && (
+                      <p className="mt-1 text-sm text-red-500">{errors.price}</p>
+                    )}
                   </div>
                   
                   <div>
                     <div className="h-8" />
                     <div className="flex items-center space-x-2 space-x-reverse mt-1">
-                      <Switch 
-                        id="negotiable" 
+                      <Switch
+                        id="negotiable"
                         checked={isNegotiable}
                         onCheckedChange={setIsNegotiable}
-                        className="dark:bg-dark-muted"
+                        disabled={adType === 'job'}
                       />
-                      <Label htmlFor="negotiable" className="dark:text-gray-200">السعر قابل للتفاوض</Label>
+                      <Label htmlFor="negotiable">السعر قابل للتفاوض</Label>
                     </div>
                   </div>
                 </div>
                 
-                {(adType === 'sell' || adType === 'exchange') && (
+                {(adType === 'sell' || adType === 'rent') && (
                   <div>
-                    <Label htmlFor="condition" className="dark:text-gray-200">حالة المنتج</Label>
+                    <Label htmlFor="condition">حالة المنتج</Label>
                     <div className="grid grid-cols-2 gap-4 mt-1">
                       <button
                         type="button"
                         className={`p-3 border rounded-lg text-center ${
-                          productCondition === 'new' 
-                            ? 'border-brand bg-brand/5 dark:border-brand dark:bg-brand/10' 
-                            : 'dark:border-dark-border dark:bg-dark-card dark:text-gray-300'
+                          productCondition === 'new' ? 'border-brand bg-brand/5' : ''
                         }`}
                         onClick={() => setProductCondition('new')}
                       >
@@ -549,9 +728,7 @@ export default function EditAd() {
                       <button
                         type="button"
                         className={`p-3 border rounded-lg text-center ${
-                          productCondition === 'used' 
-                            ? 'border-brand bg-brand/5 dark:border-brand dark:bg-brand/10' 
-                            : 'dark:border-dark-border dark:bg-dark-card dark:text-gray-300'
+                          productCondition === 'used' ? 'border-brand bg-brand/5' : ''
                         }`}
                         onClick={() => setProductCondition('used')}
                       >
@@ -563,104 +740,153 @@ export default function EditAd() {
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="state" className="dark:text-gray-200">المنطقة / المحافظة</Label>
-                    <Select value={stateId?.toString()} onValueChange={(value) => {
-                      setStateId(parseInt(value));
-                      setCityId(null); // Reset city when changing state
-                    }}>
-                      <SelectTrigger id="state" className="mt-1 dark:bg-dark-card dark:border-dark-border dark:text-gray-200">
-                        <SelectValue placeholder="اختر المنطقة" />
+                    <Label htmlFor="state">المحافظة</Label>
+                    <Select
+                      value={stateId?.toString()}
+                      onValueChange={(value) => {
+                        setStateId(parseInt(value));
+                        setCityId(null);
+                        setDistrictId(null);
+                        setErrors({ ...errors, state_id: '', city_id: '', district_id: '' });
+                      }}
+                    >
+                      <SelectTrigger 
+                        id="state" 
+                        className={`mt-1 ${errors.state_id ? 'border-red-500' : ''}`}
+                      >
+                        <SelectValue placeholder="اختر المحافظة" />
                       </SelectTrigger>
-                      <SelectContent className="dark:bg-dark-card dark:border-dark-border">
-                        {states?.map((state) => (
-                          <SelectItem key={state.id} value={state.id.toString()} className="dark:text-gray-200 dark:focus:bg-dark-muted">
-                            {state.name}
+                      <SelectContent>
+                        {states?.map((s) => (
+                          <SelectItem key={s.id} value={s.id.toString()}>
+                            {s.name}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
+                    {errors.state_id && (
+                      <p className="mt-1 text-sm text-red-500">{errors.state_id}</p>
+                    )}
                   </div>
                   
                   <div>
-                    <Label htmlFor="city" className="dark:text-gray-200">المدينة</Label>
-                    <Select value={cityId?.toString()} onValueChange={(value) => setCityId(parseInt(value))} disabled={!stateId}>
-                      <SelectTrigger id="city" className="mt-1 dark:bg-dark-card dark:border-dark-border dark:text-gray-200">
-                        <SelectValue placeholder={stateId ? "اختر المدينة" : "اختر المنطقة أولاً"} />
+                    <Label htmlFor="city">المدينة</Label>
+                    <Select
+                      value={cityId?.toString()}
+                      onValueChange={(value) => {
+                        setCityId(parseInt(value));
+                        setDistrictId(null);
+                        setErrors({ ...errors, city_id: '', district_id: '' });
+                      }}
+                      disabled={!stateId}
+                    >
+                      <SelectTrigger 
+                        id="city" 
+                        className={`mt-1 ${errors.city_id ? 'border-red-500' : ''}`}
+                      >
+                        <SelectValue placeholder={stateId ? "اختر المدينة" : "اختر المحافظة أولاً"} />
                       </SelectTrigger>
-                      <SelectContent className="dark:bg-dark-card dark:border-dark-border">
-                        {cities?.map((city) => (
-                          <SelectItem key={city.id} value={city.id.toString()} className="dark:text-gray-200 dark:focus:bg-dark-muted">
-                            {city.name}
+                      <SelectContent>
+                        {cities?.map((c) => (
+                          <SelectItem key={c.id} value={c.id.toString()}>
+                            {c.name}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
+                    {errors.city_id && (
+                      <p className="mt-1 text-sm text-red-500">{errors.city_id}</p>
+                    )}
                   </div>
                 </div>
                 
                 <div>
-                  <Label htmlFor="address" className="dark:text-gray-200">العنوان التفصيلي</Label>
+                  <Label htmlFor="district">الحي (اختياري)</Label>
+                  <Select
+                    value={districtId?.toString()}
+                    onValueChange={(value) => {
+                      setDistrictId(parseInt(value));
+                      if (errors.district_id) setErrors({ ...errors, district_id: '' });
+                    }}
+                    disabled={!cityId}
+                  >
+                    <SelectTrigger id="district">
+                      <SelectValue placeholder={cityId ? "اختر الحي" : "اختر المدينة أولاً"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {districts?.map((d) => (
+                        <SelectItem key={d.id} value={d.id.toString()}>
+                          {d.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div>
+                  <Label htmlFor="address">العنوان التفصيلي (اختياري)</Label>
                   <Input
                     id="address"
                     value={address}
-                    onChange={(e) => setAddress(e.target.value)}
+                    onChange={(e) => {
+                      setAddress(e.target.value);
+                      if (errors.address) setErrors({ ...errors, address: '' });
+                    }}
                     placeholder="أدخل العنوان التفصيلي"
-                    className="mt-1 dark:bg-dark-card dark:border-dark-border dark:text-gray-200"
+                    className="mt-1"
                   />
                 </div>
                 
                 <div className="pt-2">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="contact-settings" className="dark:text-gray-200">معلومات الاتصال</Label>
+                    <Label htmlFor="contact-settings">معلومات الاتصال</Label>
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Button variant="ghost" size="icon" className="dark:text-gray-400">
+                          <Button variant="ghost" size="icon">
                             <Info className="h-4 w-4" />
                           </Button>
                         </TooltipTrigger>
-                        <TooltipContent className="dark:bg-dark-card dark:border-dark-border dark:text-gray-200">
+                        <TooltipContent>
                           <p>يمكنك التحكم في كيفية ظهور معلومات الاتصال الخاصة بك</p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
                   </div>
-                  
                   <div className="flex items-center space-x-2 space-x-reverse mt-1">
-                    <Switch 
-                      id="phone-hidden" 
+                    <Switch
+                      id="phone-hidden"
                       checked={phoneHidden}
                       onCheckedChange={setPhoneHidden}
-                      className="dark:bg-dark-muted"
                     />
-                    <Label htmlFor="phone-hidden" className="dark:text-gray-200">إخفاء رقم الهاتف (التواصل عبر الرسائل فقط)</Label>
+                    <Label htmlFor="phone-hidden">
+                      إخفاء رقم الهاتف (التواصل عبر الرسائل فقط)
+                    </Label>
                   </div>
                 </div>
                 
                 <div className="flex justify-between pt-4">
-                  <Button variant="outline" onClick={handlePrevStep} className="dark:bg-dark-card dark:border-dark-border dark:text-gray-200 dark:hover:bg-dark-muted">
+                  <Button variant="outline" onClick={handlePrevStep}>
                     السابق
                   </Button>
-                  <Button 
-                    onClick={handleNextStep} 
-                    disabled={!adTitle || !adDescription || !stateId || !cityId || !address}
-                  >
+                  <Button onClick={handleNextStep}>
                     التالي
                   </Button>
                 </div>
               </div>
             )}
-            
-            {/* Step 3: Images */}
+
             {currentStep === 3 && (
               <div className="space-y-6">
-                {/* Main image */}
                 <div>
-                  <Label className="mb-2 block dark:text-gray-200">الصورة الرئيسية</Label>
-                  
-                  {mainImage ? (
-                    <div className="relative h-64 border rounded-lg overflow-hidden mb-4 dark:border-dark-border dark:bg-dark-muted">
-                      <img src={URL.createObjectURL(mainImage)} alt="الصورة الرئيسية" className="w-full h-full object-contain" />
+                  <Label className="mb-2 block">الصورة الرئيسية</Label>
+                  {mainImagePreview ? (
+                    <div className="relative h-64 border rounded-lg overflow-hidden mb-4">
+                      <img 
+                        src={mainImagePreview} 
+                        alt="معاينة الصورة الرئيسية" 
+                        className="w-full h-full object-contain" 
+                      />
                       <button
                         onClick={handleRemoveMainImage}
                         className="absolute top-2 left-2 bg-red-500 text-white rounded-full p-1"
@@ -668,9 +894,13 @@ export default function EditAd() {
                         <X className="h-4 w-4" />
                       </button>
                     </div>
-                  ) : mainImageData ? (
-                    <div className="relative h-64 border rounded-lg overflow-hidden mb-4 dark:border-dark-border dark:bg-dark-muted">
-                      <img src={mainImageData.image_url} alt="الصورة الرئيسية" className="w-full h-full object-contain" />
+                  ) : existingMainImage ? (
+                    <div className="relative h-64 border rounded-lg overflow-hidden mb-4">
+                      <img 
+                        src={existingMainImage.url} 
+                        alt="الصورة الرئيسية الحالية" 
+                        className="w-full h-full object-contain" 
+                      />
                       <button
                         onClick={handleRemoveMainImage}
                         className="absolute top-2 left-2 bg-red-500 text-white rounded-full p-1"
@@ -679,10 +909,16 @@ export default function EditAd() {
                       </button>
                     </div>
                   ) : (
-                    <label className="relative h-64 border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 mb-4 dark:border-dark-border dark:hover:bg-dark-card/80">
-                      <UploadCloud className="h-16 w-16 text-muted-foreground mb-2 dark:text-gray-400" />
-                      <span className="text-muted-foreground mb-1 dark:text-gray-400">اضغط لإضافة الصورة الرئيسية</span>
-                      <span className="text-xs text-muted-foreground dark:text-gray-500">(مطلوب)</span>
+                    <label 
+                      className={`relative h-64 border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 mb-4 ${
+                        errors.image ? 'border-red-500' : ''
+                      }`}
+                    >
+                      <UploadCloud className="h-16 w-16 text-muted-foreground mb-2" />
+                      <span className="text-muted-foreground mb-1">
+                        اضغط لإضافة الصورة الرئيسية
+                      </span>
+                      <span className="text-xs text-muted-foreground">(مطلوب)</span>
                       <input
                         type="file"
                         className="hidden"
@@ -691,238 +927,266 @@ export default function EditAd() {
                       />
                     </label>
                   )}
-                  
-                  <Label className="mb-2 block dark:text-gray-200">صور إضافية (اختياري)</Label>
-                  
+                  {errors.image && (
+                    <p className="mt-1 text-sm text-red-500">{errors.image}</p>
+                  )}
+
+                  <Label className="mb-2 block">صور إضافية (اختياري)</Label>
                   <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
-                    {/* Display existing gallery images */}
-                    {galleryImagesData.map((image, index) => (
-                      <div key={`existing-${image.id}`} className="relative h-32 border rounded-lg overflow-hidden dark:border-dark-border dark:bg-dark-muted">
-                        <img src={image.url} alt={`صورة ${index + 1}`} className="w-full h-full object-cover" />
+                    {existingGalleryImages.map((image) => (
+                      <div key={image.id} className="relative h-32 border rounded-lg overflow-hidden">
+                        <img 
+                          src={image.url} 
+                          alt={`صورة حالية`} 
+                          className="w-full h-full object-cover" 
+                        />
                         <button
-                          onClick={() => handleRemoveGalleryImage(index, image.id)}
+                          onClick={() => handleRemoveExistingGalleryImage(image.id)}
                           className="absolute top-1 left-1 bg-red-500 text-white rounded-full p-1"
                         >
                           <X className="h-4 w-4" />
                         </button>
-                        <div className="absolute bottom-1 left-1 bg-gray-800 text-white text-xs rounded px-1">
-                          موجودة
-                        </div>
                       </div>
                     ))}
                     
-                    {/* Display newly added gallery images */}
-                    {galleryImages.map((image, index) => (
-                      <div key={`new-${index}`} className="relative h-32 border rounded-lg overflow-hidden dark:border-dark-border dark:bg-dark-muted">
-                        <img src={URL.createObjectURL(image)} alt={`صورة جديدة ${index + 1}`} className="w-full h-full object-cover" />
+                    {galleryImagePreviews.map((preview, index) => (
+                      <div key={index} className="relative h-32 border rounded-lg overflow-hidden">
+                        <img 
+                          src={preview} 
+                          alt={`صورة جديدة ${index + 1}`} 
+                          className="w-full h-full object-cover" 
+                        />
                         <button
-                          onClick={() => handleRemoveGalleryImage(index)}
+                          onClick={() => handleRemoveNewGalleryImage(index)}
                           className="absolute top-1 left-1 bg-red-500 text-white rounded-full p-1"
                         >
                           <X className="h-4 w-4" />
                         </button>
-                        <div className="absolute bottom-1 left-1 bg-green-600 text-white text-xs rounded px-1">
-                          جديدة
-                        </div>
                       </div>
                     ))}
                     
-                    {/* Add new gallery image button */}
-                    {galleryImagesData.length + galleryImages.length < 9 && (
-                      <label className="relative h-32 border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 dark:border-dark-border dark:hover:bg-dark-card/80">
-                        <UploadCloud className="h-10 w-10 text-muted-foreground mb-2 dark:text-gray-400" />
-                        <span className="text-sm text-muted-foreground dark:text-gray-400">اضغط لإضافة صورة</span>
+                    {(existingGalleryImages.length + galleryImages.length) < 10 && (
+                      <label className="relative h-32 border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50">
+                        <UploadCloud className="h-10 w-10 text-muted-foreground mb-2" />
+                        <span className="text-sm text-muted-foreground">
+                          اضغط لإضافة صورة
+                        </span>
                         <input
                           type="file"
                           className="hidden"
                           accept="image/*"
                           onChange={handleGalleryImageChange}
+                          multiple
                         />
                       </label>
                     )}
                   </div>
                   
-                  <Card className="dark:bg-dark-surface dark:border-dark-border">
-                    <CardContent className="p-4 text-blue-700 text-sm dark:text-blue-400">
-                      <div className="flex items-start">
-                        <Info className="h-5 w-5 ml-2 flex-shrink-0 mt-0.5" />
-                        <div>
-                          <p className="font-bold mb-1">نصائح لصور أفضل:</p>
-                          <ul className="list-disc pr-5">
-                            <li>استخدم صوراً واضحة وبجودة عالية</li>
-                            <li>أضف صوراً من زوايا مختلفة</li>
-                            <li>تأكد من إضاءة جيدة للصور</li>
-                            <li>تجنب استخدام شعارات أو نصوص على الصور</li>
-                          </ul>
-                        </div>
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-blue-700 text-sm">
+                    <div className="flex items-start">
+                      <Info className="h-5 w-5 ml-2 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-bold mb-1">نصائح لصور أفضل:</p>
+                        <ul className="list-disc pr-5">
+                          <li>استخدم صوراً واضحة وبجودة عالية</li>
+                          <li>أضف صوراً من زوايا مختلفة</li>
+                          <li>تأكد من إضاءة جيدة للصور</li>
+                          <li>تجنب استخدام شعارات أو نصوص على الصور</li>
+                        </ul>
                       </div>
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </div>
                 </div>
                 
                 <div className="flex justify-between pt-4">
-                  <Button variant="outline" onClick={handlePrevStep} className="dark:bg-dark-card dark:border-dark-border dark:text-gray-200 dark:hover:bg-dark-muted">
+                  <Button variant="outline" onClick={handlePrevStep}>
                     السابق
                   </Button>
-                  <Button onClick={handleNextStep} disabled={!mainImage && !mainImageData}>
+                  <Button 
+                    onClick={handleNextStep} 
+                    disabled={!mainImage && !existingMainImage}
+                  >
                     التالي
                   </Button>
                 </div>
               </div>
             )}
-            
-            {/* Step 4: Review */}
+
             {currentStep === 4 && (
               <div className="space-y-6">
-                <Card className="dark:bg-dark-card dark:border-dark-border">
-                  <div className="bg-gray-50 dark:bg-dark-surface border-b dark:border-dark-border p-3">
-                    <h3 className="font-bold dark:text-gray-200">مراجعة معلومات الإعلان</h3>
+                <div className="border rounded-lg overflow-hidden">
+                  <div className="bg-gray-50 border-b p-3 flex justify-between items-center">
+                    <h3 className="font-bold">مراجعة معلومات الإعلان</h3>
+                    <Button 
+                      variant="link" 
+                      onClick={() => setCurrentStep(1)}
+                      className="text-brand"
+                    >
+                      تعديل الأقسام
+                    </Button>
                   </div>
                   
-                  <CardContent className="p-4 space-y-4">
+                  <div className="p-4 space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <h4 className="text-sm text-muted-foreground dark:text-gray-400">عنوان الإعلان</h4>
-                        <p className="dark:text-gray-200">{adTitle}</p>
+                        <h4 className="text-sm text-muted-foreground">عنوان الإعلان</h4>
+                        <p>{adTitle}</p>
                       </div>
                       
                       <div>
-                        <h4 className="text-sm text-muted-foreground dark:text-gray-400">التصنيف</h4>
-                        <p className="dark:text-gray-200">{categories?.find(c => c.id === categoryId)?.name || '-'}</p>
+                        <h4 className="text-sm text-muted-foreground">التصنيف</h4>
+                        <p>{categories?.find(c => c.id === categoryId)?.name || '-'}</p>
                       </div>
                       
                       <div>
-                        <h4 className="text-sm text-muted-foreground dark:text-gray-400">المنطقة</h4>
-                        <p className="dark:text-gray-200">{states?.find(s => s.id === stateId)?.name || '-'}</p>
+                        <h4 className="text-sm text-muted-foreground">المحافظة</h4>
+                        <p>{states?.find(s => s.id === stateId)?.name || '-'}</p>
                       </div>
                       
                       <div>
-                        <h4 className="text-sm text-muted-foreground dark:text-gray-400">المدينة</h4>
-                        <p className="dark:text-gray-200">{cities?.find(c => c.id === cityId)?.name || '-'}</p>
+                        <h4 className="text-sm text-muted-foreground">المدينة</h4>
+                        <p>{cities?.find(c => c.id === cityId)?.name || '-'}</p>
                       </div>
                       
+                      {districtId && (
+                        <div>
+                          <h4 className="text-sm text-muted-foreground">الحي</h4>
+                          <p>{districts?.find(d => d.id === districtId)?.name || '-'}</p>
+                        </div>
+                      )}
+                      
+                      {address && (
+                        <div>
+                          <h4 className="text-sm text-muted-foreground">العنوان التفصيلي</h4>
+                          <p>{address}</p>
+                        </div>
+                      )}
+                      
                       <div>
-                        <h4 className="text-sm text-muted-foreground dark:text-gray-400">السعر</h4>
-                        <p className="dark:text-gray-200">
-                          {adPrice ? `${adPrice} ريال` : '-'}
+                        <h4 className="text-sm text-muted-foreground">السعر</h4>
+                        <p>
+                          {adPrice ? `${adPrice} SYP` : '-'}
                           {isNegotiable && adPrice && ' (قابل للتفاوض)'}
                         </p>
                       </div>
                       
                       <div>
-                        <h4 className="text-sm text-muted-foreground dark:text-gray-400">نوع الإعلان</h4>
-                        <p className="dark:text-gray-200">
+                        <h4 className="text-sm text-muted-foreground">نوع الإعلان</h4>
+                        <p>
                           {adType === 'sell' && 'بيع منتج'}
-                          {adType === 'buy' && 'شراء'}
-                          {adType === 'exchange' && 'مقايضة'}
+                          {adType === 'rent' && 'تأجير'}
+                          {adType === 'job' && 'وظيفة'}
                           {adType === 'service' && 'خدمة'}
                         </p>
                       </div>
                       
-                      {(adType === 'sell' || adType === 'exchange') && (
+                      {(adType === 'sell' || adType === 'rent') && (
                         <div>
-                          <h4 className="text-sm text-muted-foreground dark:text-gray-400">حالة المنتج</h4>
-                          <p className="dark:text-gray-200">{productCondition === 'new' ? 'جديد' : 'مستعمل'}</p>
+                          <h4 className="text-sm text-muted-foreground">حالة المنتج</h4>
+                          <p>{productCondition === 'new' ? 'جديد' : 'مستعمل'}</p>
                         </div>
                       )}
                       
                       {brandId && brandId > 0 && brands && Array.isArray(brands) && (
                         <div>
-                          <h4 className="text-sm text-muted-foreground dark:text-gray-400">الماركة</h4>
-                          <p className="dark:text-gray-200">{brands.find(b => b.id === brandId)?.name || '-'}</p>
+                          <h4 className="text-sm text-muted-foreground">الماركة</h4>
+                          <p>{brands.find(b => b.id === brandId)?.name || '-'}</p>
                         </div>
                       )}
                     </div>
                     
                     <div>
-                      <h4 className="text-sm text-muted-foreground dark:text-gray-400">الوصف</h4>
-                      <p className="whitespace-pre-line dark:text-gray-200">{adDescription}</p>
+                      <h4 className="text-sm text-muted-foreground">الوصف</h4>
+                      <p className="whitespace-pre-line">{adDescription}</p>
                     </div>
                     
                     <div>
-                      <h4 className="text-sm text-muted-foreground dark:text-gray-400">الصور</h4>
+                      <h4 className="text-sm text-muted-foreground">الصور</h4>
                       <div className="flex flex-wrap gap-2 mt-1">
-                        {/* Main image */}
-                        {mainImage ? (
+                        {mainImagePreview && (
                           <div className="w-16 h-16 rounded-md overflow-hidden border-2 border-brand">
-                            <img src={URL.createObjectURL(mainImage)} alt="الصورة الرئيسية" className="w-full h-full object-cover" />
-                          </div>
-                        ) : mainImageData && (
-                          <div className="w-16 h-16 rounded-md overflow-hidden border-2 border-brand">
-                            <img src={mainImageData.image_url} alt="الصورة الرئيسية" className="w-full h-full object-cover" />
+                            <img 
+                              src={mainImagePreview} 
+                              alt="الصورة الرئيسية" 
+                              className="w-full h-full object-cover" 
+                            />
                           </div>
                         )}
-
-                        {/* Gallery images - both existing and new */}
-                        {galleryImagesData.map((image, index) => (
-                          <div key={`review-existing-${image.id}`} className="w-16 h-16 rounded-md overflow-hidden dark:border dark:border-dark-border">
-                            <img src={image.url} alt={`صورة ${index + 1}`} className="w-full h-full object-cover" />
+                        
+                        {!mainImagePreview && existingMainImage && (
+                          <div className="w-16 h-16 rounded-md overflow-hidden border-2 border-brand">
+                            <img 
+                              src={existingMainImage.url} 
+                              alt="الصورة الرئيسية" 
+                              className="w-full h-full object-cover" 
+                            />
+                          </div>
+                        )}
+                        
+                        {existingGalleryImages.map((image) => (
+                          <div key={image.id} className="w-16 h-16 rounded-md overflow-hidden">
+                            <img 
+                              src={image.url} 
+                              alt={`صورة`} 
+                              className="w-full h-full object-cover" 
+                            />
                           </div>
                         ))}
                         
-                        {galleryImages.map((image, index) => (
-                          <div key={`review-new-${index}`} className="w-16 h-16 rounded-md overflow-hidden dark:border dark:border-dark-border">
-                            <img src={URL.createObjectURL(image)} alt={`صورة جديدة ${index + 1}`} className="w-full h-full object-cover" />
+                        {galleryImagePreviews.map((preview, index) => (
+                          <div key={index} className="w-16 h-16 rounded-md overflow-hidden">
+                            <img 
+                              src={preview} 
+                              alt={`صورة جديدة ${index + 1}`} 
+                              className="w-full h-full object-cover" 
+                            />
                           </div>
                         ))}
                       </div>
-                      
-                      {deletedImageIds.length > 0 && (
-                        <p className="mt-2 text-xs text-red-500">
-                          سيتم حذف {deletedImageIds.length} من الصور الأصلية
-                        </p>
-                      )}
                     </div>
                     
                     <div>
-                      <h4 className="text-sm text-muted-foreground dark:text-gray-400">معلومات الاتصال</h4>
-                      <p className="dark:text-gray-200">{phoneHidden ? 'رقم الهاتف مخفي' : 'رقم الهاتف مرئي للجميع'}</p>
+                      <h4 className="text-sm text-muted-foreground">معلومات الاتصال</h4>
+                      <p>{phoneHidden ? 'رقم الهاتف مخفي' : 'رقم الهاتف مرئي للجميع'}</p>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
                 
-                <div className="border dark:border-dark-border rounded-lg p-4 bg-gray-50 dark:bg-dark-surface">
+                <div className="border rounded-lg p-4 bg-gray-50">
                   <div className="flex items-center space-x-2 space-x-reverse mb-4">
-                    <input 
-                      type="checkbox" 
-                      id="terms" 
-                      className="rounded border-gray-300 dark:bg-dark-card dark:border-dark-border"
+                    <input
+                      type="checkbox"
+                      id="terms"
+                      className="rounded border-gray-300"
                       checked={agreeTerms}
                       onChange={() => setAgreeTerms(!agreeTerms)}
                     />
-                    <label htmlFor="terms" className="text-sm dark:text-gray-300">
-                      أوافق على <a href="/terms" className="text-brand">شروط الاستخدام</a> و<a href="/privacy" className="text-brand">سياسة الخصوصية</a>
+                    <label htmlFor="terms" className="text-sm">
+                      أوافق على <a href="/terms" className="text-brand">شروط الاستخدام</a> و
+                      <a href="/privacy" className="text-brand">سياسة الخصوصية</a>
                     </label>
                   </div>
                   
                   <div className="grid gap-2">
-                    <Button 
-                      variant="default" 
+                    <Button
+                      variant="default"
                       size="lg"
                       onClick={handleUpdate}
-                      disabled={isSubmitting || !agreeTerms}
-                      className="w-full"
+                      disabled={updateListingMutation.isPending || !agreeTerms}
                     >
-                      {isSubmitting ? (
+                      {updateListingMutation.isPending ? (
                         <>
                           <Loader2 className="ml-2 h-4 w-4 animate-spin" />
-                          جاري تحديث الإعلان...
+                          جاري حفظ التعديلات...
                         </>
                       ) : (
-                        'تحديث الإعلان'
+                        'حفظ التعديلات'
                       )}
                     </Button>
-                    <Button 
-                      variant="outline" 
-                      onClick={handlePrevStep}
-                      className="dark:bg-dark-card dark:border-dark-border dark:text-gray-200 dark:hover:bg-dark-muted"
-                    >
-                      تعديل الإعلان
-                    </Button>
+                    
                     <Button 
                       variant="destructive" 
-                      onClick={handleDelete}
-                      className="mt-2"
+                      onClick={() => setIsDeleteDialogOpen(true)}
                     >
                       <X className="h-4 w-4 ml-1" />
                       حذف الإعلان
@@ -934,18 +1198,21 @@ export default function EditAd() {
           </div>
         </div>
       </main>
-
+      
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent className="dark:bg-dark-card dark:border-dark-border">
+        <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle className="dark:text-gray-100">تأكيد حذف الإعلان</AlertDialogTitle>
-            <AlertDialogDescription className="dark:text-gray-300">
+            <AlertDialogTitle>تأكيد حذف الإعلان</AlertDialogTitle>
+            <AlertDialogDescription>
               هل أنت متأكد من رغبتك في حذف هذا الإعلان؟ لا يمكن التراجع عن هذا الإجراء.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="dark:bg-dark-muted dark:text-gray-200 dark:border-dark-border">إلغاء</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700">
+            <AlertDialogCancel>إلغاء</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmDelete} 
+              className="bg-red-600 hover:bg-red-700"
+            >
               نعم، قم بالحذف
             </AlertDialogAction>
           </AlertDialogFooter>

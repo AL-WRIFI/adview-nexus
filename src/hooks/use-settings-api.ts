@@ -23,18 +23,18 @@ export const useUpdateSettings = () => {
 
   type MutationVariables = { 
     group: 'security' | 'notifications' | 'general', 
-    data: Partial<UserSettings['security'] | UserSettings['notifications'] | UserSettings['general']> 
+    data: any
   };
 
   return useMutation<ApiResponse<UserSettings>, Error, MutationVariables>({
     mutationFn: ({ group, data }) => {
       switch (group) {
         case 'security':
-          return profileAPI.updateSecuritySettings(data);
+          return profileAPI.updateSecuritySettings(data as any);
         case 'notifications':
-          return profileAPI.updateNotificationSettings(data);
+          return profileAPI.updateNotificationSettings(data as any);
         case 'general':
-          return profileAPI.updateGeneralSettings(data);
+          return profileAPI.updateGeneralSettings(data as any);
         default:
           // هذه الحالة لن تحدث أبدًا بفضل TypeScript
           return Promise.reject(new Error('Invalid settings group'));

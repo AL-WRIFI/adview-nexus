@@ -358,8 +358,8 @@ export function MobileFilterDrawer({
         />
       </div>
       <div className="flex justify-between mb-3">
-        <div className="text-sm">{priceRange[0]} ريال</div>
-        <div className="text-sm">{priceRange[1]} ريال</div>
+        <div className="text-sm">{priceRange[0]} SYP</div>
+        <div className="text-sm">{priceRange[1]} SYP</div>
       </div>
       
       <div className="grid grid-cols-2 gap-3">

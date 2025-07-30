@@ -143,11 +143,9 @@ export const useThemeStore = create<ThemeState>()(
       loadThemeFromAPI: async () => {
         set({ isLoading: true });
         try {
-          console.log('🔄 تحميل الألوان من API...');
           const colorSettings = await settingsAPI.getColorSettings();
           if (colorSettings?.data) {
             get().setApiColors(colorSettings.data);
-            console.log('✅ تم تحميل ألوان API بنجاح:', colorSettings.data);
           }
         } catch (error) {
           console.error('❌ فشل في تحميل الألوان من API:', error);
@@ -186,7 +184,6 @@ export const useThemeStore = create<ThemeState>()(
             )
           };
           
-          console.log('🌙 تطبيق الألوان الافتراضية للوضع الداكن مع ألوان API:', finalApiColors);
         } else {
           // الوضع الفاتح - استخدام الألوان الافتراضية للوضع الفاتح
           themeColors = defaultColors;
@@ -196,7 +193,6 @@ export const useThemeStore = create<ThemeState>()(
             Object.entries(apiColors).filter(([key]) => !key.startsWith('dark_'))
           );
           
-          console.log('☀️ تطبيق الألوان الافتراضية للوضع الفاتح مع ألوان API:', finalApiColors);
         }
         
         // تطبيق الألوان الأساسية
@@ -281,7 +277,6 @@ export const useThemeStore = create<ThemeState>()(
           applyDynamicStyles(finalApiColors, actualMode);
         }
 
-        console.log(`🎨 تم تطبيق ألوان الوضع ${actualMode === 'dark' ? 'الداكن' : 'الفاتح'}:`, finalApiColors);
       },
     }),
     {

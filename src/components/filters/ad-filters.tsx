@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { Search, Filter, MapPin, ChevronDown, X, DollarSign, Star, Settings, CheckCircle } from 'lucide-react';
+import { Search, Filter, MapPin, X, DollarSign, Star, Settings, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,14 +12,15 @@ import { useStates, useAllCities } from '@/hooks/use-api';
 import { useCityDistricts } from '@/hooks/use-districts';
 import { SearchFilters } from '@/types';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { requestUserLocation, getStoredLocation } from '@/utils/location';
+import { requestUserLocation } from '@/utils/location';
+import { useFilterStore } from '@/store/filter-store';
 
 interface AdFiltersProps {
   layout: 'sidebar' | 'horizontal';
   onLayoutChange?: (layout: 'grid' | 'list') => void;
   currentLayout?: 'grid' | 'list';
   onFilterChange: (filters: SearchFilters) => void;
-  selectedCategory?: any;
+  initialFilters: SearchFilters;
 }
 
 export function AdFilters({
@@ -28,237 +28,115 @@ export function AdFilters({
   onLayoutChange,
   currentLayout,
   onFilterChange,
-  selectedCategory
+  initialFilters
 }: AdFiltersProps) {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [minPrice, setMinPrice] = useState('');
-  const [maxPrice, setMaxPrice] = useState('');
-  const [selectedStateId, setSelectedStateId] = useState<number | undefined>();
-  const [selectedCityId, setSelectedCityId] = useState<number | undefined>();
-  const [selectedDistrictId, setSelectedDistrictId] = useState<number | undefined>();
-  const [nearbyEnabled, setNearbyEnabled] = useState(false);
-  const [nearbyRadius, setNearbyRadius] = useState(5);
-  const [featuredOnly, setFeaturedOnly] = useState(false);
-  const [condition, setCondition] = useState<'new' | 'used' | 'refurbished' | ''>('');
-  const [listingType, setListingType] = useState<'sell' | 'rent' | 'wanted' | 'exchange' | 'service' | ''>('');
-  const [individualOwners, setIndividualOwners] = useState(false);
-  const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'price_asc' | 'price_desc' | 'popular' | 'created_at' | 'updated_at'>('newest');
-  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [localFilters, setLocalFilters] = useState<SearchFilters>(initialFilters);
+  const { resetFilters: resetGlobalFilters } = useFilterStore();
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
-  const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
-  
   const isMobile = useIsMobile();
-  
-  // API hooks
+
+  useEffect(() => {
+    setLocalFilters(initialFilters);
+  }, [initialFilters]);
+
   const { data: states = [] } = useStates();
   const { data: cities = [] } = useAllCities();
-  const { data: districts = [] } = useCityDistricts(selectedCityId);
+  const { data: districts = [] } = useCityDistricts(localFilters.city_id);
 
-  // Get cities for selected state
-  const stateCities = selectedStateId 
-    ? cities.filter(city => city.state_id === selectedStateId)
-    : [];
+  const stateCities = localFilters.state_id ? cities.filter(city => city.state_id === localFilters.state_id) : [];
 
-  // Check for stored location on component mount
-  useEffect(() => {
-    const stored = getStoredLocation();
-    if (stored) {
-      setUserLocation({ lat: stored.lat, lng: stored.lng });
-    }
-  }, []);
+  const handleFilterUpdate = (key: keyof SearchFilters, value: any) => {
+    setLocalFilters(prev => ({
+      ...prev,
+      [key]: value === 'all' || value === '' ? undefined : value,
+    }));
+  };
 
   const handleLocationToggle = async (enabled: boolean) => {
-    setNearbyEnabled(enabled);
-    
-    if (enabled && !userLocation) {
+    if (enabled) {
       setIsLoadingLocation(true);
       try {
         const location = await requestUserLocation();
-        setUserLocation({ lat: location.lat, lng: location.lng });
+        setLocalFilters(prev => ({ ...prev, lat: location.lat, lon: location.lng, radius: prev.radius || 5 }));
       } catch (error) {
         console.error('Error getting location:', error);
-        setNearbyEnabled(false);
       } finally {
         setIsLoadingLocation(false);
       }
+    } else {
+      setLocalFilters(prev => {
+        const { lat, lon, radius, ...rest } = prev;
+        return rest;
+      });
     }
   };
 
-  // Apply filters - only called when clicking Apply button
   const applyFilters = () => {
-    const filters: SearchFilters = {
-      search: searchTerm || undefined,
-      min_price: minPrice ? parseInt(minPrice) : undefined,
-      max_price: maxPrice ? parseInt(maxPrice) : undefined,
-      state_id: selectedStateId,
-      city_id: selectedCityId,
-      district_id: selectedDistrictId,
-      condition: condition || undefined,
-      listing_type: listingType || undefined,
-      featured: featuredOnly || undefined,
-      sort: sortBy || undefined,
-      verified_user: individualOwners || undefined,
-      ...(nearbyEnabled && userLocation ? {
-        lat: userLocation.lat,
-        lon: userLocation.lng,
-        radius: nearbyRadius
-      } : {})
-    };
-
-    onFilterChange(filters);
+    onFilterChange(localFilters);
   };
 
-  const resetFilters = () => {
-    setSearchTerm('');
-    setMinPrice('');
-    setMaxPrice('');
-    setSelectedStateId(undefined);
-    setSelectedCityId(undefined);
-    setSelectedDistrictId(undefined);
-    setNearbyEnabled(false);
-    setNearbyRadius(5);
-    setFeaturedOnly(false);
-    setCondition('');
-    setListingType('');
-    setIndividualOwners(false);
-    setSortBy('newest');
-    onFilterChange({});
+  const resetLocalAndGlobalFilters = () => {
+    setLocalFilters({});
+    resetGlobalFilters();
   };
-
-  // Count active filters
-  const activeFiltersCount = [
-    minPrice,
-    maxPrice,
-    selectedStateId,
-    selectedCityId,
-    selectedDistrictId,
-    condition,
-    listingType,
-    featuredOnly ? 1 : 0,
-    individualOwners ? 1 : 0,
-    nearbyEnabled ? 1 : 0
-  ].filter(Boolean).length;
+  
+  const activeFiltersCount = Object.values(localFilters).filter(value => value !== undefined && value !== '').length;
 
   const FilterContent = () => (
     <div className="space-y-6">
-      {/* Price Range */}
       <div>
-        <div className="flex items-center gap-2 mb-3">
-          <DollarSign className="h-4 w-4 text-brand" />
-          <Label className="text-sm font-medium">نطاق السعر</Label>
-        </div>
+        <div className="flex items-center gap-2 mb-3"><DollarSign className="h-4 w-4 text-brand" /><Label className="text-sm font-medium">نطاق السعر</Label></div>
         <div className="grid grid-cols-2 gap-3">
           <div>
             <Label className="text-xs text-muted-foreground mb-1 block">من</Label>
-            <Input
-              type="number"
-              placeholder="0"
-              value={minPrice}
-              onChange={(e) => setMinPrice(e.target.value)}
-              className="text-right"
-            />
+            <Input type="number" placeholder="0" value={localFilters.min_price || ''} onChange={e => handleFilterUpdate('min_price', e.target.value ? parseInt(e.target.value) : undefined)} className="text-right" />
           </div>
           <div>
             <Label className="text-xs text-muted-foreground mb-1 block">إلى</Label>
-            <Input
-              type="number"
-              placeholder="∞"
-              value={maxPrice}
-              onChange={(e) => setMaxPrice(e.target.value)}
-              className="text-right"
-            />
+            <Input type="number" placeholder="∞" value={localFilters.max_price || ''} onChange={e => handleFilterUpdate('max_price', e.target.value ? parseInt(e.target.value) : undefined)} className="text-right" />
           </div>
         </div>
       </div>
-
       <Separator />
-
-      {/* Location */}
       <div className="space-y-3">
-        <div className="flex items-center gap-2">
-          <MapPin className="h-4 w-4 text-brand" />
-          <Label className="text-sm font-medium">المنطقة والمدينة</Label>
-        </div>
-        
-        <Select value={selectedStateId?.toString() || ''} onValueChange={(value) => {
-          setSelectedStateId(value ? parseInt(value) : undefined);
-          setSelectedCityId(undefined);
-          setSelectedDistrictId(undefined);
-        }}>
-          <SelectTrigger>
-            <SelectValue placeholder="اختر المنطقة" />
-          </SelectTrigger>
+        <div className="flex items-center gap-2"><MapPin className="h-4 w-4 text-brand" /><Label className="text-sm font-medium">المنطقة والمدينة</Label></div>
+        <Select value={localFilters.state_id?.toString() || 'all'} onValueChange={value => { handleFilterUpdate('state_id', value === 'all' ? undefined : parseInt(value)); handleFilterUpdate('city_id', undefined); handleFilterUpdate('district_id', undefined); }}>
+          <SelectTrigger><SelectValue placeholder="اختر المنطقة" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">جميع المناطق</SelectItem>
-            {states.map((state) => (
-              <SelectItem key={state.id} value={state.id.toString()}>
-                {state.name}
-              </SelectItem>
-            ))}
+            {states.map(state => (<SelectItem key={state.id} value={state.id.toString()}>{state.name}</SelectItem>))}
           </SelectContent>
         </Select>
-
-        {selectedStateId && stateCities.length > 0 && (
-          <Select value={selectedCityId?.toString() || ''} onValueChange={(value) => {
-            setSelectedCityId(value ? parseInt(value) : undefined);
-            setSelectedDistrictId(undefined);
-          }}>
-            <SelectTrigger>
-              <SelectValue placeholder="اختر المدينة" />
-            </SelectTrigger>
+        {localFilters.state_id && stateCities.length > 0 && (
+          <Select value={localFilters.city_id?.toString() || 'all'} onValueChange={value => { handleFilterUpdate('city_id', value === 'all' ? undefined : parseInt(value)); handleFilterUpdate('district_id', undefined); }}>
+            <SelectTrigger><SelectValue placeholder="اختر المدينة" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">جميع المدن</SelectItem>
-              {stateCities.map((city) => (
-                <SelectItem key={city.id} value={city.id.toString()}>
-                  {city.name}
-                </SelectItem>
-              ))}
+              {stateCities.map(city => (<SelectItem key={city.id} value={city.id.toString()}>{city.name}</SelectItem>))}
             </SelectContent>
           </Select>
         )}
-
-        {selectedCityId && districts.length > 0 && (
-          <Select value={selectedDistrictId?.toString() || ''} onValueChange={(value) => {
-            setSelectedDistrictId(value ? parseInt(value) : undefined);
-          }}>
-            <SelectTrigger>
-              <SelectValue placeholder="اختر الحي" />
-            </SelectTrigger>
+        {localFilters.city_id && districts.length > 0 && (
+          <Select value={localFilters.district_id?.toString() || 'all'} onValueChange={value => handleFilterUpdate('district_id', value === 'all' ? undefined : parseInt(value))}>
+            <SelectTrigger><SelectValue placeholder="اختر الحي" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">جميع الأحياء</SelectItem>
-              {districts.map((district) => (
-                <SelectItem key={district.id} value={district.id.toString()}>
-                  {district.name}
-                </SelectItem>
-              ))}
+              {districts.map(district => (<SelectItem key={district.id} value={district.id.toString()}>{district.name}</SelectItem>))}
             </SelectContent>
           </Select>
         )}
       </div>
-
       <Separator />
-
-      {/* Nearby Filter */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <MapPin className="h-4 w-4 text-brand" />
-            <Label className="text-sm font-medium">القريب مني</Label>
-          </div>
-          <Switch
-            checked={nearbyEnabled}
-            onCheckedChange={handleLocationToggle}
-            disabled={isLoadingLocation}
-          />
+          <div className="flex items-center gap-2"><MapPin className="h-4 w-4 text-brand" /><Label className="text-sm font-medium">القريب مني</Label></div>
+          <Switch checked={!!localFilters.radius} onCheckedChange={handleLocationToggle} disabled={isLoadingLocation} />
         </div>
-        
-        {nearbyEnabled && (
+        {!!localFilters.radius && (
           <div>
             <Label className="text-xs text-muted-foreground mb-2 block">المسافة (كلم)</Label>
-            <Select value={nearbyRadius.toString()} onValueChange={(value) => setNearbyRadius(parseInt(value))}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
+            <Select value={localFilters.radius?.toString() || '5'} onValueChange={value => handleFilterUpdate('radius', parseInt(value))}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="5">5 كلم</SelectItem>
                 <SelectItem value="10">10 كلم</SelectItem>
@@ -269,103 +147,35 @@ export function AdFilters({
             </Select>
           </div>
         )}
-
-        {isLoadingLocation && (
-          <p className="text-xs text-muted-foreground">جاري تحديد الموقع...</p>
-        )}
+        {isLoadingLocation && <p className="text-xs text-muted-foreground">جاري تحديد الموقع...</p>}
       </div>
-
       <Separator />
-
-      {/* Featured Only */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Star className="h-4 w-4 text-brand" />
-          <Label className="text-sm font-medium">الإعلانات المميزة فقط</Label>
-        </div>
-        <Switch
-          checked={featuredOnly}
-          onCheckedChange={setFeaturedOnly}
-        />
+        <div className="flex items-center gap-2"><Star className="h-4 w-4 text-brand" /><Label className="text-sm font-medium">الإعلانات المميزة فقط</Label></div>
+        <Switch checked={!!localFilters.featured} onCheckedChange={checked => handleFilterUpdate('featured', checked || undefined)} />
       </div>
-
       <Separator />
-
-      {/* Condition */}
       <div>
-        <div className="flex items-center gap-2 mb-3">
-          <CheckCircle className="h-4 w-4 text-brand" />
-          <Label className="text-sm font-medium">حالة السلعة</Label>
-        </div>
+        <div className="flex items-center gap-2 mb-3"><CheckCircle className="h-4 w-4 text-brand" /><Label className="text-sm font-medium">حالة السلعة</Label></div>
         <div className="grid grid-cols-3 gap-2">
-          {[
-            { value: '', label: 'الكل' },
-            { value: 'new', label: 'جديد' },
-            { value: 'used', label: 'مستخدم' }
-          ].map((item) => (
-            <Button
-              key={item.value}
-              variant={condition === item.value ? "default" : "outline"}
-              size="sm"
-              onClick={() => setCondition(item.value as any)}
-              className="text-xs"
-            >
-              {item.label}
-            </Button>
+          {[{ value: '', label: 'الكل' }, { value: 'new', label: 'جديد' }, { value: 'used', label: 'مستخدم' }].map(item => (
+            <Button key={item.value} variant={localFilters.condition === item.value || (localFilters.condition === undefined && item.value === '') ? "default" : "outline"} size="sm" onClick={() => handleFilterUpdate('condition', item.value)} className="text-xs">{item.label}</Button>
           ))}
         </div>
       </div>
-
       <Separator />
-
-      {/* Listing Type */}
       <div>
-        <div className="flex items-center gap-2 mb-3">
-          <Settings className="h-4 w-4 text-brand" />
-          <Label className="text-sm font-medium">نوع الإعلان</Label>
-        </div>
+        <div className="flex items-center gap-2 mb-3"><Settings className="h-4 w-4 text-brand" /><Label className="text-sm font-medium">نوع الإعلان</Label></div>
         <div className="grid grid-cols-2 gap-2">
-          {[
-            { value: '', label: 'الكل' },
-            { value: 'sell', label: 'بيع' },
-            { value: 'wanted', label: 'مطلوب' },
-            { value: 'rent', label: 'إيجار' },
-            { value: 'exchange', label: 'مقايضة' },
-            { value: 'service', label: 'وظائف' }
-          ].map((item) => (
-            <Button
-              key={item.value}
-              variant={listingType === item.value ? "default" : "outline"}
-              size="sm"
-              onClick={() => setListingType(item.value as any)}
-              className="text-xs"
-            >
-              {item.label}
-            </Button>
+          {[{ value: '', label: 'الكل' }, { value: 'sell', label: 'بيع' }, { value: 'wanted', label: 'مطلوب' }, { value: 'rent', label: 'إيجار' }, { value: 'exchange', label: 'مقايضة' }, { value: 'service', label: 'وظائف' }].map(item => (
+            <Button key={item.value} variant={localFilters.listing_type === item.value || (localFilters.listing_type === undefined && item.value === '') ? "default" : "outline"} size="sm" onClick={() => handleFilterUpdate('listing_type', item.value)} className="text-xs">{item.label}</Button>
           ))}
         </div>
       </div>
-
-      <Separator />
-
-      {/* Individual Owners Only */}
-      <div className="flex items-center justify-between">
-        <Label className="text-sm font-medium">إعلانات المُلّاك الأفراد فقط</Label>
-        <Switch
-          checked={individualOwners}
-          onCheckedChange={setIndividualOwners}
-        />
-      </div>
-
-      <Separator />
-
-      {/* Sort */}
       <div>
         <Label className="text-sm font-medium mb-3 block">ترتيب الإعلانات من</Label>
-        <Select value={sortBy} onValueChange={(value) => setSortBy(value as any)}>
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
+        <Select value={localFilters.sort || 'newest'} onValueChange={value => handleFilterUpdate('sort', value)}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="newest">الأحدث</SelectItem>
             <SelectItem value="oldest">الأقدم</SelectItem>
@@ -375,119 +185,43 @@ export function AdFilters({
           </SelectContent>
         </Select>
       </div>
-
-      {/* Filter Action Buttons */}
       <div className="flex gap-2 pt-4 border-t">
-        <Button variant="outline" onClick={resetFilters} className="flex-1">
-          إعادة تعيين
-        </Button>
-        <Button onClick={applyFilters} className="flex-1">
-          تطبيق الفلاتر
-        </Button>
+        <Button variant="outline" onClick={resetLocalAndGlobalFilters} className="flex-1">إعادة تعيين</Button>
+        <Button onClick={applyFilters} className="flex-1">تطبيق الفلاتر</Button>
       </div>
     </div>
   );
-
-  const AdvancedFiltersDropdown = () => (
-    <div className="relative">
-      <Button
-        variant="outline"
-        onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-        className="flex items-center gap-2"
-      >
-        <Filter className="w-4 h-4" />
-        <span>فلاتر متقدمة</span>
-        {activeFiltersCount > 0 && (
-          <Badge variant="secondary" className="ml-1">
-            {activeFiltersCount}
-          </Badge>
-        )}
-        <ChevronDown className={`w-4 h-4 transition-transform ${showAdvancedFilters ? 'rotate-180' : ''}`} />
-      </Button>
-
-      {showAdvancedFilters && (
-        <div className="absolute top-full mt-2 left-0 w-80 bg-white dark:bg-gray-800 border rounded-lg shadow-lg p-4 z-50 max-h-96 overflow-y-auto">
-          <FilterContent />
-        </div>
-      )}
-    </div>
-  );
-
+  
   if (isMobile) {
     return (
-      <div className="space-y-3">
-        {/* Search Bar */}
-        <div className="flex gap-2">
-          <div className="relative flex-1">
-            <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <Input
-              placeholder="ابحث عن أي شيء..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pr-10"
-            />
-          </div>
-          <Button onClick={applyFilters}>
-            <Search className="w-4 h-4" />
+      <Sheet>
+        <SheetTrigger asChild>
+          <Button variant="outline" size="sm" className="flex items-center gap-2 h-9">
+            <Filter className="w-4 h-4" /><span>فلترة</span>{activeFiltersCount > 0 && (<Badge variant="destructive" className="text-xs">{activeFiltersCount}</Badge>)}
           </Button>
-        </div>
-
-        {/* Mobile Filter Sheet - Compact Button */}
-        <Sheet>
-          <SheetTrigger asChild>
-            <Button variant="outline" size="sm" className="flex items-center gap-2 h-10 px-4">
-              <Filter className="w-4 h-4" />
-              <span>فلترة</span>
-              {activeFiltersCount > 0 && (
-                <Badge variant="destructive" className="text-xs">
-                  {activeFiltersCount}
-                </Badge>
-              )}
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="bottom" className="h-[85vh] overflow-y-auto">
-            <SheetHeader>
-              <div className="flex items-center justify-between">
-                <SheetTitle className="text-xl font-bold text-right">خيارات التصفية</SheetTitle>
-                {activeFiltersCount > 0 && (
-                  <Button variant="ghost" onClick={resetFilters} size="sm">
-                    <X className="w-4 h-4 mr-1" />
-                    مسح الكل
-                  </Button>
-                )}
-              </div>
-            </SheetHeader>
-            <div className="p-4 mt-4">
-              <FilterContent />
+        </SheetTrigger>
+        <SheetContent side="bottom" className="h-[85vh] flex flex-col">
+          <SheetHeader className="p-4 border-b">
+            <div className="flex items-center justify-between">
+              <SheetTitle className="text-xl font-bold text-right">خيارات التصفية</SheetTitle>
+              {activeFiltersCount > 0 && (<Button variant="ghost" onClick={resetLocalAndGlobalFilters} size="sm"><X className="w-4 h-4 mr-1" />مسح الكل</Button>)}
             </div>
-          </SheetContent>
-        </Sheet>
-      </div>
+          </SheetHeader>
+          <div className="flex-1 overflow-y-auto p-4"><FilterContent /></div>
+        </SheetContent>
+      </Sheet>
     );
   }
 
   return (
     <div className="space-y-4">
-      {/* Search Bar */}
       <div className="flex gap-2">
         <div className="relative flex-1">
           <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <Input
-            placeholder="ابحث عن أي شيء..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pr-10"
-          />
+          <Input placeholder="ابحث عن أي شيء..." value={localFilters.search || ''} onChange={e => handleFilterUpdate('search', e.target.value)} className="pr-10" />
         </div>
-        <Button onClick={applyFilters}>
-          <Search className="w-4 h-4" />
-        </Button>
+        <Button onClick={applyFilters}><Search className="w-4 h-4" /></Button>
       </div>
-
-      {/* Advanced Filters Dropdown */}
-      <AdvancedFiltersDropdown />
-
-      {/* Desktop Filters */}
       <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border">
         <FilterContent />
       </div>

@@ -192,7 +192,7 @@ function HorizontalAdsSection({ title, ads, sectionId }: HorizontalAdsSectionPro
                           <span className="text-muted-foreground text-xs">{ad.city_name || 'غير محدد'}</span>
                           {ad.price && (
                             <span className="font-semibold text-brand text-xs">
-                              {ad.price.toLocaleString()} ريال
+                              {ad.price.toLocaleString()} SYP
                             </span>
                           )}
                         </div>

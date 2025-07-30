@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Label } from '@/components/ui/label';
@@ -30,7 +29,42 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [agreeTerms, setAgreeTerms] = useState(false);
-  const [fieldErrors, setFieldErrors] = useState<{[key: string]: string}>({});
+  
+  const [serverErrors, setServerErrors] = useState<Record<string, string[]>>({});
+  
+  const errorTranslations: Record<string, string> = {
+    'The first name field is required.': 'حقل الاسم الأول مطلوب',
+    'The first name must not exceed 255 characters.': 'يجب ألا يتجاوز الاسم الأول 255 حرفاً',
+    'The last name field is required.': 'حقل الاسم الأخير مطلوب',
+    'The last name must not exceed 255 characters.': 'يجب ألا يتجاوز الاسم الأخير 255 حرفاً',
+    'The email field is required.': 'حقل البريد الإلكتروني مطلوب',
+    'The email must be a valid email address.': 'يجب أن يكون البريد الإلكتروني صالحاً',
+    'The email has already been taken.': 'البريد الإلكتروني مستخدم بالفعل',
+    'The phone field is required.': 'حقل رقم الهاتف مطلوب',
+    'The phone has already been taken.': 'رقم الهاتف مستخدم بالفعل',
+    'The city field is required.': 'حقل المدينة مطلوب',
+    'The selected city is invalid.': 'المدينة المختارة غير صالحة',
+    'The state field is required.': 'حقل المنطقة مطلوب',
+    'The selected state is invalid.': 'المنطقة المختارة غير صالحة',
+    'The password field is required.': 'حقل كلمة المرور مطلوب',
+    'The password must be at least 8 characters.': 'يجب أن تكون كلمة المرور 8 أحرف على الأقل',
+    'The password confirmation does not match.': 'كلمات المرور غير متطابقة',
+    
+    // أخطاء خاصة بالمنطقة والمدينة
+    'The city id field is required.': 'حقل المدينة مطلوب',
+    'The state id field is required.': 'حقل المنطقة مطلوب',
+    'The selected city id is invalid.': 'المدينة المختارة غير صالحة',
+    'The selected state id is invalid.': 'المنطقة المختارة غير صالحة',
+    
+    // أخطاء إضافية
+    'The username field is required.': 'حقل اسم المستخدم مطلوب',
+    'The username has already been taken.': 'اسم المستخدم مستخدم بالفعل',
+  };
+  
+  // ترجمة رسالة الخطأ
+  const translateError = (error: string): string => {
+    return errorTranslations[error] || error;
+  };
   
   // Filter cities based on selected state
   const filteredCities = stateId 
@@ -49,22 +83,10 @@ export default function RegisterPage() {
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setServerErrors({}); // Reset server errors
     
-    // Validate inputs and set field errors
-    const errors: {[key: string]: string} = {};
-    
-    if (!firstName) errors.firstName = 'هذا الحقل مطلوب';
-    if (!lastName) errors.lastName = 'هذا الحقل مطلوب';
-    if (!email) errors.email = 'هذا الحقل مطلوب';
-    if (!phone) errors.phone = 'هذا الحقل مطلوب';
-    if (!password) errors.password = 'هذا الحقل مطلوب';
-    if (!confirmPassword) errors.confirmPassword = 'هذا الحقل مطلوب';
-    if (!stateId) errors.stateId = 'هذا الحقل مطلوب';
-    if (!cityId) errors.cityId = 'هذا الحقل مطلوب';
-    
-    setFieldErrors(errors);
-    
-    if (Object.keys(errors).length > 0) {
+    // Validate inputs
+    if (!firstName || !lastName || !email || !phone || !password || !confirmPassword || !stateId || !cityId) {
       toast({
         variant: 'destructive',
         title: 'خطأ في البيانات',
@@ -114,9 +136,38 @@ export default function RegisterPage() {
       
       // Redirect to dashboard
       navigate('/dashboard', { replace: true });
-    } catch (error) {
-      // Error is handled in the mutation
+    } catch (error: any) {
+
+      console.log("Registration error:", error);
+      console.log("Registration error:", error?.response?.data?.errors);
+
+      // Handle validation errors from server
+      if (error?.response?.data?.errors) {
+        console.log("Registration error:", error?.response?.data?.errors);
+        setServerErrors(error.response.data.errors);
+        
+        // Show general error message
+        if (error.response.data.errors.email || error.response.data.errors.phone) {
+          toast({
+            variant: 'destructive',
+            title: 'معلومات مستخدم مسجلة مسبقأ',
+            description: 'البريد الإلكتروني أو رقم الهاتف مستخدم بالفعل',
+          });
+        }
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'خطأ غير متوقع',
+          description: 'حدث خطأ أثناء إنشاء الحساب',
+        });
+      }
     }
+  };
+  
+  // Helper to get translated error message for a field
+  const getTranslatedFieldError = (field: string) => {
+    const error = serverErrors[field]?.[0] || '';
+    return error ? translateError(error) : '';
   };
   
   return (
@@ -137,64 +188,64 @@ export default function RegisterPage() {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="firstName">الاسم الأول</Label>
-                   <Input
-                     id="firstName"
-                     placeholder="الاسم الأول"
-                     value={firstName}
-                     onChange={(e) => setFirstName(e.target.value)}
-                     className={fieldErrors.firstName ? 'border-red-500' : ''}
-                   />
-                   {fieldErrors.firstName && (
-                     <p className="text-sm text-red-500 mt-1">{fieldErrors.firstName}</p>
-                   )}
+                  <Label htmlFor="firstName">الاسم الأول*</Label>
+                  <Input
+                    id="firstName"
+                    placeholder="الاسم الأول"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    className={getTranslatedFieldError('first_name') ? 'border-red-500' : ''}
+                  />
+                  {getTranslatedFieldError('first_name') && (
+                    <p className="text-red-500 text-sm">{getTranslatedFieldError('first_name')}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="lastName">الاسم الأخير</Label>
-                   <Input
-                     id="lastName"
-                     placeholder="الاسم الأخير"
-                     value={lastName}
-                     onChange={(e) => setLastName(e.target.value)}
-                     className={fieldErrors.lastName ? 'border-red-500' : ''}
-                   />
-                   {fieldErrors.lastName && (
-                     <p className="text-sm text-red-500 mt-1">{fieldErrors.lastName}</p>
-                   )}
+                  <Label htmlFor="lastName">الاسم الأخير*</Label>
+                  <Input
+                    id="lastName"
+                    placeholder="الاسم الأخير"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    className={getTranslatedFieldError('last_name') ? 'border-red-500' : ''}
+                  />
+                  {getTranslatedFieldError('last_name') && (
+                    <p className="text-red-500 text-sm">{getTranslatedFieldError('last_name')}</p>
+                  )}
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email">البريد الإلكتروني</Label>
-                 <Input
-                   id="email"
-                   type="email"
-                   placeholder="أدخل البريد الإلكتروني"
-                   value={email}
-                   onChange={(e) => setEmail(e.target.value)}
-                   className={fieldErrors.email ? 'border-red-500' : ''}
-                 />
-                 {fieldErrors.email && (
-                   <p className="text-sm text-red-500 mt-1">{fieldErrors.email}</p>
-                 )}
+                <Label htmlFor="email">البريد الإلكتروني*</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="أدخل البريد الإلكتروني"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className={getTranslatedFieldError('email') ? 'border-red-500' : ''}
+                />
+                {getTranslatedFieldError('email') && (
+                  <p className="text-red-500 text-sm">{getTranslatedFieldError('email')}</p>
+                )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="phone">رقم الهاتف</Label>
-                 <Input
-                   id="phone"
-                   placeholder="أدخل رقم الهاتف"
-                   value={phone}
-                   onChange={(e) => setPhone(e.target.value)}
-                   className={fieldErrors.phone ? 'border-red-500' : ''}
-                 />
-                 {fieldErrors.phone && (
-                   <p className="text-sm text-red-500 mt-1">{fieldErrors.phone}</p>
-                 )}
+                <Label htmlFor="phone">رقم الهاتف*</Label>
+                <Input
+                  id="phone"
+                  placeholder="أدخل رقم الهاتف"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  className={getTranslatedFieldError('phone') ? 'border-red-500' : ''}
+                />
+                {getTranslatedFieldError('phone') && (
+                  <p className="text-red-500 text-sm">{getTranslatedFieldError('phone')}</p>
+                )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="state">المنطقة / المحافظة</Label>
+                <Label htmlFor="state">المنطقة / المحافظة*</Label>
                 <Select 
                   value={stateId?.toString()} 
                   onValueChange={(value) => {
@@ -202,9 +253,12 @@ export default function RegisterPage() {
                     setCityId(null);
                   }}
                 >
-                   <SelectTrigger id="state" className={fieldErrors.stateId ? 'border-red-500' : ''}>
-                     <SelectValue placeholder="اختر المنطقة / المحافظة" />
-                   </SelectTrigger>
+                  <SelectTrigger 
+                    id="state" 
+                    className={getTranslatedFieldError('state_id') || getTranslatedFieldError('state') ? 'border-red-500' : ''}
+                  >
+                    <SelectValue placeholder="اختر المنطقة / المحافظة" />
+                  </SelectTrigger>
                   <SelectContent>
                     {loadingStates ? (
                       <div className="p-2 text-center text-sm text-muted-foreground">
@@ -218,22 +272,27 @@ export default function RegisterPage() {
                       ))
                     )}
                   </SelectContent>
-                 </Select>
-                 {fieldErrors.stateId && (
-                   <p className="text-sm text-red-500 mt-1">{fieldErrors.stateId}</p>
-                 )}
+                </Select>
+                {(getTranslatedFieldError('state_id') || getTranslatedFieldError('state')) && (
+                  <p className="text-red-500 text-sm">
+                    {getTranslatedFieldError('state_id') || getTranslatedFieldError('state')}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="city">المدينة</Label>
+                <Label htmlFor="city">المدينة*</Label>
                 <Select 
                   value={cityId?.toString()} 
                   onValueChange={(value) => setCityId(parseInt(value, 10))}
                   disabled={!stateId}
                 >
-                   <SelectTrigger id="city" className={fieldErrors.cityId ? 'border-red-500' : ''}>
-                     <SelectValue placeholder={stateId ? "اختر المدينة" : "اختر المنطقة أولاً"} />
-                   </SelectTrigger>
+                  <SelectTrigger 
+                    id="city"
+                    className={getTranslatedFieldError('city_id') || getTranslatedFieldError('city') ? 'border-red-500' : ''}
+                  >
+                    <SelectValue placeholder={stateId ? "اختر المدينة" : "اختر المنطقة أولاً"} />
+                  </SelectTrigger>
                   <SelectContent>
                     {!stateId ? (
                       <div className="p-2 text-center text-sm text-muted-foreground">
@@ -255,23 +314,25 @@ export default function RegisterPage() {
                       ))
                     )}
                   </SelectContent>
-                 </Select>
-                 {fieldErrors.cityId && (
-                   <p className="text-sm text-red-500 mt-1">{fieldErrors.cityId}</p>
-                 )}
+                </Select>
+                {(getTranslatedFieldError('city_id') || getTranslatedFieldError('city')) && (
+                  <p className="text-red-500 text-sm">
+                    {getTranslatedFieldError('city_id') || getTranslatedFieldError('city')}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">كلمة المرور</Label>
+                <Label htmlFor="password">كلمة المرور*</Label>
                 <div className="relative">
-                   <Input
-                     id="password"
-                     type={showPassword ? 'text' : 'password'}
-                     placeholder="أدخل كلمة المرور (8 أحرف على الأقل)"
-                     value={password}
-                     onChange={(e) => setPassword(e.target.value)}
-                     className={fieldErrors.password ? 'border-red-500' : ''}
-                   />
+                  <Input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="أدخل كلمة المرور (8 أحرف على الأقل)"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className={getTranslatedFieldError('password') ? 'border-red-500' : ''}
+                  />
                   <Button
                     type="button"
                     variant="ghost"
@@ -281,23 +342,23 @@ export default function RegisterPage() {
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </Button>
-                 </div>
-                 {fieldErrors.password && (
-                   <p className="text-sm text-red-500 mt-1">{fieldErrors.password}</p>
-                 )}
+                </div>
+                {getTranslatedFieldError('password') && (
+                  <p className="text-red-500 text-sm">{getTranslatedFieldError('password')}</p>
+                )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword">تأكيد كلمة المرور</Label>
+                <Label htmlFor="confirmPassword">تأكيد كلمة المرور*</Label>
                 <div className="relative">
-                   <Input
-                     id="confirmPassword"
-                     type={showConfirmPassword ? 'text' : 'password'}
-                     placeholder="أعد إدخال كلمة المرور"
-                     value={confirmPassword}
-                     onChange={(e) => setConfirmPassword(e.target.value)}
-                     className={fieldErrors.confirmPassword ? 'border-red-500' : ''}
-                   />
+                  <Input
+                    id="confirmPassword"
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    placeholder="أعد إدخال كلمة المرور"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className={getTranslatedFieldError('password_confirmation') ? 'border-red-500' : ''}
+                  />
                   <Button
                     type="button"
                     variant="ghost"
@@ -307,10 +368,10 @@ export default function RegisterPage() {
                   >
                     {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </Button>
-                 </div>
-                 {fieldErrors.confirmPassword && (
-                   <p className="text-sm text-red-500 mt-1">{fieldErrors.confirmPassword}</p>
-                 )}
+                </div>
+                {getTranslatedFieldError('password_confirmation') && (
+                  <p className="text-red-500 text-sm">{getTranslatedFieldError('password_confirmation')}</p>
+                )}
               </div>
 
               <div className="flex items-center space-x-2 space-x-reverse">
@@ -332,6 +393,9 @@ export default function RegisterPage() {
                   </Link>
                 </Label>
               </div>
+              {getTranslatedFieldError('agreeTerms') && (
+                <p className="text-red-500 text-sm">{getTranslatedFieldError('agreeTerms')}</p>
+              )}
             </CardContent>
             <CardFooter className="flex flex-col space-y-4">
               <Button 

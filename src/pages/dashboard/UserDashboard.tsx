@@ -11,7 +11,7 @@ import { useAuth } from '@/context/auth-context';
 import { useDeleteListing } from '@/hooks/use-api';
 
 export default function UserDashboard() {
-  const [activePage, setActivePage] = useState('overview');
+  const [activePage, setActivePage] = useState('ads');
   const [selectedAd, setSelectedAd] = useState<string | null>(null);
   const [promoteDialogOpen, setPromoteDialogOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);

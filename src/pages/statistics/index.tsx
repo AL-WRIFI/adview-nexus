@@ -408,7 +408,7 @@ export default function StatisticsPage() {
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="name" />
                         <YAxis />
-                        <Tooltip formatter={(value) => `${value.toLocaleString()} ريال`} />
+                        <Tooltip formatter={(value) => `${value.toLocaleString()} SYP`} />
                         <Legend />
                         <Bar dataKey="yourPrice" name="سعرك" fill="#8B5CF6" />
                         <Bar dataKey="avgPrice" name="متوسط السعر" fill="#6B7280" />

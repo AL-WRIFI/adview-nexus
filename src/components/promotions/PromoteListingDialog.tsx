@@ -132,7 +132,7 @@ export function PromoteListingDialog({ open, onOpenChange, listing }: PromoteLis
                   />
                   <div>
                     <h3 className="font-semibold">{listing.title}</h3>
-                    <p className="text-sm text-muted-foreground">{listing.price} ريال</p>
+                    <p className="text-sm text-muted-foreground">{listing.price} SYP</p>
                   </div>
                 </div>
               </CardContent>
@@ -161,7 +161,7 @@ export function PromoteListingDialog({ open, onOpenChange, listing }: PromoteLis
                                   </p>
                                 </div>
                                 <div className="text-left">
-                                  <p className="text-lg font-bold text-primary">{pkg.price} ريال</p>
+                                  <p className="text-lg font-bold text-primary">{pkg.price} SYP</p>
                                 </div>
                               </div>
                             </Label>
@@ -213,7 +213,7 @@ export function PromoteListingDialog({ open, onOpenChange, listing }: PromoteLis
                               <div className="flex-1">
                                 <h4 className="font-semibold">رصيد المحفظة</h4>
                                 <p className="text-sm text-muted-foreground">
-                                  الرصيد الحالي: {(walletBalance / 100).toFixed(2)} ريال
+                                  الرصيد الحالي: {(walletBalance / 100).toFixed(2)} SYP
                                 </p>
                                 {!canAffordWithWallet && selectedPackageData && (
                                   <Badge variant="destructive" className="mt-1">

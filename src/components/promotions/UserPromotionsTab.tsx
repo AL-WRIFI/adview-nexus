@@ -90,7 +90,7 @@ export function UserPromotionsTab() {
                        promotion.payment_status === 'pending' ? 'في الانتظار' : 'فشل'}
                     </Badge>
                     <p className="text-sm font-medium">
-                      {promotion.amount_paid} ريال
+                      {promotion.amount_paid} SYP
                     </p>
                   </div>
                 </div>

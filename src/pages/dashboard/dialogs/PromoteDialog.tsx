@@ -166,7 +166,7 @@ export function PromoteDialog({ open, onOpenChange, adId }: PromoteDialogProps) 
                   <div className="flex justify-between items-start mb-2">
                     <h3 className="font-semibold">{pkg.name}</h3>
                     <span className="text-lg font-bold text-brand">
-                      {pkg.price} ريال
+                      {pkg.price} SYP
                     </span>
                   </div>
                   <p className="text-sm text-muted-foreground mb-2">
@@ -198,7 +198,7 @@ export function PromoteDialog({ open, onOpenChange, adId }: PromoteDialogProps) 
                     <p><strong>اسم البنك:</strong> البنك الأهلي السعودي</p>
                     <p><strong>رقم الحساب:</strong> 123456789</p>
                     <p><strong>اسم المستفيد:</strong> واحة السوق العربي</p>
-                    <p><strong>المبلغ:</strong> {selectedPackageData?.price} ريال</p>
+                    <p><strong>المبلغ:</strong> {selectedPackageData?.price} SYP</p>
                   </div>
                 </div>
 
