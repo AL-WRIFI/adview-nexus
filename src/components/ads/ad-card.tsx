@@ -1,6 +1,8 @@
+
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Badge, Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { MapPin, Clock, Heart } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Listing } from '@/types';
@@ -16,7 +18,7 @@ interface AdCardProps {
 export function AdCard({ ad, layout = 'grid' }: AdCardProps) {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { addToast } = useToast();
+  const { toast } = useToast();
   
   // Image handling with null safety
   const getFirstImage = () => {
@@ -38,14 +40,14 @@ export function AdCard({ ad, layout = 'grid' }: AdCardProps) {
   const handleFavorite = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!user) {
-      addToast({
+      toast({
         title: 'تسجيل الدخول مطلوب',
         description: 'يرجى تسجيل الدخول لحفظ الإعلان في المفضلة.',
       });
       return;
     }
     // Placeholder for favorite logic
-    addToast({
+    toast({
       title: 'تمت الإضافة إلى المفضلة',
       description: 'يمكنك عرض قائمتك في صفحة المفضلة.',
     });
@@ -54,7 +56,7 @@ export function AdCard({ ad, layout = 'grid' }: AdCardProps) {
   const handleShare = (e: React.MouseEvent) => {
     e.stopPropagation();
     // Placeholder for share logic
-    addToast({
+    toast({
       title: 'تم نسخ رابط الإعلان',
       description: 'يمكنك الآن مشاركة الرابط مع أصدقائك.',
     });
