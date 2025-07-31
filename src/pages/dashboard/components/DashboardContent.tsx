@@ -2,7 +2,7 @@
 import { ProfileTab } from './tabs/ProfileTab';
 import { AdsTab } from './tabs/AdsTab';
 import { FavoritesTab } from './tabs/FavoritesTab';
-import { MessagesTab } from './tabs/MessagesTab';
+import { SimpleMessagesTab } from './tabs/SimpleMessagesTab';
 import { NotificationsTab } from './tabs/NotificationsTab';
 import { PromoteTab } from './tabs/PromoteTab';
 import { StatisticsTab } from './tabs/StatisticsTab';
@@ -47,7 +47,7 @@ export function DashboardContent({
     case 'favorites':
       return <FavoritesTab />;
     case 'messages':
-      return <MessagesTab />;
+      return <SimpleMessagesTab />;
     // case 'notifications':
     //   return <NotificationsTab />;
     case 'promote':
@@ -55,8 +55,8 @@ export function DashboardContent({
     // case 'statistics':
     //   return <StatisticsTab />;
     case 'settings':
-      return <Settings title="الإعدادات" description="صفحة إعدادات الحساب" />;
+      return <Settings title="الإعدادات" description="إعدادات الحساب" />;
     default:
-      return <StatisticsTab title="نظرة عامة" description="لوحة التحكم الرئيسية" />;
+      return <StatisticsTab />;
   }
 }

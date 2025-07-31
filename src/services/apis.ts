@@ -380,50 +380,23 @@ export const commentsAPI = {
   deleteReply: (replyId: number): Promise<ApiResponse<void>> => 
     ApiClient.delete(`/replies/${replyId}`),
 };
-export const chatAPI = {
+// رسائل بسيطة (ليس chat)
+export const messagesAPI = {
   /**
-   * Fetches all chats for the current user.
-   * @param {number} page - The page number for pagination.
-   * @returns {Promise<ApiResponse<PaginatedResponse<Chat>>>}
+   * إرسال رسالة إلى صاحب إعلان
    */
-  getChats: (page: number = 1): Promise<ApiResponse<PaginatedResponse<Chat>>> =>
-    ApiClient.get(`/user/chats?page=${page}`),
+  sendMessage: (data: {
+    recipient_id: number;
+    message: string;
+    listing_id?: number;
+  }): Promise<ApiResponse<any>> =>
+    ApiClient.post('/user/messages', data),
 
   /**
-   * Fetches messages for a specific chat, paginated.
-   * @param {number} chatId - The ID of the chat.
-   * @param {number} page - The page number for pagination.
-   * @returns {Promise<ApiResponse<PaginatedResponse<ChatMessage>>>}
+   * جلب جميع الرسائل للمستخدم
    */
-  getChatMessages: (chatId: number, page: number = 1): Promise<ApiResponse<PaginatedResponse<ChatMessage>>> =>
-    ApiClient.get(`/user/chats/${chatId}?page=${page}`),
-
-  /**
-   * Creates a new chat and sends the first message.
-   * Useful when messaging a user for the first time from an ad page.
-   * @param {FormData} data - Must contain recipient_id, message/file, and optionally listing_id.
-   * @returns {Promise<ApiResponse<ChatMessage>>}
-   */
-  createChat: (data: FormData): Promise<ApiResponse<ChatMessage>> =>
-    ApiClient.post('/user/chats', data),
-
-  /**
-   * Sends a message to an existing chat.
-   * @param {number} chatId - The ID of the chat.
-   * @param {FormData} data - Must contain message and/or file.
-   * @returns {Promise<ApiResponse<ChatMessage>>}
-   */
-  sendMessage: (chatId: number, data: FormData): Promise<ApiResponse<ChatMessage>> =>
-    ApiClient.post(`/user/chats/${chatId}/messages`, data),
-
-  /**
-   * Marks a specific message as seen by the current user.
-   * @param {number} chatId - The ID of the chat.
-   * @param {number} messageId - The ID of the message to mark as seen.
-   * @returns {Promise<ApiResponse<null>>}
-   */
-  markMessageAsSeen: (chatId: number, messageId: number): Promise<ApiResponse<null>> =>
-    ApiClient.post(`/user/chats/${chatId}/messages/${messageId}/seen`),
+  getMessages: (): Promise<ApiResponse<any[]>> =>
+    ApiClient.get('/user/messages'),
 };
 // Helper function to check if user is authenticated
 export const isAuthenticated = (): boolean => {

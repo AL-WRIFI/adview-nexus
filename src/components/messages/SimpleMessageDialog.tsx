@@ -6,11 +6,11 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { User, Send, Loader2, MessageSquare } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { chatAPI } from '@/services/apis';
+import { messagesAPI } from '@/services/apis';
 import { toast } from '@/hooks/use-toast';
 import { Card } from '@/components/ui/card';
 
-interface SendMessageDialogProps {
+interface SimpleMessageDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   listing: {
@@ -26,23 +26,21 @@ interface SendMessageDialogProps {
   };
 }
 
-export function SendMessageDialog({ open, onOpenChange, listing }: SendMessageDialogProps) {
+export function SimpleMessageDialog({ open, onOpenChange, listing }: SimpleMessageDialogProps) {
   const [message, setMessage] = useState('');
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  const createChatMutation = useMutation({
+  const sendMessageMutation = useMutation({
     mutationFn: (messageText: string) => {
-      const formData = new FormData();
-      formData.append('recipient_id', listing.user!.id.toString());
-      formData.append('message', messageText);
-      if (listing.id) {
-        formData.append('listing_id', listing.id.toString());
-      }
-      return chatAPI.createChat(formData);
+      return messagesAPI.sendMessage({
+        recipient_id: listing.user!.id,
+        message: messageText,
+        listing_id: listing.id,
+      });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['chats'] });
+      queryClient.invalidateQueries({ queryKey: ['user-messages'] });
       toast({
         title: 'تم إرسال الرسالة',
         description: 'تم إرسال رسالتك بنجاح',
@@ -62,7 +60,7 @@ export function SendMessageDialog({ open, onOpenChange, listing }: SendMessageDi
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!message.trim() || !listing.user) return;
-    createChatMutation.mutate(message);
+    sendMessageMutation.mutate(message);
   };
 
   return (
@@ -134,16 +132,16 @@ export function SendMessageDialog({ open, onOpenChange, listing }: SendMessageDi
                 variant="outline"
                 onClick={() => onOpenChange(false)}
                 className="flex-1"
-                disabled={createChatMutation.isPending}
+                disabled={sendMessageMutation.isPending}
               >
                 إلغاء
               </Button>
               <Button
                 type="submit"
-                disabled={!message.trim() || createChatMutation.isPending}
+                disabled={!message.trim() || sendMessageMutation.isPending}
                 className="flex-1 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
               >
-                {createChatMutation.isPending ? (
+                {sendMessageMutation.isPending ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin ml-2" />
                     جارٍ الإرسال...

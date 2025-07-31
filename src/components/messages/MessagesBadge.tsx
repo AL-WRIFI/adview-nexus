@@ -4,27 +4,28 @@ import { MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useQuery } from '@tanstack/react-query';
-import { chatAPI } from '@/services/apis';
+import { messagesAPI } from '@/services/apis';
 import { useAuth } from '@/context/auth-context';
 
-export function MessageBadge() {
+export function MessagesBadge() {
   const { isAuthenticated } = useAuth();
   
-  const { data: chatsResponse } = useQuery({
-    queryKey: ['chats'],
-    queryFn: () => chatAPI.getChats(),
+  const { data: messagesResponse } = useQuery({
+    queryKey: ['user-messages'],
+    queryFn: () => messagesAPI.getMessages(),
     enabled: isAuthenticated,
     refetchInterval: 30000, // تحديث كل 30 ثانية
   });
 
-  const chats = chatsResponse?.data?.data || [];
-  const unreadCount = chats.reduce((total: number, chat: any) => total + (chat.unread_messages_count || 0), 0);
+  const messages = messagesResponse?.data || [];
+  // في الرسائل البسيطة، كل رسالة غير مقروءة
+  const unreadCount = messages.length;
 
   if (!isAuthenticated) return null;
 
   return (
     <Button variant="ghost" size="icon" asChild className="relative">
-      <Link to="/dashboard/messages">
+      <Link to="/dashboard">
         <MessageSquare className="w-5 h-5" />
         {unreadCount > 0 && (
           <Badge 

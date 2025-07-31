@@ -25,7 +25,7 @@ import UserDashboard from './pages/dashboard/UserDashboard';
 import ProfilePage from './pages/Index';
 import StatisticsPage from './pages/statistics';
 import SettingsPage from './pages/settings';
-import MessagesPage from './pages/messages';
+
 import NotificationsPage from './pages/notifications';
 import FavoritesPage from './pages/favorites';
 
@@ -99,11 +99,6 @@ function AppContent() {
       <Route path="/settings" element={
         <ProtectedRoute>
           <SettingsPage />
-        </ProtectedRoute>
-      } />
-        <Route path="/messages/:chatId" element={
-        <ProtectedRoute>
-          <MessagesPage />
         </ProtectedRoute>
       } />
       <Route path="/notifications" element={
