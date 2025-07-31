@@ -1,53 +1,44 @@
-
+// src/components/ui/logo.tsx
 import React from 'react';
 import { useSiteIdentity, useBasicSettings } from '@/hooks/use-settings';
-
 interface LogoProps {
-  size?: 'sm' | 'md' | 'lg';
-  variant?: 'dark' | 'light';
+  variant?: 'dark' | 'light'; // لم نعد بحاجة لـ size إذا كان ثابتًا
 }
 
-export function Logo({ size = 'md', variant = 'dark' }: LogoProps) {
-  const { data: siteIdentity } = useSiteIdentity();
-  const { data: basicSettings } = useBasicSettings();
-  
-  const sizes = {
-    sm: 'h-6',
-    md: 'h-8',
-    lg: 'h-10'
-  };
-  
-  const sizeClass = sizes[size];
-  
-  // استخدام اللوغو المناسب حسب النوع
-  const logoUrl = variant === 'light' && siteIdentity?.data?.site_white_logo 
-    ? siteIdentity.data.site_white_logo 
-    : siteIdentity?.data?.site_logo;
-  
-  // عنوان الموقع من API
-  const siteTitle = basicSettings?.data?.site_title || 'مكس سوريا';
-  
-  return (
-    <div className="flex items-center">
-      {logoUrl ? (
-        <img 
-          src={logoUrl} 
-          alt={siteTitle} 
-          className={`${sizeClass} mr-2`}
-          onError={(e) => {
-            // في حالة فشل تحميل الصورة، إخفاؤها
-            (e.target as HTMLImageElement).style.display = 'none';
-          }}
-        />
-      ) : (
-        // إذا لم يكن هناك لوغو، عرض أيقونة افتراضية
-        <div className={`${sizeClass} mr-2 bg-brand rounded flex items-center justify-center text-white font-bold`}>
+// الأبعاد الثابتة المختارة (مثال)
+const FIXED_LOGO_WIDTH = 90; // بكسل
+const FIXED_LOGO_HEIGHT = 36; // بكسل
+
+export function Logo({
+  variant = 'dark'
+}: LogoProps) {
+  const {
+    data: siteIdentity
+  } = useSiteIdentity();
+  const {
+    data: basicSettings
+  } = useBasicSettings();
+  const logoUrl = variant === 'light' && siteIdentity?.data?.site_white_logo ? siteIdentity.data.site_white_logo : siteIdentity?.data?.site_logo;
+  const siteTitle = basicSettings?.data?.site_title || ' ';
+  return <div className="flex items-center">
+      {logoUrl ? <img src={logoUrl} alt={siteTitle} className="mr-2" // لا حاجة لـ sizeClass
+    width={FIXED_LOGO_WIDTH} // مهم لمنع layout shift
+    height={FIXED_LOGO_HEIGHT} // مهم لمنع layout shift
+    style={{
+      maxWidth: '100%',
+      height: 'auto'
+    }} // للاستجابة إذا كانت الحاوية أضيق
+    onError={e => {
+      (e.target as HTMLImageElement).style.display = 'none';
+    }} /> : <div style={{
+      width: `${FIXED_LOGO_WIDTH}px`,
+      height: `${FIXED_LOGO_HEIGHT}px`
+    }} className="mr-2 rounded flex items-center justify-center text-white font-bold bg-transparent">
           {siteTitle.charAt(0)}
-        </div>
-      )}
-      <span className={`font-bold ${size === 'sm' ? 'text-lg' : size === 'md' ? 'text-xl' : 'text-2xl'} text-brand`}>
+        </div>}
+      {/* يمكن تبسيط حجم الخط لاسم الموقع إذا كان حجم الشعار ثابتًا */}
+      <span className={`font-bold text-xl text-brand`}> 
         {siteTitle}
       </span>
-    </div>
-  );
+    </div>;
 }

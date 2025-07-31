@@ -21,8 +21,7 @@ export function ThemeToggle({
   const handleToggle = () => {
     const newTheme = theme === "dark" ? "light" : "dark";
     setTheme(newTheme);
-    // Force immediate theme application
-    setTimeout(() => {
+      setTimeout(() => {
       applyTheme();
     }, 50);
   };

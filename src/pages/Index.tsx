@@ -1,11 +1,10 @@
-// Update this page (the content is just a fallback if you fail to update the page)
 
 const Index = () => {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+    <div className="min-h-screen flex items-center justify-center bg-background">
       <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-gray-600">Start building your amazing project here!</p>
+        <h1 className="text-4xl font-bold mb-4 text-foreground">مرحباً بك في مكس سوريا</h1>
+        <p className="text-xl text-muted-foreground">ابدأ ببناء مشروعك المذهل هنا!</p>
       </div>
     </div>
   );

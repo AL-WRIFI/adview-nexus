@@ -1,6 +1,7 @@
 
 import React, { createContext, useContext, useEffect } from 'react';
-import { useColorSettings, useBasicSettings, useSiteIdentity, applyColorSettingsToDOM } from '@/hooks/use-settings';
+import { useColorSettings, useBasicSettings, useSiteIdentity } from '@/hooks/use-settings';
+import { applyDynamicStyles } from '@/utils/dynamic-styles';
 import type { ApiResponse } from '@/types';
 import type { ColorSettings, BasicSettings, SiteIdentity } from '@/services/settings-api';
 
@@ -36,19 +37,20 @@ export function SiteSettingsProvider({ children }: SiteSettingsProviderProps) {
   const applyColorSettings = () => {
     const colorData = (colorSettings as ApiResponse<ColorSettings>)?.data;
     if (!colorData) {
-      console.log('⚠️ لا توجد بيانات ألوان متاحة');
+      console.log('⚠️ No color data available');
       return;
     }
 
-    console.log('🎨 تطبيق الألوان:', colorData);
-    applyColorSettingsToDOM(colorData);
+    const isDarkMode = document.documentElement.classList.contains('dark');
+    console.log('🎨 Applying colors:', colorData);
+    applyDynamicStyles(colorData, isDarkMode ? 'dark' : 'light');
   };
 
-  // تطبيق الألوان عند تحميل البيانات
+  // Apply colors when data loads
   useEffect(() => {
     const colorData = (colorSettings as ApiResponse<ColorSettings>)?.data;
     if (colorData) {
-      console.log('📥 تم تحميل إعدادات الألوان، جاري التطبيق...', colorData);
+      console.log('📥 Color settings loaded, applying...', colorData);
       applyColorSettings();
       
       // تطبيق متأخر للتأكد من تحميل جميع العناصر
@@ -62,8 +64,7 @@ export function SiteSettingsProvider({ children }: SiteSettingsProviderProps) {
     }
   }, [colorSettings]);
 
-  // مراقبة تغييرات DOM وإعادة تطبيق الألوان
-  useEffect(() => {
+useEffect(() => {
     const colorData = (colorSettings as ApiResponse<ColorSettings>)?.data;
     if (!colorData) return;
 
@@ -101,8 +102,7 @@ export function SiteSettingsProvider({ children }: SiteSettingsProviderProps) {
 
     return () => observer.disconnect();
   }, [colorSettings]);
-
-  // تطبيق العنوان من الإعدادات الأساسية
+  
   useEffect(() => {
     const basicData = (basicSettings as ApiResponse<BasicSettings>)?.data;
     if (basicData?.site_title) {
@@ -110,7 +110,7 @@ export function SiteSettingsProvider({ children }: SiteSettingsProviderProps) {
     }
   }, [basicSettings]);
 
-  // تطبيق الأيقونة المفضلة
+  // Apply favicon
   useEffect(() => {
     const identityData = (siteIdentity as ApiResponse<SiteIdentity>)?.data;
     if (identityData?.site_favicon) {

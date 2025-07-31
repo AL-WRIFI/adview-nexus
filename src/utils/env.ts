@@ -9,7 +9,7 @@ interface EnvironmentVariables {
 
 // Default values for development
 const defaultValues: EnvironmentVariables = {
-  API_BASE_URL: 'http://admin2.mixsyria.com/api/v1',
+  API_BASE_URL: 'https://haraj-syria.test/api/v1',
   APP_ENV: 'development',
   DEBUG_MODE: true,
 };
@@ -46,6 +46,12 @@ export const env = {
   API_KEY: getEnv('API_KEY'),
   APP_ENV: getEnv('APP_ENV'),
   DEBUG_MODE: getEnv('DEBUG_MODE'),
+  
+  // Additional environment variables
+  ENABLE_LOCATION: getEnv('ENABLE_LOCATION') as boolean,
+  ANALYTICS_ID: getEnv('ANALYTICS_ID'),
+  PUSHER_KEY: getEnv('PUSHER_KEY'),
+  PUSHER_CLUSTER: getEnv('PUSHER_CLUSTER'),
   
   // Helper function to check if we're in development mode
   isDevelopment: () => getEnv('APP_ENV') === 'development',

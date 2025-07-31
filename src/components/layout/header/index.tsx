@@ -4,13 +4,12 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { User, Plus, Bell, Menu } from 'lucide-react';
 import { useState } from 'react';
+import { MessageBadge } from './MessageBadge';
+import { useAuth } from '@/context/auth-context';
 
-interface HeaderProps {
-  isLoggedIn?: boolean;
-}
-
-export function Header({ isLoggedIn = false }: HeaderProps) {
+export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { isAuthenticated } = useAuth();
 
   return (
     <header className="bg-white dark:bg-dark-card border-b border-border dark:border-dark-border sticky top-0 z-50">
@@ -39,7 +38,7 @@ export function Header({ isLoggedIn = false }: HeaderProps) {
 
           {/* Actions */}
           <div className="flex items-center space-x-3 space-x-reverse">
-            {isLoggedIn ? (
+            {isAuthenticated ? (
               <>
                 <Button asChild size="sm" className="hidden md:flex">
                   <Link to="/add-ad">
@@ -48,6 +47,8 @@ export function Header({ isLoggedIn = false }: HeaderProps) {
                   </Link>
                 </Button>
                 
+                <MessageBadge />
+                
                 <Button variant="ghost" size="icon" asChild>
                   <Link to="/notifications">
                     <Bell className="w-5 h-5" />
@@ -55,7 +56,7 @@ export function Header({ isLoggedIn = false }: HeaderProps) {
                 </Button>
                 
                 <Button variant="ghost" size="icon" asChild>
-                  <Link to="/profile">
+                  <Link to="/dashboard">
                     <User className="w-5 h-5" />
                   </Link>
                 </Button>
@@ -109,7 +110,7 @@ export function Header({ isLoggedIn = false }: HeaderProps) {
               >
                 البحث
               </Link>
-              {isLoggedIn && (
+              {isAuthenticated && (
                 <Link 
                   to="/add-ad" 
                   className="text-brand hover:text-brand/80 transition-colors px-2 py-1 font-medium"

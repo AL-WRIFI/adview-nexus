@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { settingsAPI } from '@/services/settings-api';
 import { applyDynamicStyles } from '@/utils/dynamic-styles';
 
-// Hook لجلب معرف الموقع
+// Hook to fetch site identity
 export const useSiteIdentity = () => {
   return useQuery({
     queryKey: ['site-identity'],
@@ -12,7 +12,7 @@ export const useSiteIdentity = () => {
   });
 };
 
-// Hook لجلب الإعدادات الأساسية
+// Hook to fetch basic settings
 export const useBasicSettings = () => {
   return useQuery({
     queryKey: ['basic-settings'],
@@ -21,7 +21,7 @@ export const useBasicSettings = () => {
   });
 };
 
-// Hook لجلب إعدادات الألوان مع تطبيق مباشر
+// Hook to fetch color settings
 export const useColorSettings = () => {
   return useQuery({
     queryKey: ['color-settings'],
@@ -30,7 +30,7 @@ export const useColorSettings = () => {
   });
 };
 
-// Hook لجلب إعدادات الإعلانات
+// Hook to fetch listing settings
 export const useListingSettings = () => {
   return useQuery({
     queryKey: ['listing-settings'],
@@ -38,8 +38,6 @@ export const useListingSettings = () => {
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 };
-
-// دالة لتطبيق إعدادات الألوان على DOM بشكل احترافي
 export const applyColorSettingsToDOM = (colors: any, mode: string = 'light') => {
   const root = document.documentElement;
   
@@ -187,7 +185,7 @@ const applyColorsToExistingElements = (colors: any, mode: string = 'light') => {
   }
 };
 
-// Hook شامل لجميع الإعدادات
+// Comprehensive hook for all settings
 export const useAllSettings = () => {
   const siteIdentity = useSiteIdentity();
   const basicSettings = useBasicSettings();

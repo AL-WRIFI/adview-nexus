@@ -33,7 +33,7 @@ export function PromoteTab() {
     );
   }
 
-  const listings = userListings || [];
+  const listings = userListings.data || [];
   const promotionsList = promotionsResponse?.data || [];
   const packagesList = Array.isArray(packages) ? packages : [];
 
@@ -99,7 +99,7 @@ export function PromoteTab() {
                             <div className="flex-1 min-w-0">
                               <h3 className="font-semibold truncate">{listing.title}</h3>
                               <p className="text-sm text-muted-foreground mb-2">
-                                {listing.price} ريال
+                                {listing.price} SYP
                               </p>
                               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                                 <Eye className="h-3 w-3" />
@@ -151,7 +151,7 @@ export function PromoteTab() {
                       <CardTitle className="text-lg">{pkg.name}</CardTitle>
                     </div>
                     <div className="text-2xl font-bold text-brand">
-                      {pkg.price} ريال
+                      {pkg.price} SYP
                     </div>
                   </CardHeader>
                   <CardContent>
