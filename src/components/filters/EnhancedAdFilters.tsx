@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,8 +27,7 @@ import {
   Clock
 } from 'lucide-react';
 import { SearchFilters } from '@/types';
-import { useCategories, useBrands } from '@/hooks/use-api';
-import { useStates, useCities } from '@/hooks/use-api.ts';
+import { useCategories, useBrands, useStates, useCities } from '@/hooks/use-api';
 import { cn } from '@/lib/utils';
 
 interface EnhancedAdFiltersProps {
@@ -130,7 +128,22 @@ export function EnhancedAdFilters({
   };
 
   const updateFilters = (newFilters: Partial<SearchFilters>) => {
-    const updatedFilters = { ...filters, ...newFilters };
+    // Convert legacy filter names to current ones
+    const normalizedFilters = { ...newFilters };
+    if (normalizedFilters.product_condition) {
+      normalizedFilters.condition = normalizedFilters.product_condition;
+      delete normalizedFilters.product_condition;
+    }
+    if (normalizedFilters.sub_category_id) {
+      normalizedFilters.subcategory_id = normalizedFilters.sub_category_id;
+      delete normalizedFilters.sub_category_id;
+    }
+    if (normalizedFilters.sort_by) {
+      normalizedFilters.sort = normalizedFilters.sort_by;
+      delete normalizedFilters.sort_by;
+    }
+    
+    const updatedFilters = { ...filters, ...normalizedFilters };
     setFilters(updatedFilters);
     onFilterChange(updatedFilters);
   };

@@ -1,11 +1,9 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast, useToast } from '@/hooks/use-toast';
+import { toast } from '@/hooks/use-toast';
 import * as API from '@/services/api';
 import { Listing, ListingDetails, Category, Brand, User, SearchFilters, Comment, PaginatedResponse, ApiResponse } from '@/types';
 import { profileAPI } from '@/services/apis';
-import type { AxiosError } from "axios";
-import { useNavigate } from 'react-router-dom';
 
 // Auth Hooks
 export function useLogin() {
@@ -58,7 +56,6 @@ export function useLogout() {
 
 export function useRegister() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
   
   return useMutation({
     mutationFn: (userData: {
@@ -78,9 +75,14 @@ export function useRegister() {
         description: `مرحباً ${data.data.user.first_name} ${data.data.user.last_name}`,
       });
     },
-    onError: (error: AxiosError) => {
-      // Pass the error to the component to handle
-      throw error;
+    meta: {
+      onError: (error: Error) => {
+        toast({
+          variant: "destructive",
+          title: "خطأ في إنشاء الحساب",
+          description: error instanceof Error ? error.message : "خطأ غير معروف",
+        });
+      }
     }
   });
 }
@@ -204,78 +206,28 @@ export function useRelatedListings(listingId: number | undefined, limit: number 
   });
 }
 
-// export function useCreateListing() {
-//   const queryClient = useQueryClient();
-  
-//   return useMutation({
-//     mutationFn: (formData: FormData) => API.listingsAPI.createListing(formData),
-//     onSuccess: () => {
-//       queryClient.invalidateQueries({ queryKey: ['listings'] });
-//       queryClient.invalidateQueries({ queryKey: ['userListings'] });
-//       toast({
-//         title: "تم إنشاء الإعلان بنجاح",
-//         description: "سيظهر الإعلان بعد مراجعته",
-//       });
-//     },
-//     meta: {
-//       onError: (error: Error) => {
-//         toast({
-//           variant: "destructive",
-//           title: "خطأ في إنشاء الإعلان",
-//           description: error instanceof Error ? error.message : "خطأ غير معروف",
-//         });
-//       }
-//     }
-//   });
-// }
-
 export function useCreateListing() {
   const queryClient = useQueryClient();
-  const navigate = useNavigate(); // <--- (2) تهيئة useNavigate
-  const { toast } = useToast();
-
+  
   return useMutation({
-    // (A) دالة التنفيذ التي تستدعي الـ API
-    mutationFn: (formData: FormData): Promise<ApiResponse<Listing>> =>
-      API.listingsAPI.createListing(formData),
-
-    // (B) دالة النجاح (onSuccess) التي تُنفذ بعد استجابة ناجحة من الـ API
-    onSuccess: (response) => {
-      // (C) تحديث الكويريات في الخلفية لإظهار الإعلان الجديد في قوائم أخرى
+    mutationFn: (formData: FormData) => API.listingsAPI.createListing(formData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['listings'] });
       queryClient.invalidateQueries({ queryKey: ['userListings'] });
-      queryClient.invalidateQueries({ queryKey: ['listings'] }); // إذا كان لديك قائمة عامة
-
-      // (D) التحقق من أن الاستجابة تحتوي على بيانات الإعلان الجديد والـ ID الخاص به
-      if (response.success && response.data?.id) {
-        // إظهار رسالة نجاح للمستخدم
-        toast({
-          title: "تم نشر إعلانك بنجاح!",
-          description: "سيتم مراجعته قريباً. يتم الآن توجيهك لصفحة الإعلان.",
-          duration: 5000,
-        });
-        
-        // (E) الجزء الأهم: توجيه المستخدم إلى صفحة تفاصيل الإعلان الجديد
-        // باستخدام الـ ID الذي تم الحصول عليه من استجابة الـ API
-        navigate(`/ad/${response.data.id}`);
-
-      } else {
-        // معالجة الحالة التي يرجع فيها الخادم استجابة ناجحة (200) ولكن العملية فشلت منطقياً
+      toast({
+        title: "تم إنشاء الإعلان بنجاح",
+        description: "سيظهر الإعلان بعد مراجعته",
+      });
+    },
+    meta: {
+      onError: (error: Error) => {
         toast({
           variant: "destructive",
           title: "خطأ في إنشاء الإعلان",
-          description: response.message || "لم يتمكن الخادم من إعادة بيانات الإعلان الجديد.",
+          description: error instanceof Error ? error.message : "خطأ غير معروف",
         });
       }
-    },
-
-    // (F) دالة الخطأ (onError) التي تُنفذ في حالة فشل طلب الـ API (e.g., 4xx, 5xx)
-    onError: (error: Error) => {
-      toast({
-        variant: "destructive",
-        title: "خطأ فادح في نشر الإعلان",
-        description: error.message || "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.",
-      });
-    },
+    }
   });
 }
 
@@ -588,23 +540,6 @@ export function useCities(stateId: number | undefined) {
   });
 }
 
-export function useDistricts(cityId: number | undefined) {
-  return useQuery({
-    queryKey: ['districts', cityId],
-    
-    queryFn: async () => {
-      if (!cityId) return []; 
-
-      const response = await API.locationAPI.getDistrictsByCity(cityId);
-      return response.data;
-    },
-
-    enabled: !!cityId,
-    
-    staleTime: 24 * 60 * 60 * 1000,
-  });
-}
-
 export function useAllCities() {
   return useQuery({
     queryKey: ['allCities'],
@@ -612,7 +547,7 @@ export function useAllCities() {
       const response = await API.locationAPI.getAllCities();
       return response.data;
     },
-    staleTime: 24 * 60 * 60 * 1000,
+    staleTime: 24 * 60 * 60 * 1000, // 24 hours - cities don't change often
   });
 }
 
@@ -649,28 +584,14 @@ export function useUpdateProfile() {
   });
 }
 
-// export function useUserListings(userId?: number) {
-//   return useQuery({
-//     queryKey: ['userListings', userId],
-//     queryFn: async () => {
-//       const response = await API.userAPI.getUserListings(userId);
-//       return response;
-//     },
-//     enabled: API.isAuthenticated(),
-//   });
-// }
-
-export function useUserListings(filters: SearchFilters) {
+export function useUserListings(userId?: number) {
   return useQuery({
-    queryKey: ['userListings', filters],
-    
+    queryKey: ['userListings', userId],
     queryFn: async () => {
-      const response = await API.listingsAPI.getListings(filters);
-      return response;
+      const response = await API.userAPI.getUserListings(userId);
+      return response.data;
     },
-
     enabled: API.isAuthenticated(),
-    keepPreviousData: true,
   });
 }
 

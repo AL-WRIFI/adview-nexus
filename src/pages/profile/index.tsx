@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -120,41 +119,57 @@ export default function ProfilePage() {
 
             {/* Form Fields */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
+              <div className="space-y-2">
                 <Label htmlFor="first_name">الاسم الأول</Label>
                 <Input
+                  {...register("first_name")}
                   id="first_name"
-                  {...register('first_name')}
-                  error={errors.first_name?.message}
+                  placeholder="أدخل اسمك الأول"
+                  className={errors.first_name ? "border-destructive" : ""}
                 />
+                {errors.first_name && (
+                  <p className="text-sm text-destructive">{errors.first_name.message}</p>
+                )}
               </div>
-              <div>
+              <div className="space-y-2">
                 <Label htmlFor="last_name">اسم العائلة</Label>
                 <Input
+                  {...register("last_name")}
                   id="last_name"
-                  {...register('last_name')}
-                  error={errors.last_name?.message}
+                  placeholder="أدخل اسم عائلتك"
+                  className={errors.last_name ? "border-destructive" : ""}
                 />
+                {errors.last_name && (
+                  <p className="text-sm text-destructive">{errors.last_name.message}</p>
+                )}
               </div>
             </div>
 
-            <div>
+            <div className="space-y-2">
               <Label htmlFor="email">البريد الإلكتروني</Label>
               <Input
+                {...register("email")}
                 id="email"
                 type="email"
-                {...register('email')}
-                error={errors.email?.message}
+                placeholder="أدخل بريدك الإلكتروني"
+                className={errors.email ? "border-destructive" : ""}
               />
+              {errors.email && (
+                <p className="text-sm text-destructive">{errors.email.message}</p>
+              )}
             </div>
 
-            <div>
+            <div className="space-y-2">
               <Label htmlFor="phone">رقم الهاتف</Label>
               <Input
+                {...register("phone")}
                 id="phone"
-                {...register('phone')}
-                error={errors.phone?.message}
+                placeholder="أدخل رقم هاتفك"
+                className={errors.phone ? "border-destructive" : ""}
               />
+              {errors.phone && (
+                <p className="text-sm text-destructive">{errors.phone.message}</p>
+              )}
             </div>
 
             <div>

@@ -33,83 +33,14 @@ import { useAuth } from '@/context/auth-context';
 import { toast } from '@/hooks/use-toast';
 import { Comment } from '@/types';
 import { RelatedAndSuggestedAds } from '@/components/ads/RelatedAndSuggestedAds';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { chatAPI } from '@/services/apis';
-import { SendMessageDialog } from '@/components/chat/SendMessageDialog';
+
 export default function AdDetails() {
   const { id } = useParams<{ id: string }>();
   const [activeTab, setActiveTab] = useState('comments');
   const [isFavorite, setIsFavorite] = useState(false);
   const [commandId, setCommandId] = useState(null);
-  const [sendMessageDialogOpen, setSendMessageDialogOpen] = useState(false);
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
-
-  const createChatMutation = useMutation({
-    mutationFn: (recipientId: number) => {
-      const formData = new FormData();
-      formData.append('recipient_id', recipientId.toString());
-      // Optional: Add a default message when starting a chat from an ad
-      formData.append('message', `مرحباً، أنا مهتم بالإعلان: "${ad?.title}"`);
-      if (ad?.id) {
-        formData.append('listing_id', ad.id.toString());
-      }
-      return chatAPI.createChat(formData);
-    },
-    onSuccess: (response) => {
-      // The response contains the new message, which has the chat_id
-      const chatId = response.data.chat_id;
-      // Invalidate chats list to refetch it on the dashboard
-      queryClient.invalidateQueries({ queryKey: ['chats'] });
-      // Navigate to the newly created chat page
-      navigate(`/messages/${chatId}`);
-    },
-    onError: (error) => {
-      toast({
-        title: "فشل إرسال الرسالة",
-        description: error.message || "حدث خطأ ما، حاول مرة أخرى.",
-        variant: "destructive"
-      });
-    }
-  });
-
-  const handleSendMessage = () => {
-    if (!isAuthenticated) {
-      toast({
-        title: "تسجيل الدخول مطلوب",
-        description: "يجب عليك تسجيل الدخول لإرسال رسالة",
-        variant: "destructive"
-      });
-      navigate('/auth/login', { state: { from: `/ad/${id}` } });
-      return;
-    }
-    
-    if (ad?.user?.id === user?.id) {
-      toast({
-        title: "لا يمكنك مراسلة نفسك",
-        variant: "default"
-      });
-      return;
-    }
-    
-    setSendMessageDialogOpen(true);
-  };
-
-  const handleWhatsAppMessage = () => {
-    if (!ad?.user?.phone) {
-      toast({
-        title: "رقم الهاتف غير متوفر",
-        description: "لا يمكن الوصول لرقم هاتف صاحب الإعلان",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    const message = encodeURIComponent(`مرحباً، أنا مهتم بالإعلان: "${ad.title}"`);
-    const phoneNumber = ad.user.phone.replace(/\D/g, ''); // إزالة كل شيء عدا الأرقام
-    const whatsappUrl = `https://wa.me/${phoneNumber}?text=${message}`;
-    window.open(whatsappUrl, '_blank');
-  };
+  
   const { isAuthenticated, user } = useAuth();
   
   const numId = id ? parseInt(id, 10) : 0;
@@ -269,8 +200,8 @@ export default function AdDetails() {
     // Add gallery images
     if (ad.images && Array.isArray(ad.images)) {
       ad.images.forEach(img => {
-        if (typeof img === 'object' && img.url) {
-          images.push(img.url);
+        if (typeof img === 'object' && img && 'url' in img) {
+          images.push((img as any).url);
         } else if (typeof img === 'string') {
           images.push(img);
         }
@@ -284,7 +215,7 @@ export default function AdDetails() {
   const allImages = processImages();
   
   // Prepare related ads - convert ListingDetails to Listing format if needed
-  const relatedAds = ad.related || [];
+  const relatedAds = ad.related_listings || ad.related || [];
   
   // Process comments
   const comments: Comment[] = ad.comments || [];
@@ -299,7 +230,7 @@ export default function AdDetails() {
             <Link to="/" className="hover:text-black dark:hover:text-neutral-200">الرئيسية</Link>
             {' > '}
             <Link to={`/category/${ad.category_id}`} className="hover:text-black dark:hover:text-neutral-200">
-              {ad.category_name || 'تصنيف'}
+              {ad.category?.name || ad.category_name || 'تصنيف'}
             </Link>
             {' > '}
             <span className="dark:text-neutral-300">{ad.title}</span>
@@ -312,8 +243,8 @@ export default function AdDetails() {
               <div className="mb-6">
               <h1 className="text-xl md:text-2xl font-bold text-neutral-800 dark:text-white mb-2">{ad.title}</h1>
               <div className="flex items-center text-neutral-600 dark:text-neutral-400 text-sm gap-4">
-                <div className="flex items-center gap-1"><Eye className="w-4 h-4" /> {ad.viewCount} مشاهدة</div>
-                <div className="flex items-center gap-1"><MapPin className="w-4 h-4" /> <span className="truncate max-w-[80px]">{ad.city ?? "غير معروف"}</span></div>
+                <div className="flex items-center gap-1"><Eye className="w-4 h-4" /> {ad.views_count || ad.viewCount || 0} مشاهدة</div>
+                <div className="flex items-center gap-1"><MapPin className="w-4 h-4" /> <span className="truncate max-w-[80px]">{ad.city || ad.city_name || ad.address || "غير معروف"}</span></div>
                 <div className="flex items-center gap-1"><Clock className="w-4 h-4" /> {timeAgo}</div>
               </div>
             </div>
@@ -350,17 +281,17 @@ export default function AdDetails() {
                     <div className="grid grid-cols-2 gap-4 text-neutral-700 dark:text-neutral-300">
                       <div className="flex items-center">
                         <span className="text-neutral-500 dark:text-neutral-400 ml-2"> التصنيف : </span>
-                        <span>{ad.category_name || "غير محدد"}</span>
+                        <span>{ad.category?.name || ad.category_name || "غير محدد"}</span>
                       </div>
-                      {ad.sub_category_name && (
+                      {(ad.subcategory?.name || ad.sub_category_name) && (
                         <div className="flex items-center">
                           <span className="text-neutral-500 dark:text-neutral-400 ml-2"> التصنيف الفرعي : </span>
-                          <span>{ad.sub_category_name}</span>
+                          <span>{ad.subcategory?.name || ad.sub_category_name}</span>
                         </div>
                       )}
                       <div className="flex items-center">
                         <span className="text-neutral-500 dark:text-neutral-400 ml-2"> المدينة : </span>
-                        <span>{ad.city || ad.address || "غير محدد"}</span>
+                        <span>{ad.city || ad.city_name || ad.address || "غير محدد"}</span>
                       </div>
                       {ad.state && (
                         <div className="flex items-center">
@@ -372,13 +303,15 @@ export default function AdDetails() {
                         <span className="text-neutral-500 dark:text-neutral-400 ml-2">نوع الإعلان  :  </span>
                         <span>
                           {ad.listing_type === 'sell' ? ' بيع' : 
-                           ad.listing_type === 'buy' ? ' شراء' : 
-                           ad.listing_type === 'exchange' ? ' تبادل' : ' خدمة'}
+                           ad.listing_type === 'rent' ? ' إيجار' : 
+                           ad.listing_type === 'exchange' ? ' تبادل' : 
+                           ad.listing_type === 'wanted' ? ' مطلوب' : 
+                           ' خدمة'}
                         </span>
                       </div>
                       <div className="flex items-center">
                         <span className="text-neutral-500 dark:text-neutral-400 ml-2">تاريخ النشر : </span>
-                        <span>{new Date(ad.created_at).toLocaleDateString('ar-SA')}</span>
+                        <span>{new Date(ad.created_at || '').toLocaleDateString('ar-SA')}</span>
                       </div>
                       {ad.condition && (
                         <div className="flex items-center">
@@ -393,7 +326,7 @@ export default function AdDetails() {
                 {/* Comments tab */}
                 <TabsContent value="comments" className="pt-4">
                   <CommentsList 
-                    comments={comments}
+                    listingId={numId}
                     onAddComment={handleAddComment}
                     onAddReply={handleAddReply}
                     onDeleteComment={handleDeleteComment}
@@ -456,33 +389,26 @@ export default function AdDetails() {
                         {ad.user.phone}
                       </Button>
                     )}
-                    
-                    {/* أزرار المراسلة والواتساب */}
-                    <div className="grid grid-cols-1 gap-3">
-                      <Button 
-                        variant="outline" 
-                        className="w-full bg-gradient-to-r from-primary/10 to-primary/5 border-primary/20 hover:bg-primary/20 text-primary hover:text-primary/80 transition-all duration-300" 
-                        size="lg"
-                        onClick={handleSendMessage}
-                        disabled={!ad.user || ad.user.id === user?.id}
-                      >
-                        <MessageSquare className="ml-2 h-5 w-5" />
-                        إرسال رسالة
-                      </Button>
-                      
-                      {ad.user?.phone && (
-                        <Button 
-                          className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white border-none shadow-lg hover:shadow-xl transition-all duration-300" 
-                          size="lg"
-                          onClick={handleWhatsAppMessage}
-                        >
-                          <svg className="ml-2 h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.890-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.785"/>
-                          </svg>
-                          واتساب
-                        </Button>
-                      )}
-                    </div>
+                    <Button 
+                      variant="outline" 
+                      className="w-full dark:border-neutral-600 dark:text-neutral-300 dark:hover:bg-neutral-700" 
+                      size="lg" 
+                      onClick={() => {
+                        if (!isAuthenticated) {
+                          toast({
+                            title: "تسجيل الدخول مطلوب",
+                            description: "يجب عليك تسجيل الدخول لإرسال رسالة",
+                            variant: "destructive"
+                          });
+                          navigate('/auth/login', { state: { from: `/ad/${id}` } });
+                          return;
+                        }
+                        navigate('/messages', { state: { userId: ad.user_id } });
+                      }}
+                    >
+                      <MessageSquare className="ml-2 h-5 w-5" />
+                      مراسلة
+                    </Button>
                     <Button 
                       variant="ghost" 
                       className={`w-full border dark:border-neutral-700 ${
@@ -561,17 +487,6 @@ export default function AdDetails() {
       
       <Footer />
       <MobileNav />
-      
-      {/* Dialog للرسائل */}
-      <SendMessageDialog 
-        open={sendMessageDialogOpen}
-        onOpenChange={setSendMessageDialogOpen}
-        listing={{
-          id: ad?.id || 0,
-          title: ad?.title || '',
-          user: ad?.user
-        }}
-      />
     </div>
   );
 }

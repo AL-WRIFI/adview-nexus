@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { AdCard } from './ad-card';
 import { Button } from '@/components/ui/button';
@@ -50,16 +49,23 @@ function HorizontalAdsSection({ title, ads, sectionId }: HorizontalAdsSectionPro
 
   // دالة الحصول على رابط الصورة بشكل آمن
   const getImageUrl = (ad: Listing): string => {
-    if (ad.image) {
-      if (typeof ad.image === 'string') {
-        return ad.image;
+    if (ad.main_image_url) {
+      if (typeof ad.main_image_url === 'string') {
+        return ad.main_image_url;
       }
-      if (typeof ad.image === 'object' && 'image_url' in ad.image) {
-        return ad.image.image_url;
+      if (typeof ad.main_image_url === 'object' && ad.main_image_url && 'image_url' in ad.main_image_url) {
+        return (ad.main_image_url as any).image_url;
       }
-      if (typeof ad.image === 'object' && 'url' in ad.image) {
-        return (ad.image as any).url;
-      }
+    }
+    
+    if (typeof ad.image === 'string' && ad.image) {
+      return ad.image;
+    }
+    if (ad.image && typeof ad.image === 'object' && 'image_url' in ad.image) {
+      return (ad.image as any).image_url;
+    }
+    if (ad.image && typeof ad.image === 'object' && 'url' in ad.image) {
+      return (ad.image as any).url;
     }
     
     if (ad.images && Array.isArray(ad.images) && ad.images.length > 0) {
@@ -112,9 +118,9 @@ function HorizontalAdsSection({ title, ads, sectionId }: HorizontalAdsSectionPro
           }}
         >
           {ads.map((ad) => (
-            <a key={ad.id} href={`/ad/${ad.id}`} className="flex-shrink-0 w-80">
+            <div key={ad.id} className="flex-shrink-0 w-80">
               <AdCard ad={ad} layout="grid" />
-            </a>
+            </div>
           ))}
         </div>
       </div>
@@ -160,8 +166,8 @@ function HorizontalAdsSection({ title, ads, sectionId }: HorizontalAdsSectionPro
             <SwiperSlide key={index}>
               <div className="grid grid-cols-3 gap-3">
                 {adsChunk.map((ad) => (
-                  <a key={ad.id} href={`/ad/${ad.id}`}
-                      className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm flex flex-col hover:shadow-md transition-all cursor-pointer"
+                  <div key={ad.id}
+                      className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm flex flex-col"
                     >
                       {/* صورة الإعلان أو صورة افتراضية */}
                       <div className="relative w-full aspect-square overflow-hidden bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
@@ -169,13 +175,13 @@ function HorizontalAdsSection({ title, ads, sectionId }: HorizontalAdsSectionPro
                           <img
                             src={getImageUrl(ad)}
                             alt={ad.title}
-                            className="w-full h-full object-cover hover:scale-105 transition-transform"
+                            className="w-full h-full object-cover"
                             loading="lazy"
                           />
                         ) : (
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
-                            className="h-8 w-8 text-gray-400"
+                            className="h-12 w-12 text-gray-400"
                             viewBox="0 0 24 24"
                             fill="currentColor"
                           >
@@ -185,19 +191,19 @@ function HorizontalAdsSection({ title, ads, sectionId }: HorizontalAdsSectionPro
                       </div>
 
                       {/* معلومات الإعلان */}
-                      <div className="p-2 flex flex-col gap-1 text-xs">
-                        <h3 className="font-medium truncate text-foreground hover:text-brand">{ad.title}</h3>
+                      <div className="p-2 flex flex-col gap-1 text-xs text-gray-700 dark:text-gray-300">
+                        <h3 className="font-medium truncate">{ad.title}</h3>
 
                         <div className="flex justify-between items-center">
-                          <span className="text-muted-foreground text-xs">{ad.city_name || 'غير محدد'}</span>
+                          <span className="text-gray-500">{ad.city_name || ad.city || ad.location || 'غير محدد'}</span>
                           {ad.price && (
-                            <span className="font-semibold text-brand text-xs">
-                              {ad.price.toLocaleString()} SYP
+                            <span className="font-semibold text-green-600 dark:text-green-400">
+                              {ad.price.toLocaleString()} ريال
                             </span>
                           )}
                         </div>
                       </div>
-                    </a>
+                    </div>
 
                 ))}
               </div>
@@ -259,4 +265,3 @@ export function RelatedAndSuggestedAds({
     </div>
   );
 }
-

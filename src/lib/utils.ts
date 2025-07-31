@@ -33,7 +33,7 @@ export function formatDate(dateString: string): string {
 
 // Format currency function
 export function formatCurrency(amount: number): string {
-  return amount.toLocaleString('ar-SA') + ' SYP';
+  return amount.toLocaleString('ar-SA') + ' ريال';
 }
 
 // Get image URL with fallback

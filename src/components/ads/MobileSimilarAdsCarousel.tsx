@@ -82,14 +82,21 @@ export function MobileSimilarAdsCarousel({
   };
   
   const getImageUrl = (ad: Listing) => {
-    if (ad.image) {
-      if (typeof ad.image === 'string') return ad.image;
-      if (typeof ad.image === 'object' && 'image_url' in ad.image) {
-        return ad.image.image_url;
+    if (ad.main_image_url) {
+      if (typeof ad.main_image_url === 'string') return ad.main_image_url;
+      if (typeof ad.main_image_url === 'object' && ad.main_image_url && 'image_url' in ad.main_image_url) {
+        return (ad.main_image_url as any).image_url;
       }
-      if (typeof ad.image === 'object' && 'url' in ad.image) {
-        return (ad.image as any).url;
-      }
+    }
+    
+    if (typeof ad.image === 'string' && ad.image) {
+      return ad.image;
+    }
+    if (ad.image && typeof ad.image === 'object' && 'image_url' in ad.image) {
+      return (ad.image as any).image_url;
+    }
+    if (ad.image && typeof ad.image === 'object' && 'url' in ad.image) {
+      return (ad.image as any).url;
     }
     
     if (ad.images && ad.images.length > 0) {
@@ -97,7 +104,7 @@ export function MobileSimilarAdsCarousel({
       if (typeof firstImage === 'string') {
         return firstImage;
       }
-      if (typeof firstImage === 'object' && firstImage && 'url' in firstImage) {
+      if (firstImage && typeof firstImage === 'object' && firstImage && 'url' in firstImage) {
         return (firstImage as any).url;
       }
     }
@@ -247,7 +254,7 @@ export function MobileSimilarAdsCarousel({
                     <div className="flex items-center justify-between text-xs text-muted-foreground">
                       <div className="flex items-center gap-1">
                         <MapPin className="w-3 h-3" />
-                        <span className="truncate max-w-[80px]">{ad.city_name || ad.city || ad.location}</span>
+                        <span className="truncate max-w-[80px]">{ad.city_name || ad.city || ad.location || 'غير محدد'}</span>
                       </div>
                       <span>منذ يومين</span>
                     </div>

@@ -2,7 +2,6 @@
 import React, { useState } from 'react';
 import { MapPin, Search, Filter, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select';
 import { Drawer, DrawerContent, DrawerTrigger } from '@/components/ui/drawer';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -28,7 +27,7 @@ export function CategoryFilters({
     'الرياض',
     'جدة',
     'مكة المكرمة',
-    'المنطقة المنورة',
+    'المدينة المنورة',
     'الدمام',
     'الخبر',
     'تبوك',
@@ -44,28 +43,44 @@ export function CategoryFilters({
           <Button 
             variant="outline" 
             size="sm" 
-            className="flex items-center gap-1 flex-shrink-0 bg-white dark:bg-dark-card h-8"
+            className="flex items-center gap-1 flex-shrink-0 bg-white dark:bg-dark-card"
             onClick={onNearbyClick}
           >
             <MapPin className="w-4 h-4 text-brand" />
             <span className="text-sm">القريب</span>
           </Button>
           
-          <Select
-            value={selectedRegion}
-            onValueChange={onRegionSelect}
-          >
-            <SelectTrigger className="w-32 h-8 flex-shrink-0 bg-white dark:bg-dark-card">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {regions.map(region => (
-                <SelectItem key={region} value={region}>
-                  {region}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="relative">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="flex items-center gap-1 flex-shrink-0 bg-white dark:bg-dark-card"
+              onClick={() => setShowRegions(!showRegions)}
+            >
+              <span className="text-sm">{selectedRegion}</span>
+              <ChevronDown className="w-3.5 h-3.5" />
+            </Button>
+            
+            {/* Regions list */}
+            {showRegions && (
+              <div 
+                className="absolute z-30 mt-1 bg-white dark:bg-dark-card rounded-md shadow-lg border border-gray-200 dark:border-dark-border py-1 w-48 max-h-60 overflow-y-auto"
+              >
+                {regions.map(region => (
+                  <button
+                    key={region}
+                    className="w-full text-right px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-dark-muted"
+                    onClick={() => {
+                      onRegionSelect(region);
+                      setShowRegions(false);
+                    }}
+                  >
+                    {region}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
           
           {isMobile ? (
             <Drawer>
@@ -73,7 +88,7 @@ export function CategoryFilters({
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  className="flex-1 flex items-center gap-1 justify-between bg-white dark:bg-dark-card h-8"
+                  className="flex-1 flex items-center gap-1 justify-between bg-white dark:bg-dark-card"
                 >
                   <Search className="w-4 h-4 text-muted-foreground" />
                   <span className="text-sm text-muted-foreground truncate">بحث...</span>
@@ -118,7 +133,7 @@ export function CategoryFilters({
               <Button 
                 variant="outline" 
                 size="sm" 
-                className="w-full flex items-center gap-1 bg-white dark:bg-dark-card justify-between h-8"
+                className="w-full flex items-center gap-1 bg-white dark:bg-dark-card justify-between"
                 onClick={onFilterClick}
               >
                 <Search className="w-4 h-4 text-muted-foreground" />

@@ -6,7 +6,6 @@ import { MessagesTab } from './tabs/MessagesTab';
 import { NotificationsTab } from './tabs/NotificationsTab';
 import { PromoteTab } from './tabs/PromoteTab';
 import { StatisticsTab } from './tabs/StatisticsTab';
-import Settings from './tabs/Settings'; 
 import { PlaceholderTab } from './tabs/PlaceholderTab';
 
 interface DashboardContentProps {
@@ -48,15 +47,15 @@ export function DashboardContent({
       return <FavoritesTab />;
     case 'messages':
       return <MessagesTab />;
-    // case 'notifications':
-    //   return <NotificationsTab />;
+    case 'notifications':
+      return <NotificationsTab />;
     case 'promote':
       return <PromoteTab />;
-    // case 'statistics':
-    //   return <StatisticsTab />;
+    case 'statistics':
+      return <StatisticsTab />;
     case 'settings':
-      return <Settings title="الإعدادات" description="صفحة إعدادات الحساب" />;
+      return <PlaceholderTab title="الإعدادات" description="صفحة إعدادات الحساب" />;
     default:
-      return <StatisticsTab title="نظرة عامة" description="لوحة التحكم الرئيسية" />;
+      return <PlaceholderTab title="نظرة عامة" description="لوحة التحكم الرئيسية" />;
   }
 }

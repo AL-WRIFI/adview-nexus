@@ -95,6 +95,9 @@ export function PromoteListingDialog({ open, onOpenChange, listing }: PromoteLis
     if (listing.image && typeof listing.image === 'object' && 'image_url' in listing.image) {
       return (listing.image as any).image_url;
     }
+    if (listing.image && typeof listing.image === 'object' && 'url' in listing.image) {
+      return (listing.image as any).url;
+    }
     
     if (listing.images && Array.isArray(listing.images) && listing.images.length > 0) {
       const firstImage = listing.images[0];
@@ -132,7 +135,7 @@ export function PromoteListingDialog({ open, onOpenChange, listing }: PromoteLis
                   />
                   <div>
                     <h3 className="font-semibold">{listing.title}</h3>
-                    <p className="text-sm text-muted-foreground">{listing.price} SYP</p>
+                    <p className="text-sm text-muted-foreground">{listing.price} ريال</p>
                   </div>
                 </div>
               </CardContent>
@@ -161,7 +164,7 @@ export function PromoteListingDialog({ open, onOpenChange, listing }: PromoteLis
                                   </p>
                                 </div>
                                 <div className="text-left">
-                                  <p className="text-lg font-bold text-primary">{pkg.price} SYP</p>
+                                  <p className="text-lg font-bold text-primary">{pkg.price} ريال</p>
                                 </div>
                               </div>
                             </Label>
@@ -213,7 +216,7 @@ export function PromoteListingDialog({ open, onOpenChange, listing }: PromoteLis
                               <div className="flex-1">
                                 <h4 className="font-semibold">رصيد المحفظة</h4>
                                 <p className="text-sm text-muted-foreground">
-                                  الرصيد الحالي: {(walletBalance / 100).toFixed(2)} SYP
+                                  الرصيد الحالي: {(walletBalance / 100).toFixed(2)} ريال
                                 </p>
                                 {!canAffordWithWallet && selectedPackageData && (
                                   <Badge variant="destructive" className="mt-1">

@@ -1,6 +1,5 @@
 
 import { PaginatedResponse, Ad, Comment, User, Category, Brand, Listing, ListingDetails, SearchFilters, ApiResponse } from '@/types';
-import axios, { AxiosError } from 'axios';
 
 // Base API URL for the application
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://haraj-syria.test/api/v1';
@@ -76,77 +75,53 @@ export const isAuthenticated = () => {
 //     throw error;
 //   }
 // }
+
 async function fetchAPI<T>(endpoint: string, options?: RequestInit): Promise<T> {
   try {
     const url = `${API_BASE_URL}${endpoint}`;
+
     const token = getAuthToken();
 
-    // تحديد ما إذا كان الجسم هو FormData
     const isFormData = options?.body instanceof FormData;
 
-    // إعداد الهيدرات الأساسية
-    const headers: Record<string, string> = {
+    const defaultHeaders: Record<string, string> = {
       Accept: 'application/json',
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(!isFormData ? { 'Content-Type': 'application/json' } : {}),
     };
 
-    // إضافة Content-Type فقط إذا لم يكن FormData
-    if (!isFormData && options?.body) {
-      headers['Content-Type'] = 'application/json';
-    }
-
-    // إنشاء كائن الطلب
-    const requestOptions: RequestInit = {
+    const response = await fetch(url, {
       ...options,
       headers: {
-        ...headers,
+        ...defaultHeaders,
         ...(options?.headers || {}),
       },
-    };
-
-    const response = await fetch(url, requestOptions);
+    });
 
     if (!response.ok) {
-      let errorData: any;
-      
-      try {
-        errorData = await response.json();
-      } catch (e) {
-        errorData = await response.text();
+      const errorData = await response.json().catch(() => ({}));
+
+      if (response.status === 401) {
+        localStorage.removeItem('authToken');
+        sessionStorage.removeItem('authToken');
+        if (!window.location.pathname.includes('/auth/login')) {
+          window.location.href = '/auth/login';
+        }
       }
 
-      const errorMessage = typeof errorData === 'object' 
-        ? errorData.message || `API Error: ${response.status} ${response.statusText}`
-        : errorData || `API Error: ${response.status} ${response.statusText}`;
-      
-      const apiError = new Error(errorMessage);
-      (apiError as any).response = {
-        status: response.status,
-        data: typeof errorData === 'string' ? { message: errorData } : errorData
-      };
-      
-      throw apiError;
+      throw new Error(errorData.message || `API Error: ${response.status} ${response.statusText}`);
     }
 
-    return await response.json() as T;
-  } catch (error: any) {
-    console.error('API request failed:', error);
-    
-    const apiError = new Error(error.message || 'Unknown API error');
-    
-    if (error.response) {
-      apiError.response = error.response;
-    } else {
-      apiError.response = {
-        data: {
-          success: false,
-          message: error.message || 'Network error',
-          errors: ['تعذر الاتصال بالخادم']
-        }
-      };
+    const data = await response.json();
+
+    if (data.success === false) {
+      throw new Error(data.message || 'Unknown API error');
     }
-    
-    throw apiError;
+
+    return data as T;
+  } catch (error) {
+    console.error('API request failed:', error);
+    throw error;
   }
 }
 
@@ -191,7 +166,6 @@ export const authAPI = {
   },
   
   // Register a new user
-  // Register a new user
   register: async (userData: {
     first_name: string;
     last_name: string;
@@ -202,63 +176,18 @@ export const authAPI = {
     city_id: number;
     state_id: number;
   }): Promise<ApiResponse<{ token: string; user: User }>> => {
-    try {
-      const response = await axios.post<ApiResponse<{ token: string; user: User }>>(
-        '/user/register',
-        userData,
-        {
-          baseURL: API_BASE_URL,
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          }
-        }
-      );
-
-      // Store the token in localStorage if registration successful
-      if (response.data.data?.token) {
-        localStorage.setItem('authToken', response.data.data.token);
-        sessionStorage.removeItem('authToken');
-      }
-      
-      return response.data;
-    } catch (error: any) {
-      // تحويل خطأ axios إلى تنسيق موحد
-      if (axios.isAxiosError(error)) {
-        const axiosError = error as AxiosError<ApiResponse<any>>;
-        
-        if (axiosError.response) {
-          // استجابة الخادم مع رمز حالة غير 2xx
-          throw {
-            response: {
-              data: axiosError.response.data
-            }
-          };
-        } else {
-          // خطأ في الطلب (مشكلة شبكة)
-          throw {
-            response: {
-              data: {
-                success: false,
-                message: 'Network Error',
-                errors: { network: ['تعذر الاتصال بالخادم'] }
-              }
-            }
-          };
-        }
-      }
-      
-      // خطأ غير متوقع
-      throw {
-        response: {
-          data: {
-            success: false,
-            message: 'Unknown Error',
-            errors: { unknown: ['حدث خطأ غير متوقع'] }
-          }
-        }
-      };
+    const response = await fetchAPI<ApiResponse<{ token: string; user: User }>>('/user/register', {
+      method: 'POST',
+      body: JSON.stringify(userData),
+    });
+    
+    // Store the token in localStorage if registration successful
+    if (response.data?.token) {
+      localStorage.setItem('authToken', response.data.token);
+      sessionStorage.removeItem('authToken');
     }
+    
+    return response;
   },
 };
 
@@ -315,82 +244,38 @@ export const listingsAPI = {
     return fetchAPI(`/listings?${queryParams.toString()}`);
   },
   
-
+  // Get a single listing by ID
   getListing: async (id: number): Promise<ApiResponse<ListingDetails>> => {
     return fetchAPI(`/listing/${id}`);
   },
   
+  // Create a new listing
   createListing: async (listingData: FormData): Promise<ApiResponse<Listing>> => {
-    try {
-      const response = await fetchAPI<ApiResponse<Listing>>('/user/listings', {
-        method: 'POST',
-        body: listingData,
-      });
-      
-      console.log("Listing created successfully:", response.data);
-      return response;
-    } catch (error) {
-      console.error("Listing creation error:", error);
-      
-      if (error?.response?.data) {
-        return error.response.data;
-      }
-      
-      throw {
-        success: false,
-        message: 'فشل في إنشاء الإعلان',
-        errors: ['حدث خطأ غير متوقع أثناء محاولة إنشاء الإعلان']
-      };
-    }
+    console.log("Form Data => :", listingData);
+    return fetchAPI('/user/listings', {
+      method: 'POST',
+      body: listingData,
+      headers: {
+      }, 
+    });
   },
-
+  
+  // Update an existing listing
   updateListing: async (id: number, listingData: FormData): Promise<ApiResponse<Listing>> => {
-    try {
-      listingData.append('_method', 'PUT');
-      
-      const response = await fetchAPI<ApiResponse<Listing>>(`/user/listings/${id}`, {
-        method: 'POST',
-        body: listingData,
-      });
-      
-      console.log("Listing updated successfully:", response.data);
-      return response;
-    } catch (error) {
-      console.error("Listing update error:", error);
-      
-      if (error?.response?.data) {
-        return error.response.data;
-      }
-      
-      throw {
-        success: false,
-        message: 'فشل في تحديث الإعلان',
-        errors: ['حدث خطأ غير متوقع أثناء محاولة تحديث الإعلان']
-      };
-    }
+    return fetchAPI(`/user/listings/${id}`, {
+      method: 'POST', // Most APIs use POST for form-data with a _method field for PUT
+      body: listingData,
+      headers: {
+        // Let the browser set Content-Type with the correct boundary for FormData
+      },
+    });
   },
-
+  
+  // Delete a listing
   deleteListing: async (id: number): Promise<ApiResponse<void>> => {
-    try {
-      const response = await fetchAPI<ApiResponse<void>>(`/user/listings/${id}`, {
-        method: 'DELETE',
-      });
-      
-      console.log("Listing deleted successfully");
-      return response;
-    } catch (error) {
-      console.error("Listing deletion error:", error);
-      
-      if (error?.response?.data) {
-        return error.response.data;
-      }
-      
-      throw {
-        success: false,
-        message: 'فشل في حذف الإعلان',
-        errors: ['حدث خطأ غير متوقع أثناء محاولة حذف الإعلان']
-      };
-    }
+    return fetchAPI(`/user/listings/${id}`, {
+      method: 'DELETE',
+    });
   },
   
   // Add a comment to a listing
@@ -493,10 +378,6 @@ export const locationAPI = {
     return fetchAPI('/cities');
   },
   
-    getDistrictsByCity: async (cityId: number): Promise<ApiResponse<{ id: number; name: string }[]>> => {
-    return fetchAPI(`/cities/${cityId}/districts`);
-  },
-
   // Get user's current location
   getCurrentLocation: async (): Promise<{ lat: number; lng: number }> => {
     return new Promise((resolve, reject) => {

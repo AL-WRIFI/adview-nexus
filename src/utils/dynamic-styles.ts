@@ -13,7 +13,10 @@ export const applyDynamicStyles = (colors: any, mode: string = 'light') => {
   }
   
   let css = '';
-  const isDarkMode = mode === 'dark';  
+
+  // تحديد الألوان المناسبة للوضع الحالي
+  const isDarkMode = mode === 'dark';
+  
   // ألوان العلامة التجارية الأساسية
   const primaryColor = isDarkMode && colors.dark_site_main_color_one 
     ? colors.dark_site_main_color_one 
@@ -239,53 +242,8 @@ export const applyDynamicStyles = (colors: any, mode: string = 'light') => {
     `;
   }
   
- console.log(`🎨 تم تحديث الألوان بنجاح للوضع ${isDarkMode ? 'الداكن' : 'الفاتح'}.`);
-};
-
-let colorSettingsData: any = null;
-// متغير لتخزين مرجع للمستمع (listener) لإزالته عند الحاجة
-let mediaQueryListener: ((this: MediaQueryList, ev: MediaQueryListEvent) => any) | null = null;
-export const setupDynamicStyles = async () => {
-  try {
-    // 1. جلب البيانات فقط إذا لم تكن موجودة بالفعل
-    if (!colorSettingsData) {
-      const { settingsAPI } = await import('@/services/settings-api');
-      const response = await settingsAPI.getColorSettings();
-      if (response?.data) {
-        colorSettingsData = response.data;
-      } else {
-        console.error('❌ لم يتم العثور على بيانات الألوان، سيتم استخدام الأنماط الافتراضية.');
-        return; // الخروج من الدالة إذا لم توجد بيانات
-      }
-    }
-
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-
-    // 2. دالة معالجة التغيير
-    const handleThemeChange = (event: MediaQueryListEvent) => {
-      const newMode = event.matches ? 'dark' : 'light';
-      console.log(`🎨 تم اكتشاف تغيير في المظهر. التطبيق على الوضع: ${newMode}`);
-      applyDynamicStyles(colorSettingsData, newMode);
-    };
-
-    // 3. تطبيق الأنماط لأول مرة عند التحميل
-    const initialMode = mediaQuery.matches ? 'dark' : 'light';
-    applyDynamicStyles(colorSettingsData, initialMode);
-
-    // 4. إزالة المستمع القديم (إذا كان موجودًا) لتجنب التكرار
-    if (mediaQueryListener) {
-      mediaQuery.removeEventListener('change', mediaQueryListener);
-    }
-
-    // 5. إضافة المستمع الجديد
-    mediaQuery.addEventListener('change', handleThemeChange);
-    mediaQueryListener = handleThemeChange; // حفظ مرجع للمستمع الجديد
-
-    console.log("✅ تم تهيئة الألوان الديناميكية والمستمع للتغييرات بنجاح.");
-
-  } catch (error) {
-    console.error('❌ فشل في تهيئة الألوان الديناميكية:', error);
-  }
+  styleElement.textContent = css;
+  console.log(`🎨 تم تطبيق الألوان بنجاح للوضع ${isDarkMode ? 'الداكن' : 'الفاتح'}:`, colors);
 };
 
 // دالة مساعدة لتحويل hex إلى hsl

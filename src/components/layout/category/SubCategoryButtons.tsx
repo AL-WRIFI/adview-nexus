@@ -70,12 +70,12 @@ export function SubCategoryButtons({
     : 'py-1 px-2 text-xs';
   
   const selectedClasses = isSubLevel
-    ? 'bg-brand text-white shadow-sm border border-brand' 
-    : 'bg-brand/10 border-brand border-2 text-brand shadow-sm font-medium';
+    ? 'bg-brand text-white shadow-sm' 
+    : 'bg-white border-brand border text-brand shadow-sm';
   
   const unselectedClasses = isSubLevel
-    ? 'bg-white text-gray-700 border border-gray-200 dark:bg-dark-card dark:text-gray-300 dark:border-dark-border hover:bg-gray-50 dark:hover:bg-dark-surface' 
-    : 'bg-white border border-gray-300 text-gray-600 dark:bg-dark-surface dark:border-dark-border dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-dark-card';
+    ? 'bg-gray-100 text-gray-700 dark:bg-dark-card dark:text-gray-300' 
+    : 'bg-gray-50 border border-gray-200 text-gray-700 dark:bg-dark-surface dark:border-dark-border dark:text-gray-300';
   
   return (
     <div className="relative w-full">

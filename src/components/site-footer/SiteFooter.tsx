@@ -18,7 +18,7 @@ export function SiteFooter() {
           {/* Site Info */}
           <div className="md:col-span-2">
             <div className="mb-4">
-              <Logo variant="light" />
+              <Logo variant="light" size="lg" />
             </div>
             <p className="text-gray-300 mb-4">
               {siteTagline}

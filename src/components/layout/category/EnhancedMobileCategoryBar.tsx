@@ -4,15 +4,12 @@ import 'keen-slider/keen-slider.min.css';
 import { useCategories } from '@/hooks/use-api';
 import { cn } from '@/lib/utils';
 import { Category } from '@/types';
-import { ScrollableContainer } from './ScrollableContainer';
 
 interface MobileCategoryGridProps {
   selectedCategory?: number | null;
   onCategorySelect?: (categoryId: number | null) => void;
   selectedSubcategory?: number | null;
   onSubcategorySelect?: (subcategoryId: number | null) => void;
-  selectedChildCategory?: number | null;
-  onChildCategorySelect?: (childCategoryId: number | null) => void;
 }
 
 export function EnhancedMobileCategoryBar({
@@ -20,27 +17,17 @@ export function EnhancedMobileCategoryBar({
   onCategorySelect,
   selectedSubcategory,
   onSubcategorySelect,
-  selectedChildCategory,
-  onChildCategorySelect,
 }: MobileCategoryGridProps) {
   const { data: categories, isLoading } = useCategories();
 
-  const subcategories =
-    selectedCategory && categories
-      ? categories.find((cat) => cat.id === selectedCategory)?.subcategories || []
-      : [];
-
-  const childCategories =
-    selectedSubcategory && subcategories
-      ? subcategories.find((sub) => sub.id === selectedSubcategory)?.childcategories || []
-      : [];
-
-  const itemsPerPage = 8;
+  const itemsPerPage = 8; // 4 columns x 2 rows
 
   const getCategoryImage = (category: Category) => {
+    // Use API image first
     if (category.image_url) return category.image_url;
     if (category.image) return category.image;
-
+    
+    // Fallback to category-specific images
     const defaultImages: Record<string, string> = {
       'سيارات': 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=120&h=120&fit=crop',
       'عقارات': 'https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=120&h=120&fit=crop',
@@ -53,11 +40,11 @@ export function EnhancedMobileCategoryBar({
       'تعليم': 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=120&h=120&fit=crop',
       'طعام': 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=120&h=120&fit=crop',
     };
-
+    
     for (const [key, image] of Object.entries(defaultImages)) {
       if (category.name.includes(key)) return image;
     }
-
+    
     return 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=120&h=120&fit=crop';
   };
 
@@ -96,8 +83,7 @@ export function EnhancedMobileCategoryBar({
 
   return (
     <div dir="rtl" className="bg-white dark:bg-dark-background border-b border-border dark:border-dark-border">
-      {/* Main Categories */}
-      <div className="py-3">
+      <div className="py-4">
         <div ref={sliderRef} className="keen-slider touch-pan-x select-none">
           {pages.map((page, pageIndex) => (
             <div key={pageIndex} className="keen-slider__slide px-4">
@@ -113,7 +99,7 @@ export function EnhancedMobileCategoryBar({
                         : "opacity-80 hover:opacity-100"
                     )}
                   >
-                    <div className={`w-14 h-14 mb-1 rounded-sm overflow-hidden border-2 transition-all ${selectedCategory === category.id ? 'border-brand' : 'border-gray-200 dark:border-gray-700'}`}>
+                    <div className="w-16 h-16 mb-1 rounded-sm overflow-hidden">
                       <img
                         src={getCategoryImage(category)}
                         alt={category.name}
@@ -124,7 +110,7 @@ export function EnhancedMobileCategoryBar({
                         }}
                       />
                     </div>
-                    <span className={`text-xs text-center font-medium leading-tight w-full px-1 truncate max-w-[56px] ${selectedCategory === category.id ? 'text-brand' : 'text-foreground'}`}>
+                    <span className="text-xs text-center font-medium text-gray-800 dark:text-gray-100 leading-tight w-full px-1 truncate max-w-[64px]">
                       {category.name}
                     </span>
                   </button>
@@ -137,7 +123,7 @@ export function EnhancedMobileCategoryBar({
           ))}
         </div>
 
-        {/* indicators */}
+        {/* المؤشرات */}
         {pages.length > 1 && (
           <div className="mt-4 flex justify-center gap-2">
             {pages.map((_, i) => (
@@ -158,62 +144,6 @@ export function EnhancedMobileCategoryBar({
           </div>
         )}
       </div>
-
-      {/* Subcategories */}
-      {selectedCategory && subcategories.length > 0 && (
-        <div className="border-t border-gray-100 dark:border-dark-border bg-gray-50 dark:bg-dark-surface">
-          <div className="px-4 py-3">
-            <ScrollableContainer className="overflow-x-auto scrollbar-hide" showScrollbar={subcategories.length > 3}>
-              <div className="flex gap-2 min-w-max">
-                {subcategories.map((subcategory) => {
-                  const isSelected = selectedSubcategory === subcategory.id;
-                  return (
-                    <button
-                      key={subcategory.id}
-                      onClick={() => onSubcategorySelect?.(subcategory.id)}
-                      className={`px-3 py-1.5 rounded-md text-sm font-medium whitespace-nowrap transition-all ${
-                        isSelected
-                          ? 'bg-brand text-white'
-                          : 'bg-white text-foreground hover:bg-gray-100 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500'
-                      }`}
-                    >
-                      {subcategory.name}
-                    </button>
-                  );
-                })}
-              </div>
-            </ScrollableContainer>
-          </div>
-        </div>
-      )}
-
-      {/* Child Categories */}
-      {selectedSubcategory && childCategories.length > 0 && (
-        <div className="border-t border-gray-100 dark:border-dark-border bg-gray-50 dark:bg-dark-surface">
-          <div className="px-4 py-2">
-            <ScrollableContainer className="overflow-x-auto scrollbar-hide" showScrollbar={childCategories.length > 3}>
-              <div className="flex gap-2 min-w-max">
-                {childCategories.map((childCategory) => {
-                  const isSelected = selectedChildCategory === childCategory.id;
-                  return (
-                    <button
-                      key={childCategory.id}
-                      onClick={() => onChildCategorySelect?.(childCategory.id)}
-                      className={`px-3 py-1.5 rounded-md text-sm font-medium whitespace-nowrap transition-all ${
-                        isSelected
-                          ? 'bg-brand text-white'
-                          : 'bg-white text-foreground hover:bg-gray-100 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500'
-                      }`}
-                    >
-                      {childCategory.name}
-                    </button>
-                  );
-                })}
-              </div>
-            </ScrollableContainer>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

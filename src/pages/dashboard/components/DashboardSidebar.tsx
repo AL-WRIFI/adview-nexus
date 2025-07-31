@@ -29,9 +29,9 @@ export function DashboardSidebar({
     { id: 'ads', label: 'إعلاناتي', icon: FileText },
     { id: 'favorites', label: 'المفضلة', icon: Heart },
     { id: 'messages', label: 'الرسائل', icon: MessageCircle },
-    // { id: 'notifications', label: 'الإشعارات', icon: Bell },
+    { id: 'notifications', label: 'الإشعارات', icon: Bell },
     { id: 'promote', label: 'ترويج الإعلانات', icon: TrendingUp },
-    // { id: 'statistics', label: 'الإحصائيات', icon: BarChart3 },
+    { id: 'statistics', label: 'الإحصائيات', icon: BarChart3 },
     { id: 'settings', label: 'الإعدادات', icon: Settings },
   ];
 

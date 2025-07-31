@@ -1,253 +1,173 @@
-// src/components/ads/AdCard.tsx
-
-import { Link } from 'react-router-dom';
-import { Clock, MapPin, Star, Eye, Image as ImageIcon, Heart } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import React from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge, Button } from '@/components/ui/button';
+import { MapPin, Clock, Heart } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Listing } from '@/types';
 import { formatDistanceToNow } from 'date-fns';
-import { ar } from 'date-fns/locale';
-import React, { useState } from 'react';
-import { useAddToFavorites, useRemoveFromFavorites } from '@/hooks/use-api';
-import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
+import { useToast } from '@/components/ui/use-toast';
 
 interface AdCardProps {
   ad: Listing;
   layout?: 'grid' | 'list';
-  className?: string;
-  onFavoriteToggle?: (adId: number) => void;
-  isFavorite?: boolean;
 }
 
-export function AdCard({ 
-  ad, 
-  layout = 'list', 
-  className, 
-  onFavoriteToggle, 
-  isFavorite: externalIsFavorite,
-}: AdCardProps) {
-  const [localIsFavorite, setLocalIsFavorite] = useState(ad.is_favorited || false);
-  const { isAuthenticated } = useAuth();
-  const addToFavorites = useAddToFavorites();
-  const removeFromFavorites = useRemoveFromFavorites();
+export function AdCard({ ad, layout = 'grid' }: AdCardProps) {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { addToast } = useToast();
   
-  const timeAgo = formatDistanceToNow(new Date(ad.created_at), { 
-    addSuffix: true,
-    locale: ar
-  });
-
-  const isFavorite = externalIsFavorite !== undefined ? externalIsFavorite : localIsFavorite;
-
-  const handleFavoriteToggle = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    if (!isAuthenticated) {
-      toast({
-        title: "تسجيل الدخول مطلوب",
-        description: "يجب عليك تسجيل الدخول لإضافة للمفضلة",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (onFavoriteToggle) {
-      onFavoriteToggle(ad.id);
-    } else {
-      setLocalIsFavorite(!isFavorite);
-      if (isFavorite) {
-        removeFromFavorites.mutate(ad.id);
-      } else {
-        addToFavorites.mutate(ad.id);
-      }
-    }
-  };
-
-  const getImageUrl = (): string | null => {
+  // Image handling with null safety
+  const getFirstImage = () => {
     if (ad.main_image_url) return ad.main_image_url;
-    if (ad.image && typeof ad.image === 'object' && 'image_url' in ad.image) return (ad.image as any).image_url;
-    if (typeof ad.image === 'string' && ad.image) return ad.image;
-    if (ad.images && Array.isArray(ad.images) && ad.images.length > 0) {
-      const firstImage = ad.images[0];
-      if (firstImage && typeof firstImage === 'object' && 'url' in firstImage) return (firstImage as any).url;
-      if (typeof firstImage === 'string') return firstImage;
+    if (ad.image) {
+      if (typeof ad.image === 'string') return ad.image;
+      if (typeof ad.image === 'object' && ad.image?.image_url) return ad.image.image_url;
+    }
+    if (ad.gallery_images && Array.isArray(ad.gallery_images) && ad.gallery_images.length > 0) {
+      const firstImg = ad.gallery_images[0];
+      return typeof firstImg === 'string' ? firstImg : firstImg?.url;
     }
     return null;
   };
+  
+  const firstImage = getFirstImage();
+  const defaultImage = 'https://images.unsplash.com/photo-1560472355-536de3962603?w=400&h=300&fit=crop';
 
-  const imageUrl = getImageUrl();
-  const hasValidImage = !!imageUrl;
-
-  const formatDistance = (distanceInKm: number): string => {
-    if (distanceInKm < 1) {
-      const meters = Math.round(distanceInKm * 1000);
-      return `${meters} متر`;
+  const handleFavorite = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!user) {
+      addToast({
+        title: 'تسجيل الدخول مطلوب',
+        description: 'يرجى تسجيل الدخول لحفظ الإعلان في المفضلة.',
+      });
+      return;
     }
-    return `${distanceInKm.toFixed(1)} كم`;
+    // Placeholder for favorite logic
+    addToast({
+      title: 'تمت الإضافة إلى المفضلة',
+      description: 'يمكنك عرض قائمتك في صفحة المفضلة.',
+    });
   };
 
-  if (layout === 'grid') {
+  const handleShare = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    // Placeholder for share logic
+    addToast({
+      title: 'تم نسخ رابط الإعلان',
+      description: 'يمكنك الآن مشاركة الرابط مع أصدقائك.',
+    });
+  };
+
+  const formatPrice = (price: number) => {
+    return price.toLocaleString('ar-SA', {
+      style: 'currency',
+      currency: 'SAR',
+    });
+  };
+
+  if (layout === 'list') {
     return (
-      <Link
-        to={`/ad/${ad.id}`}
-        className={cn(
-          "ad-card block border border-border hover:shadow-md transition-shadow bg-white relative h-80",
-          ad.featured && "featured-ad border-t-2 border-t-brand",
-          className
-        )}
-      >
-        <button 
-          className="absolute top-2 right-2 z-10 w-8 h-8 rounded-full bg-white/80 flex items-center justify-center shadow-sm"
-          onClick={handleFavoriteToggle}
-        >
-          <Heart 
-            className={`h-5 w-5 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-muted-foreground'}`}
-          />
-        </button>
-
-        <div className="relative w-full h-40">
-          {hasValidImage ? (
-            <img 
-              src={imageUrl} 
-              alt={ad.title} 
-              className="w-full h-full object-cover"
-              loading="lazy"
+      <Card className="overflow-hidden hover:shadow-md transition-shadow cursor-pointer">
+        <div className="flex gap-4 p-4" onClick={() => navigate(`/ad/${ad.id}`)}>
+          <div className="w-32 h-24 flex-shrink-0">
+            <img
+              src={firstImage || defaultImage}
+              alt={ad.title}
+              className="w-full h-full object-cover rounded-lg"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.src = 'https://images.unsplash.com/photo-1560472355-536de3962603?w=400&h=300&fit=crop';
+              }}
             />
-          ) : (
-            <div className="w-full h-full bg-muted flex items-center justify-center flex-col text-muted-foreground">
-              <ImageIcon className="h-8 w-8" />
-              <span className="text-xs mt-1">لا توجد صورة</span>
-            </div>
-          )}
-
-          {ad.featured ? (
-            <div className="absolute top-2 left-2 rtl:right-2 rtl:left-auto">
-              <Star className="h-5 w-5 fill-yellow-400 text-yellow-400 drop-shadow-md" />
-            </div>
-          ) : null}
-        </div>
-        
-        <div className="p-3 flex flex-col h-40">
-          <div className="flex justify-between items-start">
-            <h3 className="font-bold text-sm truncate max-w-[180px]" title={ad.title}>{ad.title}</h3>
-            {ad.price > 0 && (
-              <span className="font-bold text-brand whitespace-nowrap mr-2 text-sm">
-                {ad.price.toLocaleString()} SYP
-              </span>
-            )}
           </div>
           
-         <p className="text-muted-foreground text-xs line-clamp-3 mt-1 leading-snug">
-            {ad.description}
-          </p>
-          
-          <div className="mt-auto flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
-            <div className="flex items-center">
-              <MapPin className="h-3 w-3 ml-1" />
-              <span className="truncate max-w-[80px]">{ad.city_name || ad.city || 'غير محدد'}</span>
-            </div>
-            <div className="flex items-center">
-              <Clock className="h-3 w-3 ml-1" />
-              <span>{timeAgo}</span>
-            </div>
-            <div className="flex items-center">
-              <Eye className="h-3 w-3 ml-1" />
-              <span>{ad.views_count || 0}</span>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start justify-between mb-2">
+              <h3 className="font-semibold text-sm line-clamp-2 text-foreground">
+                {ad.title}
+              </h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => handleFavorite(e)}
+                className="flex-shrink-0 ml-2"
+              >
+                <Heart className="h-4 w-4" />
+              </Button>
             </div>
             
-            {ad.distance_km !== undefined && ad.distance_km !== null && (
-              <div className="flex items-center">
-                <MapPin className="h-3 w-3 ml-1 text-brand" />
-                <span className="text-brand font-medium">{formatDistance(ad.distance_km)}</span>
+            <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
+              {ad.description}
+            </p>
+            
+            <div className="flex items-center justify-between">
+              <div className="text-brand font-bold text-lg">
+                {formatPrice(ad.price)}
               </div>
-            )}
+              <div className="flex items-center text-xs text-muted-foreground">
+                <MapPin className="h-3 w-3 ml-1" />
+                <span>{ad.city_name || ad.city || ad.location || 'غير محدد'}</span>
+              </div>
+            </div>
           </div>
         </div>
-      </Link>
+      </Card>
     );
   }
 
   return (
-    <Link 
-      to={`/ad/${ad.id}`}
-      className={cn(
-        "ad-card flex border border-border hover:shadow-md transition-shadow bg-white relative h-36",
-        ad.featured && "featured-ad border-r-2 border-r-brand",
-        className
-      )}
-    >
-      <button 
-        className="absolute top-2 right-2 z-10 w-7 h-7 rounded-full bg-white/80 flex items-center justify-center shadow-sm"
-        onClick={handleFavoriteToggle}
-      >
-        <Heart 
-          className={`h-4 w-4 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-muted-foreground'}`}
-        />
-      </button>
-
-      <div className="w-28 md:w-36 flex-shrink-0 relative">
-        {hasValidImage ? (
-          <img 
-            src={imageUrl} 
-            alt={ad.title} 
+    <Card className="overflow-hidden hover:shadow-md transition-shadow cursor-pointer">
+      <div onClick={() => navigate(`/ad/${ad.id}`)}>
+        <div className="aspect-video relative">
+          <img
+            src={firstImage || defaultImage}
+            alt={ad.title}
             className="w-full h-full object-cover"
-            loading="lazy"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              target.src = 'https://images.unsplash.com/photo-1560472355-536de3962603?w=400&h=300&fit=crop';
+            }}
           />
-        ) : (
-          <div className="w-full h-full bg-muted flex items-center justify-center text-muted-foreground">
-            <ImageIcon className="h-6 w-6" />
-          </div>
-        )}
-        {ad.featured && (
-          <div className="absolute top-2 left-2 rtl:right-2 rtl:left-auto">
-            <Star className="h-4 w-4 fill-yellow-400 text-yellow-400 drop-shadow-md" />
-          </div>
-        )}
-      </div>
-      
-      <div className="p-3 flex flex-col flex-1 justify-between overflow-hidden">
-        <div>
-          <div className="flex justify-between items-start gap-2">
-            <h3
-              className="font-bold text-base truncate max-w-[150px] md:max-w-[180px]"
-              title={ad.title}
-            >
-              {ad.title}
-            </h3>
-            {ad.price > 0 && (
-              <span className="font-bold text-brand text-sm shrink-0 whitespace-nowrap">
-                {ad.price.toLocaleString()} SYP
-              </span>
-            )}
-          </div>
-
-          <p className="text-muted-foreground text-xs mt-1 leading-snug line-clamp-2 max-h-[2.75rem] overflow-hidden">
-            {ad.description}
-          </p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-xs text-muted-foreground">
-          <div className="flex items-center">
-            <MapPin className="h-3 w-3 ml-1" />
-            <span className="truncate max-w-[80px]">{ad.city_name || ad.city || 'غير محدد'}</span>
-          </div>
-          <div className="flex items-center">
-            <Clock className="h-3 w-3 ml-1" />
-            <span>{timeAgo}</span>
-          </div>
-          <div className="flex items-center">
-            <Eye className="h-3 w-3 ml-1" />
-            <span>{ad.views_count || 0}</span>
-          </div>
-          
-          {ad.distance_km !== undefined && ad.distance_km !== null && (
-            <div className="flex items-center">
-              <MapPin className="h-3 w-3 ml-1 text-brand" />
-              <span className="text-brand font-medium">{formatDistance(ad.distance_km)}</span>
-            </div>
+          {ad.featured && (
+            <Badge className="absolute top-2 right-2 bg-brand text-white">
+              مميز
+            </Badge>
           )}
         </div>
+        
+        <CardContent className="p-4">
+          <div className="flex items-start justify-between mb-2">
+            <h3 className="font-semibold text-sm line-clamp-2 text-foreground flex-1">
+              {ad.title}
+            </h3>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={(e) => handleFavorite(e)}
+              className="flex-shrink-0 ml-2"
+            >
+              <Heart className="h-4 w-4" />
+            </Button>
+          </div>
+          
+          <div className="text-brand font-bold text-lg mb-2">
+            {formatPrice(ad.price)}
+          </div>
+          
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <div className="flex items-center">
+              <MapPin className="h-3 w-3 ml-1" />
+              <span>{ad.city_name || ad.city || ad.location || 'غير محدد'}</span>
+            </div>
+            <div className="flex items-center">
+              <Clock className="h-3 w-3 ml-1" />
+              <span>{formatDistanceToNow(new Date(ad.created_at || ''))}</span>
+            </div>
+          </div>
+        </CardContent>
       </div>
-    </Link>
+    </Card>
   );
 }

@@ -1,7 +1,6 @@
 
 import React, { createContext, useContext, useEffect } from 'react';
-import { useColorSettings, useBasicSettings, useSiteIdentity } from '@/hooks/use-settings';
-import { applyDynamicStyles } from '@/utils/dynamic-styles';
+import { useColorSettings, useBasicSettings, useSiteIdentity, applyColorSettingsToDOM } from '@/hooks/use-settings';
 import type { ApiResponse } from '@/types';
 import type { ColorSettings, BasicSettings, SiteIdentity } from '@/services/settings-api';
 
@@ -37,20 +36,19 @@ export function SiteSettingsProvider({ children }: SiteSettingsProviderProps) {
   const applyColorSettings = () => {
     const colorData = (colorSettings as ApiResponse<ColorSettings>)?.data;
     if (!colorData) {
-      console.log('⚠️ No color data available');
+      console.log('⚠️ لا توجد بيانات ألوان متاحة');
       return;
     }
 
-    const isDarkMode = document.documentElement.classList.contains('dark');
-    console.log('🎨 Applying colors:', colorData);
-    applyDynamicStyles(colorData, isDarkMode ? 'dark' : 'light');
+    console.log('🎨 تطبيق الألوان:', colorData);
+    applyColorSettingsToDOM(colorData);
   };
 
-  // Apply colors when data loads
+  // تطبيق الألوان عند تحميل البيانات
   useEffect(() => {
     const colorData = (colorSettings as ApiResponse<ColorSettings>)?.data;
     if (colorData) {
-      console.log('📥 Color settings loaded, applying...', colorData);
+      console.log('📥 تم تحميل إعدادات الألوان، جاري التطبيق...', colorData);
       applyColorSettings();
       
       // تطبيق متأخر للتأكد من تحميل جميع العناصر
@@ -64,7 +62,8 @@ export function SiteSettingsProvider({ children }: SiteSettingsProviderProps) {
     }
   }, [colorSettings]);
 
-useEffect(() => {
+  // مراقبة تغييرات DOM وإعادة تطبيق الألوان
+  useEffect(() => {
     const colorData = (colorSettings as ApiResponse<ColorSettings>)?.data;
     if (!colorData) return;
 
@@ -102,7 +101,8 @@ useEffect(() => {
 
     return () => observer.disconnect();
   }, [colorSettings]);
-  
+
+  // تطبيق العنوان من الإعدادات الأساسية
   useEffect(() => {
     const basicData = (basicSettings as ApiResponse<BasicSettings>)?.data;
     if (basicData?.site_title) {
@@ -110,7 +110,7 @@ useEffect(() => {
     }
   }, [basicSettings]);
 
-  // Apply favicon
+  // تطبيق الأيقونة المفضلة
   useEffect(() => {
     const identityData = (siteIdentity as ApiResponse<SiteIdentity>)?.data;
     if (identityData?.site_favicon) {

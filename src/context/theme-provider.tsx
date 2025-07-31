@@ -42,7 +42,9 @@ export function ThemeProvider({
     };
     
     mediaQuery.addEventListener('change', handleChange);
-      const observer = new MutationObserver(() => {
+    
+    // Also listen for DOM changes to reapply theme
+    const observer = new MutationObserver(() => {
       // Small delay to ensure DOM is updated
       setTimeout(() => {
         applyTheme();
@@ -58,8 +60,7 @@ export function ThemeProvider({
     
     return () => {
       mediaQuery.removeEventListener('change', handleChange);
-            observer.disconnect();
-
+      observer.disconnect();
     };
   }, [mode, applyTheme]);
 
@@ -67,6 +68,7 @@ export function ThemeProvider({
     theme: mode,
     setTheme: (theme: Theme) => {
       setMode(theme);
+      // Force immediate application
       setTimeout(() => {
         applyTheme();
       }, 0);
