@@ -18,7 +18,7 @@ export function MobileNav() {
   });
 
   const messages = messagesResponse?.data || [];
-  const unreadCount = messages.filter((msg: any) => !msg.read_at && msg.recipient_id === useAuth().user?.id).length;
+  const unreadCount = messages.filter((msg: any) => !msg.read_at && msg.recipient_id).length;
 
   const items = [
     {

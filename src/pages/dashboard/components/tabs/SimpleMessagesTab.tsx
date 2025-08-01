@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { messagesAPI } from '@/services/apis';
 import { useAuth } from '@/context/auth-context';
@@ -7,10 +7,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Inbox, User, AlertCircle, MessageSquareText, Send, Check, CheckCheck, MapPin, Phone, Clock, MessageCircle } from 'lucide-react';
+import { Inbox, User, AlertCircle, MessageSquareText, Send, Check, CheckCheck, MapPin, Phone } from 'lucide-react';
 import { WhatsAppButton } from '@/components/messages/WhatsAppButton';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
 
 interface Message {
   id: number;
@@ -42,206 +40,120 @@ interface Message {
   };
 }
 
-const MessageListItem = ({ message, type, expandedId, setExpandedId }: { 
-  message: Message; 
-  type: 'sent' | 'received';
-  expandedId: number | null;
-  setExpandedId: (id: number | null) => void;
-}) => {
+const MessageListItem = ({ message, type }: { message: Message; type: 'sent' | 'received' }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
   const { user } = useAuth();
   const queryClient = useQueryClient();
   
   const markAsReadMutation = useMutation({
     mutationFn: (messageId: number) => messagesAPI.markMessageAsRead(messageId),
-    onSuccess: (_, messageId) => {
-      // تحديث البيانات بدون إعادة تحميل كامل
-      queryClient.setQueryData(['user-messages'], (oldData: any) => {
-        if (!oldData) return oldData;
-        return {
-          ...oldData,
-          data: oldData.data.map((msg: Message) =>
-            msg.id === messageId ? { ...msg, read_at: new Date().toISOString() } : msg
-          ),
-        };
-      });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user-messages'] });
     },
   });
 
-  const handleClick = useCallback(() => {
-    const isExpanded = expandedId === message.id;
-    
-    if (!message.read_at && type === 'received' && !isExpanded) {
+  const handleClick = () => {
+    if (!message.read_at && type === 'received') {
       markAsReadMutation.mutate(message.id);
     }
-    
-    setExpandedId(isExpanded ? null : message.id);
-  }, [expandedId, message.id, message.read_at, type, markAsReadMutation, setExpandedId]);
+    setIsExpanded(!isExpanded);
+  };
 
-  const isExpanded = expandedId === message.id;
   const isUnread = !message.read_at && type === 'received';
   const otherUser = type === 'sent' ? message.recipient : message.sender;
 
-  const formatTime = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
-    
-    if (diffInHours < 24) {
-      return date.toLocaleTimeString('ar-SA', { 
-        hour: '2-digit', 
-        minute: '2-digit' 
-      });
-    } else {
-      return date.toLocaleDateString('ar-SA', { 
-        month: 'short', 
-        day: 'numeric' 
-      });
-    }
-  };
-
   return (
-    <Card 
-      className={`mb-3 transition-all duration-300 cursor-pointer hover:shadow-md border-l-4 ${
-        isUnread 
-          ? 'bg-gradient-to-r from-blue-50 to-transparent dark:from-blue-900/20 border-l-blue-500' 
-          : type === 'sent' 
-            ? 'border-l-green-400 hover:border-l-green-500' 
-            : 'border-l-gray-300 hover:border-l-gray-400'
-      } ${isExpanded ? 'ring-2 ring-primary/20 shadow-lg' : ''}`}
+    <div 
+      className={`group flex items-start gap-4 p-4 mx-2 rounded-lg transition-all duration-200 cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800 border-b border-neutral-100 dark:border-neutral-700 last:border-b-0 ${
+        isUnread ? 'bg-blue-50 dark:bg-blue-900/20' : ''
+      }`}
       onClick={handleClick}
     >
-      <CardContent className="p-4">
-        <div className="flex items-start gap-4">
-          <div className="relative">
-            <Avatar className={`transition-all duration-200 ${isExpanded ? 'w-14 h-14' : 'w-12 h-12'}`}>
-              <AvatarImage 
-                src={otherUser?.image} 
-                alt={`${otherUser?.first_name} ${otherUser?.last_name}`} 
-              />
-              <AvatarFallback className={`${type === 'sent' ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' : 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'}`}>
-                {type === 'sent' ? <Send className="w-5 h-5" /> : <User className="w-5 h-5" />}
-              </AvatarFallback>
-            </Avatar>
-            
+      <div className="relative">
+        <Avatar className="w-12 h-12">
+          <AvatarImage src={otherUser?.image} alt={`${otherUser?.first_name} ${otherUser?.last_name}`} />
+          <AvatarFallback className="bg-neutral-200 dark:bg-neutral-700">
+            <User className="text-neutral-500" />
+          </AvatarFallback>
+        </Avatar>
+      </div>
+      <div className="flex-1 overflow-hidden">
+        <div className="flex items-start justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <p className="font-semibold text-sm text-neutral-800 dark:text-neutral-100">
+              {type === 'sent' ? 'أنت' : (otherUser ? `${otherUser.first_name} ${otherUser.last_name}` : 'مستخدم')}
+            </p>
             {type === 'sent' && (
-              <div className="absolute -bottom-1 -right-1 bg-green-500 rounded-full p-1">
-                {message.read_at ? (
-                  <CheckCheck className="w-3 h-3 text-white" />
-                ) : (
-                  <Check className="w-3 h-3 text-white" />
-                )}
-              </div>
+              <Badge variant="secondary" className="text-xs">
+                <Send className="w-3 h-3 mr-1" />
+                مرسلة
+              </Badge>
+            )}
+            {isUnread && (
+              <Badge variant="destructive" className="text-xs animate-pulse">
+                جديدة
+              </Badge>
             )}
           </div>
-
-          <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between mb-2">
-              <div className="flex items-center gap-2 flex-wrap">
-                <h4 className="font-semibold text-base text-foreground">
-                  {type === 'sent' ? 'أنت' : (otherUser ? `${otherUser.first_name} ${otherUser.last_name}` : 'مستخدم')}
-                </h4>
-                
-                <div className="flex items-center gap-1">
-                  {type === 'sent' && (
-                    <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-300">
-                      <Send className="w-3 h-3 mr-1" />
-                      مرسلة
-                    </Badge>
-                  )}
-                  
-                  {isUnread && (
-                    <Badge variant="destructive" className="text-xs animate-pulse bg-red-500">
-                      <MessageCircle className="w-3 h-3 mr-1" />
-                      جديدة
-                    </Badge>
-                  )}
-                </div>
-              </div>
-              
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <Clock className="w-3 h-3" />
-                <time className="whitespace-nowrap">
-                  {formatTime(message.created_at)}
-                </time>
-              </div>
-            </div>
-            
-            {message.listing && (
-              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-2 mb-3 border-l-4 border-blue-400">
-                <p className="text-sm font-medium text-blue-700 dark:text-blue-300">
-                  📋 بخصوص الإعلان: {message.listing.title}
-                </p>
-              </div>
-            )}
-            
-            <div className={`transition-all duration-300 ${isExpanded ? 'max-h-full' : 'max-h-16 overflow-hidden'}`}>
-              <p className="text-sm text-foreground leading-relaxed bg-muted/30 p-3 rounded-lg">
-                {message.message}
-              </p>
-            </div>
-
-            {!isExpanded && message.message.length > 100 && (
-              <Button variant="ghost" size="sm" className="mt-2 h-auto p-1 text-xs text-primary hover:text-primary/80">
-                اقرأ المزيد...
-              </Button>
-            )}
-
-            {isExpanded && (
-              <div className="mt-4 space-y-3">
-                <Separator />
-                
-                {otherUser && (
-                  <div className="bg-muted/20 rounded-lg p-3 space-y-2">
-                    <h5 className="font-medium text-sm text-foreground mb-2">معلومات المرسل:</h5>
-                    
-                    <div className="grid grid-cols-1 gap-2">
-                      {otherUser.location_address && (
-                        <div className="flex items-center gap-2 text-sm">
-                          <MapPin className="w-4 h-4 text-muted-foreground" />
-                          <span className="text-muted-foreground">{otherUser.location_address}</span>
-                        </div>
-                      )}
-                      
-                      {otherUser.phone && (
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2 text-sm">
-                            <Phone className="w-4 h-4 text-muted-foreground" />
-                            <span className="text-muted-foreground">{otherUser.phone}</span>
-                          </div>
-                          
-                          <WhatsAppButton 
-                            phoneNumber={otherUser.phone}
-                            message={`مرحباً ${otherUser.first_name}، بخصوص ${type === 'sent' ? 'إعلانك' : 'رسالتك'}: "${message.message.substring(0, 50)}..."`}
-                            size="sm"
-                            className="h-8 px-3 text-xs"
-                          />
-                        </div>
-                      )}
-                    </div>
-                  </div>
+          <div className="flex items-center gap-2">
+            <time className="text-xs text-muted-foreground whitespace-nowrap">
+              {new Date(message.created_at).toLocaleDateString('ar-SA')}
+            </time>
+            {type === 'sent' && (
+              <div className="text-muted-foreground">
+                {message.read_at ? (
+                  <CheckCheck className="w-4 h-4 text-blue-500" />
+                ) : (
+                  <Check className="w-4 h-4" />
                 )}
-                
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="w-full text-xs text-muted-foreground hover:text-foreground"
-                  onClick={() => setExpandedId(null)}
-                >
-                  إخفاء التفاصيل
-                </Button>
-              </div>
-            )}
-
-            {isUnread && (
-              <div className="flex items-center gap-2 mt-3 p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-                <span className="text-xs font-medium text-blue-600 dark:text-blue-400">رسالة غير مقروءة</span>
               </div>
             )}
           </div>
         </div>
-      </CardContent>
-    </Card>
+        
+        {message.listing && (
+          <div className="text-xs text-blue-600 dark:text-blue-400 mb-1">
+            بخصوص: {message.listing.title}
+          </div>
+        )}
+        
+        <p className={`text-sm text-muted-foreground mb-2 ${isExpanded ? '' : 'line-clamp-2'}`}>
+          {message.message}
+        </p>
+
+        {isExpanded && otherUser && (
+          <div className="mt-3 pt-3 border-t border-border space-y-2">
+            {otherUser.location_address && (
+              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                <MapPin className="w-3 h-3" />
+                <span>{otherUser.location_address}</span>
+              </div>
+            )}
+            {otherUser.phone && (
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <Phone className="w-3 h-3" />
+                  <span>{otherUser.phone}</span>
+                </div>
+                <WhatsAppButton 
+                  phoneNumber={otherUser.phone}
+                  message={`مرحباً ${otherUser.first_name}، بخصوص ${type === 'sent' ? 'إعلانك' : 'رسالتك'}: "${message.message.substring(0, 50)}..."`}
+                  size="sm"
+                  className="h-6 px-2 text-xs"
+                />
+              </div>
+            )}
+          </div>
+        )}
+
+        {isUnread && (
+          <div className="flex items-center gap-1 mt-2">
+            <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+            <span className="text-xs text-blue-600 dark:text-blue-400">غير مقروءة</span>
+          </div>
+        )}
+      </div>
+    </div>
   );
 };
 
@@ -266,13 +178,10 @@ const MessagesSkeleton = () => (
 
 export function SimpleMessagesTab() {
   const { user } = useAuth();
-  const [expandedMessageId, setExpandedMessageId] = useState<number | null>(null);
-  
   const { data: messages, isLoading, isError, error } = useQuery({
     queryKey: ['user-messages'],
     queryFn: () => messagesAPI.getMessages(),
     retry: 1,
-    refetchInterval: 30000, // تحديث كل 30 ثانية
   });
 
   const messagesList: Message[] = messages?.data || [];
@@ -330,49 +239,31 @@ export function SimpleMessagesTab() {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="received" className="py-2 space-y-2">
+        <TabsContent value="received" className="py-2">
           {receivedMessages.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="bg-muted/30 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4">
-                <Inbox className="w-10 h-10 text-muted-foreground" />
-              </div>
-              <h3 className="font-medium text-lg mb-2">لا توجد رسائل مستقبلة</h3>
-              <p className="text-sm text-muted-foreground">عندما يرسل لك أحد رسالة، ستظهر هنا</p>
+            <div className="text-center py-8">
+              <Inbox className="w-12 h-12 text-muted-foreground mx-auto mb-2" />
+              <p className="text-sm text-muted-foreground">لا توجد رسائل مستقبلة</p>
             </div>
           ) : (
             receivedMessages.map(message => (
               message && message.id ? (
-                <MessageListItem 
-                  key={message.id} 
-                  message={message} 
-                  type="received"
-                  expandedId={expandedMessageId}
-                  setExpandedId={setExpandedMessageId}
-                />
+                <MessageListItem key={message.id} message={message} type="received" />
               ) : null
             ))
           )}
         </TabsContent>
 
-        <TabsContent value="sent" className="py-2 space-y-2">
+        <TabsContent value="sent" className="py-2">
           {sentMessages.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="bg-muted/30 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4">
-                <Send className="w-10 h-10 text-muted-foreground" />
-              </div>
-              <h3 className="font-medium text-lg mb-2">لا توجد رسائل مرسلة</h3>
-              <p className="text-sm text-muted-foreground">الرسائل التي ترسلها ستظهر هنا</p>
+            <div className="text-center py-8">
+              <Send className="w-12 h-12 text-muted-foreground mx-auto mb-2" />
+              <p className="text-sm text-muted-foreground">لا توجد رسائل مرسلة</p>
             </div>
           ) : (
             sentMessages.map(message => (
               message && message.id ? (
-                <MessageListItem 
-                  key={message.id} 
-                  message={message} 
-                  type="sent"
-                  expandedId={expandedMessageId}
-                  setExpandedId={setExpandedMessageId}
-                />
+                <MessageListItem key={message.id} message={message} type="sent" />
               ) : null
             ))
           )}
@@ -382,29 +273,20 @@ export function SimpleMessagesTab() {
   }
 
   return (
-    <Card className="shadow-xl border-0 rounded-3xl overflow-hidden bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50">
-      <CardHeader className="bg-gradient-to-r from-primary/5 to-blue-500/5 border-b border-primary/10 p-6">
+    <Card className="shadow-lg shadow-black/5 border-none rounded-2xl">
+      <CardHeader className="flex flex-row items-center justify-between border-b dark:border-neutral-800 p-4">
         <div className='flex items-center justify-between w-full'>
-          <div className='flex items-center gap-4'>
-            <div className="bg-primary/10 p-3 rounded-2xl">
-              <MessageSquareText className="h-7 w-7 text-primary" />
-            </div>
+          <div className='flex items-center gap-3'>
+            <MessageSquareText className="h-6 w-6 text-brand" />
             <div>
-              <CardTitle className="text-xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
-                الرسائل
-              </CardTitle>
-              <CardDescription className="text-sm text-muted-foreground">
-                رسائل العملاء بخصوص إعلاناتك
-              </CardDescription>
+              <CardTitle className="text-lg">الرسائل</CardTitle>
+              <CardDescription className="text-xs">رسائل العملاء بخصوص إعلاناتك</CardDescription>
             </div>
           </div>
           {unreadReceivedMessages.length > 0 && (
-            <div className="flex items-center gap-2">
-              <Badge variant="destructive" className="animate-pulse shadow-lg">
-                <MessageCircle className="w-3 h-3 mr-1" />
-                {unreadReceivedMessages.length} غير مقروءة
-              </Badge>
-            </div>
+            <Badge variant="destructive" className="animate-pulse">
+              {unreadReceivedMessages.length} غير مقروءة
+            </Badge>
           )}
         </div>
       </CardHeader>
