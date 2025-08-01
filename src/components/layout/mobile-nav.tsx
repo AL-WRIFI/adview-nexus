@@ -1,9 +1,24 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Search, PlusCircle, Heart, User } from 'lucide-react';
+import { Home, MessageSquare, PlusCircle, Heart, User } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { useQuery } from '@tanstack/react-query';
+import { messagesAPI } from '@/services/apis';
+import { useAuth } from '@/context/auth-context';
 import { cn } from '@/lib/utils';
 
 export function MobileNav() {
   const location = useLocation();
+  const { isAuthenticated } = useAuth();
+
+  const { data: messagesResponse } = useQuery({
+    queryKey: ['user-messages'],
+    queryFn: () => messagesAPI.getMessages(),
+    enabled: isAuthenticated,
+    refetchInterval: 30000,
+  });
+
+  const messages = messagesResponse?.data || [];
+  const unreadCount = messages.filter((msg: any) => !msg.read_at && msg.recipient_id).length;
 
   const items = [
     {
@@ -12,9 +27,10 @@ export function MobileNav() {
       href: '/'
     },
     {
-      label: 'البحث',
-      icon: Search,
-      href: '/search'
+      label: 'الرسائل',
+      icon: MessageSquare,
+      href: '/messages',
+      badge: unreadCount
     },
     {
       label: 'إضافة إعلان',
@@ -47,14 +63,24 @@ export function MobileNav() {
               key={item.href}
               to={item.href}
               className={cn(
-                "flex flex-col items-center justify-center text-xs font-medium transition-colors",
+                "flex flex-col items-center justify-center text-xs font-medium transition-colors relative",
                 isActive
                   ? "text-primary dark:text-white"
                   : "text-gray-600 dark:text-neutral-400",
                 isAddAd && "text-primary"
               )}
             >
-              <Icon className={cn("h-6 w-6 mb-1", isAddAd && "text-primary")} />
+              <div className="relative">
+                <Icon className={cn("h-6 w-6 mb-1", isAddAd && "text-primary")} />
+                {item.badge && item.badge > 0 && (
+                  <Badge 
+                    variant="destructive" 
+                    className="absolute -top-2 -right-2 h-4 w-4 flex items-center justify-center p-0 text-xs rounded-full bg-red-500 text-white"
+                  >
+                    {item.badge > 99 ? '99+' : item.badge}
+                  </Badge>
+                )}
+              </div>
               <span>{item.label}</span>
             </Link>
           );

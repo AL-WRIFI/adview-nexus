@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { User, Plus, Bell, Menu } from 'lucide-react';
 import { useState } from 'react';
-import { MessagesBadge } from '@/components/messages/MessagesBadge';
+import { MessagesDropdown } from '@/components/messages/MessagesDropdown';
 import { useAuth } from '@/context/auth-context';
 
 export function Header() {
@@ -47,7 +47,7 @@ export function Header() {
                   </Link>
                 </Button>
                 
-                <MessagesBadge />
+                <MessagesDropdown />
                 
                 <Button variant="ghost" size="icon" asChild>
                   <Link to="/notifications">

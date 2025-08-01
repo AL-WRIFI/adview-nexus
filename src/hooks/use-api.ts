@@ -670,7 +670,7 @@ export function useUserListings(filters: SearchFilters) {
     },
 
     enabled: API.isAuthenticated(),
-    keepPreviousData: true,
+    placeholderData: (previousData) => previousData,
   });
 }
 

@@ -65,9 +65,9 @@ export default function AddAd() {
   const [lon, setLon] = useState<number | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const { data: cities } = useCities(stateId);
-  const { data: districts } = useDistricts(cityId);
-  const { data: brands } = useBrands(categoryId);
+  const { data: cities } = useCities();
+  const { data: districts } = useDistricts();
+  const { data: brands } = useBrands();
 
   const subCategories = categoryId && categories ?
     categories.find(cat => cat.id === categoryId)?.subcategories || [] : [];
