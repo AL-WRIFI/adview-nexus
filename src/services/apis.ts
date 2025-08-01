@@ -281,8 +281,8 @@ export const listingsAPI = {
 };
 
 export const authAPI = {
-  login: (identifier: string, password: string): Promise<ApiResponse<{ user: User; token: string }>> => 
-    ApiClient.post('/auth/login', { identifier, password }),
+  login: (identifier: string, password: string, rememberMe?: boolean): Promise<ApiResponse<{ user: User; token: string }>> => 
+    ApiClient.post('/auth/login', { identifier, password, remember_me: rememberMe }),
 
   register: (userData: any): Promise<ApiResponse<{ user: User; token: string }>> => 
     ApiClient.post('/auth/register', userData),
@@ -301,6 +301,12 @@ export const authAPI = {
 
   deleteAccount: (data: DeleteAccountPayload): Promise<ApiResponse<void>> =>
     ApiClient.post('/user/account/delete-account', data),
+
+  requestPasswordResetCode: (identifier: string): Promise<ApiResponse<void>> =>
+    ApiClient.post('/auth/forgot-password', { identifier }),
+
+  resetPassword: (data: { token: string; password: string; password_confirmation: string }): Promise<ApiResponse<void>> =>
+    ApiClient.post('/auth/reset-password', data),
 };
 
 export const profileAPI = {
@@ -397,6 +403,12 @@ export const messagesAPI = {
    */
   getMessages: (): Promise<ApiResponse<any[]>> =>
     ApiClient.get('/user/messages'),
+
+  /**
+   * تمييز الرسالة كمقروءة
+   */
+  markMessageAsRead: (messageId: number): Promise<ApiResponse<void>> =>
+    ApiClient.post('/user/messages/mark-as-read', { message_id: messageId }),
 };
 // Helper function to check if user is authenticated
 export const isAuthenticated = (): boolean => {

@@ -8,10 +8,12 @@ interface AuthContextType {
   isAuthenticated: boolean;
   user: User | null;
   loading: boolean;
+  isLoading: boolean;
   error: Error | null;
-  login: (identifier: string, password: string) => Promise<void>;
+  login: (identifier: string, password: string, rememberMe?: boolean) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
+  register: (userData: any) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -263,14 +265,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const register = async (userData: any): Promise<void> => {
+    try {
+      setLoading(true);
+      const response = await authAPI.register(userData);
+      if (response.data?.token) {
+        tokenStorage.setToken(response.data.token, true);
+        setUser(response.data.user);
+        localStorage.setItem('cachedUser', JSON.stringify(response.data.user));
+        localStorage.setItem('cachedUserTime', Date.now().toString());
+      }
+      setError(null);
+      setApiErrorCount(0);
+      
+      toast({
+        title: "تم إنشاء الحساب بنجاح",
+        description: `مرحباً، ${response.data.user.first_name}!`
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Failed to register'));
+      toast({
+        title: "فشل إنشاء الحساب",
+        description: err instanceof Error ? err.message : "خطأ في إنشاء الحساب",
+        variant: "destructive"
+      });
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const value: AuthContextType = {
     isAuthenticated: !!user,
     user,
     loading,
+    isLoading: loading,
     error,
     login,
     logout,
-    refreshUser
+    refreshUser,
+    register
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

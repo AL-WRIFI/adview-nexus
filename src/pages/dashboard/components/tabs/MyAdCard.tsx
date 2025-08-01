@@ -103,10 +103,10 @@ export function MyAdCard({ listing, onPromote, onDelete, onRefresh }: MyAdCardPr
               <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{listing.city_name || 'غير محدد'}</span>
             </div>
             <div className="flex gap-1 self-end sm:self-auto">
-              <Button size="icon-sm" variant="outline" onClick={() => onPromote(listing.id)} title="ترويج"><TrendingUp className="h-4 w-4" /></Button>
-              <Button size="icon-sm" variant="outline" onClick={() => onRefresh(listing.id)} title="تحديث"><RefreshCw className="h-4 w-4" /></Button>
-              <Button size="icon-sm" variant="outline" onClick={() => navigate(`/edit-ad/${listing.id}`)} title="تعديل"><Edit className="h-4 w-4" /></Button>
-              <Button size="icon-sm" variant="destructive" outline onClick={() => onDelete(listing.id)} title="حذف"><Trash2 className="h-4 w-4" /></Button>
+              <Button size="sm" variant="outline" onClick={() => onPromote(listing.id)} title="ترويج"><TrendingUp className="h-4 w-4" /></Button>
+              <Button size="sm" variant="outline" onClick={() => onRefresh(listing.id)} title="تحديث"><RefreshCw className="h-4 w-4" /></Button>
+              <Button size="sm" variant="outline" onClick={() => navigate(`/edit-ad/${listing.id}`)} title="تعديل"><Edit className="h-4 w-4" /></Button>
+              <Button size="sm" variant="destructive" onClick={() => onDelete(listing.id)} title="حذف"><Trash2 className="h-4 w-4" /></Button>
             </div>
           </div>
         </div>

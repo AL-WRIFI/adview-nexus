@@ -139,11 +139,11 @@ export default function MessagesPage() {
                   </time>
                   {type === 'sent' && (
                     <div className="text-muted-foreground">
-                      {message.read_at ? (
-                        <CheckCheck className="w-4 h-4 text-blue-500" title="تم قراءتها" />
-                      ) : (
-                        <Check className="w-4 h-4" title="تم إرسالها" />
-                      )}
+                  {message.read_at ? (
+                    <CheckCheck className="w-4 h-4 text-blue-500" />
+                  ) : (
+                    <Check className="w-4 h-4" />
+                  )}
                     </div>
                   )}
                 </div>

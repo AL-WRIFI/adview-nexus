@@ -44,6 +44,7 @@ export interface User {
   name: string;
   city: string;
   bio?: string;
+  about?: string;
   created_at: string;
   updated_at: string;
   verified?: boolean;
