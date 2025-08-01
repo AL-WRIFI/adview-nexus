@@ -103,7 +103,7 @@ export default function EditAd() {
 
   const { data: cities } = useCities(stateId);
   const { data: districts } = useDistricts(cityId);
-  const { data: brands } = useBrands(categoryId);
+  const { data: brands } = useBrands();
 
   const subCategories = useMemo(() => {
     return categoryId && categories 
@@ -152,8 +152,8 @@ export default function EditAd() {
     if (listing && !isInitialized) {
       setAdType(listing.listing_type as 'sell' | 'rent' | 'job' | 'service' || 'sell');
       setCategoryId(listing.category_id || null);
-      setSubCategoryId(listing.sub_category_id || null);
-      setChildCategoryId(listing.child_category_id || null);
+      setSubCategoryId(typeof listing.sub_category_id === 'number' ? listing.sub_category_id : null);
+      setChildCategoryId(typeof listing.child_category_id === 'number' ? listing.child_category_id : null);
       setBrandId(listing.brand_id || null);
       setAdTitle(listing.title || '');
       setAdDescription(listing.description || '');
@@ -168,18 +168,23 @@ export default function EditAd() {
       setLat(listing.lat ? Number(listing.lat) : null);
       setLon(listing.lon ? Number(listing.lon) : null);
 
-      if (listing.image) {
+      if (listing.image && typeof listing.image === 'object') {
         setExistingMainImage({ 
-          id: listing.image.image_id, 
-          url: listing.image.image_url 
+          id: (listing.image as any).image_id || (listing.image as any).id, 
+          url: (listing.image as any).image_url || (listing.image as any).url 
         });
       }
       
       if (listing.images && Array.isArray(listing.images)) {
-        setExistingGalleryImages(listing.images.map(img => ({ 
-          id: img.id, 
-          url: img.url 
-        })));
+        setExistingGalleryImages(listing.images.map(img => {
+          if (typeof img === 'object') {
+            return { 
+              id: (img as any).id || (img as any).image_id, 
+              url: (img as any).url || (img as any).image_url 
+            };
+          }
+          return { id: '', url: '' };
+        }).filter(img => img.id && img.url));
       }
 
       setIsInitialized(true);

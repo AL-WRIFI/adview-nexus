@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, Eye, EyeOff, KeyRound } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { authAPI } from '@/services/api'; // Ensure this is the correct import
+import { authAPI } from '@/services/apis'; // Ensure this is the correct import
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 
 export default function ResetPasswordPage() {
@@ -46,7 +46,6 @@ export default function ResetPasswordPage() {
     setIsPending(true);
     try {
       const response = await authAPI.resetPassword({
-        email,
         token,
         password,
         password_confirmation: passwordConfirmation,
