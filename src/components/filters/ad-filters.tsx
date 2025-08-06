@@ -92,8 +92,8 @@ export function AdFilters({
             <Input 
               type="number" 
               placeholder="0" 
-              value={localFilters.min_price || ''} 
-              onChange={e => handleFilterUpdate('min_price', e.target.value === '' ? undefined : e.target.value)} 
+              defaultValue={localFilters.min_price || ''}
+              onBlur={e => handleFilterUpdate('min_price', e.target.value === '' ? undefined : e.target.value)}
               className="text-right" 
             />
           </div>
@@ -102,8 +102,8 @@ export function AdFilters({
             <Input 
               type="number" 
               placeholder="∞" 
-              value={localFilters.max_price || ''} 
-              onChange={e => handleFilterUpdate('max_price', e.target.value === '' ? undefined : e.target.value)} 
+              defaultValue={localFilters.max_price || ''}
+              onBlur={e => handleFilterUpdate('max_price', e.target.value === '' ? undefined : e.target.value)}
               className="text-right" 
             />
           </div>

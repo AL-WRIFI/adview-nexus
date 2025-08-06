@@ -1,15 +1,12 @@
 // src/components/dashboard/AdsTab.tsx
-
 import React, { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { RefreshCw } from 'lucide-react';
 import { useUserListings } from '@/hooks/use-api';
 import { useAuth } from '@/context/auth-context';
-import { useDebounce } from '@/hooks/use-debounce'; // ستحتاج لإنشاء هذا الهوك
-
-// استيراد المكونات الفرعية والمكون المخصص للترقيم
-import { Pagination } from '@/components/custom/pagination'; // استيراد مكون الترقيم
+import { useDebounce } from '@/hooks/use-debounce';
+import { Pagination } from '@/components/custom/pagination';
 import { MyAdCard } from './MyAdCard';
 import { AdFilters } from './AdFilters';
 
@@ -41,7 +38,7 @@ export function AdsTab({ onPromote, onDelete }: AdsTabProps) {
     search: '',
   });
 
-  const debouncedSearch = useDebounce(filters.search, 500); // تطبيق debounce للبحث
+  const debouncedSearch = useDebounce(filters.search, 500);
   const { user } = useAuth();
   const itemsPerPage = 8;
 
@@ -62,7 +59,7 @@ export function AdsTab({ onPromote, onDelete }: AdsTabProps) {
 
   const handleFilterChange = useCallback((key: keyof typeof filters, value: string) => {
     setFilters(prev => ({ ...prev, [key]: value }));
-    setPage(1); // إعادة الترقيم إلى الصفحة الأولى عند تغيير الفلاتر
+    setPage(1);
   }, []);
 
   const handleRefreshAd = useCallback(async (adId: number) => {

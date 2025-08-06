@@ -290,4 +290,31 @@
     border-color: hsl(0 0% 30%) !important;
     box-shadow: 0 0 0 2px hsl(0 0% 30% / 0.2) !important;
   }
+
+
+  .scrollbar-hover {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  }
+
+  .scrollbar-hover::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+  }
+
+  .scrollbar-hover:hover {
+    scrollbar-width: thin;
+  }
+
+  .scrollbar-hover:hover::-webkit-scrollbar {
+    height: 6px;
+  }
+
+  .scrollbar-hover:hover::-webkit-scrollbar-thumb {
+    background-color: rgba(100, 100, 100, 0.5);
+    border-radius: 4px;
+  }
+
+  
+
 }

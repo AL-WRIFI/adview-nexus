@@ -214,7 +214,6 @@ export const applyDynamicStyles = (colors: any, mode: string = 'light') => {
     `;
   }
   
-  // متغيرات CSS
   css += `
     /* ========== متغيرات CSS المحدثة ========== */
     :root {
@@ -281,10 +280,9 @@ export const setupDynamicStyles = async () => {
     mediaQuery.addEventListener('change', handleThemeChange);
     mediaQueryListener = handleThemeChange; // حفظ مرجع للمستمع الجديد
 
-    console.log("✅ تم تهيئة الألوان الديناميكية والمستمع للتغييرات بنجاح.");
 
   } catch (error) {
-    console.error('❌ فشل في تهيئة الألوان الديناميكية:', error);
+    console.error('❌ فشل في إعداد الأنماط الديناميكية:', error);
   }
 };
 

@@ -116,13 +116,9 @@ export const applyColorSettingsToDOM = (colors: any, mode: string = 'light') => 
     }
   }
   
-  // تطبيق الأنماط الديناميكية المحسنة
   applyDynamicStyles(colors, mode);
   
-  // تطبيق فوري على العناصر الموجودة
-  applyColorsToExistingElements(colors, mode);
-  
-  console.log('✅ تم تطبيق إعدادات الألوان بنجاح على DOM');
+  applyColorsToExistingElements(colors, mode);  
 };
 
 // دالة لتطبيق الألوان على العناصر الموجودة فوراً

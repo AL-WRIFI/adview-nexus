@@ -113,7 +113,7 @@ export function EnhancedMobileCategoryBar({
                         : "opacity-80 hover:opacity-100"
                     )}
                   >
-                    <div className={`w-14 h-14 mb-1 rounded-sm overflow-hidden border-2 transition-all ${selectedCategory === category.id ? 'border-brand' : 'border-gray-200 dark:border-gray-700'}`}>
+                    <div className={`w-14 h-14 mb-1 rounded-sm overflow-hidden transition-all`}>
                       <img
                         src={getCategoryImage(category)}
                         alt={category.name}

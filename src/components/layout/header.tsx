@@ -17,6 +17,9 @@ import {
   Home,
   LayoutDashboard,
   ChevronDown,
+  ListOrdered,
+  ListOrderedIcon,
+  ListIcon,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -33,6 +36,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Input } from "../ui/input";
 import { useFilterStore } from "@/store/filter-store";
+import { MessagesDropdown } from "../messages/MessagesDropdown";
 
 export function Header() {
   const { isAuthenticated, user, logout } = useAuth();
@@ -115,14 +119,15 @@ export function Header() {
                           <Link to="/favorites" className="flex items-center gap-2 p-3 hover:bg-gray-100 dark:hover:bg-dark-surface rounded-md">
                             <Heart className="h-5 w-5 text-brand" /><span>المفضلة</span>
                           </Link>
-                          <Link to="/messages" className="flex items-center gap-2 p-3 hover:bg-gray-100 dark:hover:bg-dark-surface rounded-md">
+                          <Link to="/dashboard/?tab=messages" className="flex items-center gap-2 p-3 hover:bg-gray-100 dark:hover:bg-dark-surface rounded-md">
                             <MessageCircle className="h-5 w-5 text-brand" /><span>الرسائل</span>
                           </Link>
-                          <Link to="/notifications" className="flex items-center gap-2 p-3 hover:bg-gray-100 dark:hover:bg-dark-surface rounded-md">
+                          
+                          {/* <Link to="/notifications" className="flex items-center gap-2 p-3 hover:bg-gray-100 dark:hover:bg-dark-surface rounded-md">
                             <Bell className="h-5 w-5 text-brand" /><span>الإشعارات</span>
-                          </Link>
+                          </Link> */}
                           <Separator className="my-2 dark:bg-dark-border" />
-                          <Link to="/settings" className="flex items-center gap-2 p-3 hover:bg-gray-100 dark:hover:bg-dark-surface rounded-md">
+                          <Link to="/dashboard/?tab=settings" className="flex items-center gap-2 p-3 hover:bg-gray-100 dark:hover:bg-dark-surface rounded-md">
                             <Settings className="h-5 w-5 text-brand" /><span>الإعدادات</span>
                           </Link>
                           <div className="flex items-center justify-between mt-auto p-3">
@@ -184,8 +189,9 @@ export function Header() {
               <ThemeToggle />
               {isAuthenticated ? (
                 <>
-                  <Link to="/messages"><Button variant="ghost" size="icon" className="relative" aria-label="الرسائل"><MessageCircle className="h-5 w-5" /></Button></Link>
-                  <Link to="/notifications"><Button variant="ghost" size="icon" className="relative" aria-label="الإشعارات"><Bell className="h-5 w-5" /></Button></Link>
+                  <MessagesDropdown />
+                  {/* <Link to="/"><Button variant="ghost" size="icon" className="relative" aria-label="الرسائل"><MessageCircle className="h-5 w-5" /></Button></Link> */}
+                  {/* <Link to="/notifications"><Button variant="ghost" size="icon" className="relative" aria-label="الإشعارات"><Bell className="h-5 w-5" /></Button></Link> */}
                   <Link to="/favorites"><Button variant="ghost" size="icon" aria-label="المفضلة"><Heart className="h-5 w-5" /></Button></Link>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -205,7 +211,10 @@ export function Header() {
                         <Link to="/dashboard" className="w-full flex items-center"><Settings className="mr-2 h-4 w-4" /><span>لوحة التحكم</span></Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
-                        <Link to="/profile" className="w-full flex items-center"><User className="mr-2 h-4 w-4" /><span>الملف الشخصي</span></Link>
+                        <Link to="/dashboard/?tab=ads" className="w-full flex items-center"><ListIcon className="mr-2 h-4 w-4" /><span> اعلاناتي</span></Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link to="/dashboard/?tab=profile" className="w-full flex items-center"><User className="mr-2 h-4 w-4" /><span>الملف الشخصي</span></Link>
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem onClick={logout} className="flex items-center"><LogOut className="mr-2 h-4 w-4" /><span>تسجيل الخروج</span></DropdownMenuItem>

@@ -29,7 +29,7 @@ export function MobileNav() {
     {
       label: 'الرسائل',
       icon: MessageSquare,
-      href: '/messages',
+      href: '/dashboard/?tab=messages',
       badge: unreadCount
     },
     {
@@ -45,7 +45,7 @@ export function MobileNav() {
     {
       label: 'حسابي',
       icon: User,
-      href: '/profile'
+      href: '/dashboard/?tab=profile'
     }
   ];
 
